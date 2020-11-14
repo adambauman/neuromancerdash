@@ -29,6 +29,9 @@
     <Content Include="periscope_docs\dashboard.gif" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="aida64_sse_data.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="neuromancer_dash.py" />
     <Compile Include="periscope.py" />
     <Compile Include="periscope_docs\periscope.py" />
