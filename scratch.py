@@ -26,11 +26,19 @@ text_surface = font.render("Yo yo yo", True, color_fg, color_bg)
 display_surface.blit(text_surface, (240,150))
 pygame.display.flip()
 
-x = np.linspace(0.0, 2*np.pi, 100)
+#x = np.linspace(0.0, 2*np.pi, 100)
 line_plot_0 = periscope.LinePlot(120, 80)
-line_plot_0.set_content(x, np.sin(x))
-display_surface.blit(line_plot_0.surface, (50,50))
-pygame.display.flip()
+#line_plot_0.set_content(x, np.sin(x))
+
+
+x = 0
+time_passed = 0
+sleep_time = 0
 
 while True:
-	time.sleep(1)
+	line_plot_0.set_content(x, time_passed, 100)
+	display_surface.blit(line_plot_0.surface, (50,50))
+	pygame.display.flip()	
+	time.sleep(sleep_time)
+	x += 5
+	time_passed += sleep_time
