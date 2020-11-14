@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7335ad1a-b663-418a-976d-1fb2fce08aa0}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>scratch.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>Global|PythonCore|3.8-32</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="aida64_sse_examples.txt" />
+    <Content Include="assets\fonts\IBM_Plex_Mono\OFL.txt" />
+    <Content Include="assets\fonts\Nanum_Gothic_Coding\OFL.txt" />
+    <Content Include="assets\fonts\Open_Sans\LICENSE.txt" />
+    <Content Include="assets\fonts\Roboto_Mono\LICENSE.txt" />
+    <Content Include="assets\fonts\Roboto_Mono\README.txt" />
+    <Content Include="install_command_history.txt" />
+    <Content Include="periscope_docs\dashboard.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="neuromancer_dash.py" />
+    <Compile Include="periscope.py" />
+    <Compile Include="periscope_docs\periscope.py" />
+    <Compile Include="scratch.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="assets\" />
+    <Folder Include="assets\fonts\" />
+    <Folder Include="assets\fonts\IBM_Plex_Mono" />
+    <Folder Include="assets\fonts\Nanum_Gothic_Coding" />
+    <Folder Include="assets\fonts\Open_Sans" />
+    <Folder Include="assets\fonts\Roboto_Mono" />
+    <Folder Include="periscope_docs" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.8-32" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

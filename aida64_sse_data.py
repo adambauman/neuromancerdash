@@ -1,4 +1,3 @@
-from time import sleep
 from sseclient import SSEClient
 
 print("Connecting...")
@@ -61,16 +60,17 @@ def parse_data(message_data):
 	return parsed_datas
 
 
-for message in messages:
+if __name__ == "__main__":
+
+	print("Starting output...")
+	for message in messages:
 	
-	# Example data response: 'Page0 | {|}Simple1|cpu_util 6 {|} Simple2|cpu_temp 32 {|}'
-	# NOTE: (Adam) 2020-11-14 Message data isn't always in sync with the message? Continue looping
-	#		if it wasn't receieved.
-	if 0 == len(message.data) or None == message.data:
-		continue
+		# Example data response: 'Page0 | {|}Simple1|cpu_util 6 {|} Simple2|cpu_temp 32 {|}'
+		# NOTE: (Adam) 2020-11-14 Message data isn't always in sync with the message? Continue looping
+		#		if it wasn't receieved.
+		if 0 == len(message.data) or None == message.data:
+			continue
 
-	parsed_datas = parse_data(message.data)
-
-	if __debug__:
-		print("CPU Temperature: " + parsed_datas.get("cpu_temp"))
-		print("CPU Utilization: " + parsed_datas.get("cpu_util"))
+		parsed_datas = parse_data(message.data)
+		for key in parsed_datas:
+			print(key + ": " + parsed_datas[key])

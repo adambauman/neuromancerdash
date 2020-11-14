@@ -1,6 +1,7 @@
 import pygame
 import time
 import sys, getopt
+from sseclient import SSEClient
 
 
 class AssetPath:
@@ -64,6 +65,8 @@ def main(argv):
 
     print("Specified server: " + server_address)
 
+    server_messages = SSEClient(server_address)
+
     pygame.init()
     pygame.mouse.set_visible(False)
     
@@ -80,6 +83,10 @@ def main(argv):
     x = 0
 
     while True:
+
+        for server_message in server_messages:
+            print(server_message)
+
         time.sleep(1)
         display_surface.fill(Color.black)
         x += 5
