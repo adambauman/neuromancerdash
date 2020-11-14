@@ -1,68 +1,114 @@
+#!/usr/bin/env python
+
+import sys, getopt
+
 from sseclient import SSEClient
 
-print("Connecting...")
-messages = SSEClient("http://localhost:8080/sse")
-print("Connected")
 
+class AIDA64SSEData:
 
-def extract_single_item_data(data):
-	assert(None != data and 0 != len(data))
+	# TODO: (Adam) 2020-11-14 Very simple static class right now, could definitely tighten things up, use
+	#		user-specified callbacks to send out data, etc.
 
-	# Data is initially combined with the gauge type like so: Simple1|cpu_util 6
-	split_type_and_item_data = data.split("|")
-	assert(2 == len(split_type_and_item_data))
-	assert(-1 != split_type_and_item_data[0].find("Simple")) # Derp check that we setup AIDA64 fields correctly
+	@staticmethod
+	def __extract_single_item_data__(data):
+		assert(0 != len(data))
 
-	# Second index will contain the actual data which is space delimited
-	split_item_data = split_type_and_item_data[1].split()
-	assert(2 == len(split_item_data)) # Should be key, value
-	assert(0 != len(split_item_data[0]) and 0 != len(split_item_data[1]))
+		# Data is initially combined with the gauge type like so: Simple1|cpu_util 6
+		split_type_and_item_data = data.split("|")
+		assert(2 == len(split_type_and_item_data))
+		assert(-1 != split_type_and_item_data[0].find("Simple")) # Derp check that we setup AIDA64 fields correctly
+
+		# Second index will contain the actual data which is space delimited
+		split_item_data = split_type_and_item_data[1].split()
+		assert(2 == len(split_item_data)) # Should be key, value
+		assert(0 != len(split_item_data[0]) and 0 != len(split_item_data[1]))
 	
-	# Return key, value
-	return split_item_data[0], split_item_data[1]
+		# Return key, value
+		return split_item_data[0], split_item_data[1]
+
+	@staticmethod
+	def connect(server_address):
+		assert(0 != len(server_address))
+
+		print("Connecting to SSEClient \'" + server_address + "\'...")
+		messages = SSEClient(server_address)
+		print("Connected!")
+
+		return messages
+
+	@staticmethod
+	def parse_data(message_data):
+		assert(0 != len(message_data))
+
+		if __debug__:
+			print("Message data: " + message_data)
+
+		split_message_data = message_data.split("{|}")
+		assert(0 != len(split_message_data))
+
+		# TODO: (Adam) 2020-11-14 Multi-page handling? Right now one page can fit a ton of data but it
+		#		could be split into multiple pages to decrease the size of the stream packet.
+
+		# First item should be the page name, process it seperatly
+		page_name = split_message_data.pop(0)
+		assert('|' == page_name[-1])
+		assert(-1 != page_name.find("Page"))
+
+		if __debug__:
+			print("Page name: " + page_name)
+
+		# The last item should be empty after the split, pop it
+		last_item = split_message_data.pop(-1)
+		assert(0 == len(last_item))
+
+		parsed_datas = {}
+		for data in split_message_data:
+			key, value = AIDA64SSEData.__extract_single_item_data__(data)
+
+			# Don't add incomplete data
+			if 0 != len(key) and 0 != len(value):
+				parsed_datas[key] = value
+			else:
+				assert(False)
+				continue;
+
+		return parsed_datas
 
 
-def parse_data(message_data):
-	assert(None != message_data and 0 != len(message_data))
-
-	if __debug__:
-		print("Message data: " + message_data)
-
-	split_message_data = message_data.split("{|}")
-	assert(0 != len(split_message_data))
-
-	# TODO: (Adam) 2020-11-14 Multi-page handling? Right now one page can fit a ton of data but it
-	#		could be split into multiple pages to decrease the size of the stream packet.
-
-	# First item should be the page name, process it seperatly
-	page_name = split_message_data.pop(0)
-	assert('|' == page_name[-1])
-	assert(-1 != page_name.find("Page"))
-
-	if __debug__:
-		print("Page name: " + page_name)
-
-	# The last item should be empty after the split, pop it
-	last_item = split_message_data.pop(-1)
-	assert(0 == len(last_item))
-
-	parsed_datas = {}
-	for data in split_message_data:
-		key, value = extract_single_item_data(data)
-
-		# Don't add incomplete data
-		if 0 != len(key) and 0 != len(value):
-			parsed_datas[key] = value
-		else:
-			assert(False)
-			continue;
-
-	return parsed_datas
+def print_usage():
+    print("\nUsage: aida64_sse_data.py --server <full http address to sse stream>\n")
 
 
-if __name__ == "__main__":
+def get_command_args(argv):
+    server_address = None
+    try:
+        opts, args = getopt.getopt(argv,"server:",["server="])
 
-	print("Starting output...")
+    except getopt.GetoptError:
+        print_usage()
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt == '-h':
+            print_usage()
+            sys.exit()
+        elif opt in ("--server"):
+            server_address = arg
+
+    if (None == server_address):
+        print_usage()
+        sys.exit()
+
+    return server_address
+
+
+def main(argv):
+	server_address = get_command_args(argv)
+	assert(None != server_address)
+
+	# Example usage
+	messages = AIDA64SSEData.connect(server_address)
 	for message in messages:
 	
 		# Example data response: 'Page0 | {|}Simple1|cpu_util 6 {|} Simple2|cpu_temp 32 {|}'
@@ -71,6 +117,15 @@ if __name__ == "__main__":
 		if 0 == len(message.data) or None == message.data:
 			continue
 
-		parsed_datas = parse_data(message.data)
+		parsed_datas = AIDA64SSEData.parse_data(message.data)
+
+		# Draw your dashboard, process the message data, etc. 
 		for key in parsed_datas:
 			print(key + ": " + parsed_datas[key])
+
+		print("\n")
+
+	
+if __name__ == "__main__":
+	main(sys.argv[1:])
+	
