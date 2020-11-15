@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import pygame
-import time
 import sys, getopt
+
+if __debug__:
+    import traceback
 
 from aida64_sse_data import AIDA64SSEData, DashData, AIDAField, Unit, Units
 
@@ -56,18 +58,9 @@ def get_command_args(argv):
 
     return server_address
 
-def main(argv):
-    server_address = get_command_args(argv)
 
-    assert(None != server_address)
-
-    pygame.init()
-    pygame.mouse.set_visible(False)
-    
-    display_surface = pygame.display.set_mode(
-        (Hardware.screen_width, Hardware.screen_height),
-        pygame.HWSURFACE | pygame.DOUBLEBUF
-    )
+def start_dashboard(server_address, display_surface):
+    assert(0 != len(server_address))
 
     display_surface.fill(Color.black)
 
@@ -102,6 +95,45 @@ def main(argv):
         display_surface.blit(text_surface, (10, 40))
 
         pygame.display.flip()
+
+def start_reconnect_screensaver(server_address, display_surface):
+    assert(0 != len(server_address))
+    assert(None != display_surface)
+
+    font_name, font_size = Font.open_sans(), 32
+    font = pygame.font.SysFont(font_name, font_size)
+
+    seconds_remaining = 10
+    while 0 < seconds_remaining:
+        display_surface.fill(Color.black)
+        text_surface = font.render("Connection timeout, retry in {} seconds...".format(seconds_remaining), True, Color.grey_75, None)
+        display_surface.blit(text_surface, (0, 0))
+        pygame.display.flip()
+        seconds_remaining -= 1
+        pygame.time.wait(1000)
+
+def main(argv):
+    server_address = get_command_args(argv)
+    assert(None != server_address)
+
+    pygame.init()
+    pygame.mouse.set_visible(False)
+    
+    display_surface = pygame.display.set_mode(
+        (Hardware.screen_width, Hardware.screen_height),
+        pygame.HWSURFACE | pygame.DOUBLEBUF
+    )
+
+    while True:
+        # Dashboard will fail if the computer sleeps or is otherwise unavailable, keep
+        # retrying until it starts to respond again.
+        try:
+            start_dashboard(server_address, display_surface)
+        except Exception:
+            #if __debug__:
+                #traceback.print_exc()
+            
+            start_reconnect_screensaver(server_address, display_surface)
 
 
     pygame.quit()

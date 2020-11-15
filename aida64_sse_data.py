@@ -109,13 +109,22 @@ class AIDA64SSEData:
 
         # Second index will contain the actual data which is space delimited
         split_item_data = split_type_and_item_data[1].split()
+
         item_value = ""
         if DashData.desktop_resolution.field_name == split_item_data[0]:
-            # Desktop resultion is "key, width, 'x', height"
-            assert(4 == len(split_item_data)) 
-            item_value = split_item_data[1] + split_item_data[2] + split_item_data[3]
+            # Desktop resultion reporting is inconsistant. Sometimes it's split into width, "x", and height,
+            # other times it's a single string.
+            assert(2 <= len(split_item_data)) 
+            first_run = True
+            for single_item_data in split_item_data:
+                if first_run:
+                    first_run = False
+                    continue
+
+                item_value += single_item_data
         else:
-            assert(2 == len(split_item_data)) # Should be key, value
+            # Should be key, value
+            assert(2 == len(split_item_data))
             item_value = split_item_data[1]
 
         assert(0 != len(split_item_data[0]) and 0 !=len(item_value))
@@ -160,7 +169,12 @@ class AIDA64SSEData:
 
         parsed_datas = {}
         for data in split_message_data:
-            key, value = AIDA64SSEData.__extract_single_item_data__(data)
+            try:
+                key, value = AIDA64SSEData.__extract_single_item_data__(data)
+            except:
+                # Skip any fields that failed to parse
+                assert(False)
+                continue
 
             # Don't add incomplete data
             if 0 != len(key) and 0 != len(value):
