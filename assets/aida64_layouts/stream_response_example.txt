@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Allow-Credentials: true
+
+data: Page0|{|}Simple1|cpu_util 23{|}Simple2|cpu_temp 35{|}Simple3|cpu_clock 2000{|}Simple4|cpu_power 25.30{|}Simple5|gpu_clock 300{|}Simple6|gpu_util 15{|}Simple7|gpu_ram_used 2152{|}Simple8|gpu_power 19.52{|}Simple9|gpu_temp 30{|}Simple10|gpu_perfcap_reason Utilization{|}Simple11|sys_ram_used 8167{|}Simple12|nic1_download_rate 0.1{|}Simple13|nic1_upload_rate 0.2{|}Simple14|cpu_fan 1445{|}Simple15|cpu_opt_fan 1276{|}Simple16|chassis_1_fan 1032{|}Simple17|chassis_2_fan 920{|}Simple18|chassis_3_fan 1298{|}Simple19|gpu_fan 1498{|}Simple20|gpu_2_fan 41{|}Simple21|desktop_resolution 3840 x 2160{|}Simple22|vertical_refresh_rate 60{|}Simple23|motherboard_temp 28{|}Simple24|rtss_fps 0{|}Simple25|disk_1_activity 0{|}Simple26|disk_2_activity 0{|}Simple27|disk_3_activity 0{|}Simple28|disk_4_activity 0{|}Simple29|cpu1_util 36{|}Simple30|cpu2_util 36{|}Simple31|cpu3_util 9{|}Simple32|cpu4_util 27{|}Simple33|cpu5_util 54{|}Simple34|cpu6_util 18{|}Simple35|cpu7_util 27{|}Simple36|cpu8_util 27{|}

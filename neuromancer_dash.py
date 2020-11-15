@@ -4,7 +4,7 @@ import pygame
 import time
 import sys, getopt
 
-from aida64_sse_data import AIDA64SSEData
+from aida64_sse_data import AIDA64SSEData, DashData, AIDAField, Unit, Units
 
 
 class AssetPath:
@@ -29,32 +29,6 @@ class Font:
     @staticmethod
     def open_sans():
         return AssetPath.fonts + "/Open_Sans/OpenSans-Regular.ttf"
-
-# TODO: (Adam) 2020-11-14 This is a bit of mess, could use something like Pint for slick unit handling
-class Unit:
-    name = ""
-    symbol = ""
-    def __init__(self, name = "", symbol = ""):
-        self.name = name
-        self.symbol = symbol
-
-class Units:
-    null_unit = Unit()
-    celsius = Unit("Celcius", "C")
-    percent = Unit("Percent", "%")
-
-class AIDAField:
-    field_name = ""
-    description = ""
-    unit = Units.null_unit
-    def __init__(self, field_name = "", description = "", unit = Units.null_unit):
-        self.field_name = field_name
-        self.description = description
-        self.unit = unit
-
-class DashData:
-    cpu_temp = AIDAField("cpu_temp", "CPU Temperature", Units.celsius)
-    cpu_util = AIDAField("cpu_util", "CPU Utilization", Units.percent)
 
 
 def print_usage():
