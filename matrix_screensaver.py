@@ -1,12 +1,15 @@
+#!/usr/bin/env python
+
 import pygame, pygame.font
 import random
 
 # TODO: (Adam) 2020-11-14 Copypasta'd from https://gist.github.com/MrKioZ/c07b9377d20bab53af6ebcdfbdeabb64, fork and properly link
 
-COLOR = (0, 200, 200) #The Color of the Matrix
-ZERO_ONE = False #Makes a rain of zeros and ones instead of random ASCII character
 
 class MatrixScreenSaver:
+
+    __color = (0, 200, 200) #The Color of the Matrix
+    __zero_one = False #Makes a rain of zeros and ones instead of random ASCII character  
 
     __xHeads = None
     __maxCol = None
@@ -53,7 +56,7 @@ class MatrixScreenSaver:
         # color init
         colorList = [(255, 255, 255)]
         primeColors = len(colorList)+1
-        R,G,B = COLOR
+        R,G,B = self.__color
         colorList += [(R+10, G+10, B+10)] * ((lettersOnScreen[1] - 10))
         endColors = len(colorList)
         colorList += [(R-50 if R else 0, B-50 if B else 0, G-50 if G else 0),(R-100 if R else 0, B-100 if B else 0, G-100 if G else 0),(0, 0, 0)]
@@ -64,7 +67,7 @@ class MatrixScreenSaver:
 
         # char generator
         letters = [[0 for _ in range(lettersOnScreen[1] + 1)] for _ in range(lettersOnScreen[0])]
-        if ZERO_ONE:
+        if self.__zero_one:
             char = chr(random.randint(48, 49))
         else:
             char = chr(random.randint(32, 126))
@@ -72,7 +75,7 @@ class MatrixScreenSaver:
         for y in range(lettersOnScreen[1] + 1):
             for x in range(lettersOnScreen[0]):
                 letters[x][y] = [fontObj.render(char, False, colorList[col]) for col in range(self.__maxCol)]
-                if ZERO_ONE:
+                if self.__zero_one:
                     char = chr(random.randint(48, 49))
                 else:
                     char = chr(random.randint(32, 126))
