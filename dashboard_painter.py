@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-import pygame
+import pygame, pygame.freetype
+
+import os
 
 class AssetPath:
     # No trailing slashes
-    fonts = "./assets/fonts"
+    fonts = "assets/fonts"
 
 class Color:
     yellow = "#ffff00"
@@ -16,10 +18,21 @@ class Color:
     grey_75 = "#c0c0c0"
     black = "#000000"
 
-class Font:
+class FontPaths:
+    # TODO: (Adam) 2020-11-15 Use os.path.join instead of string concact
     @staticmethod
-    def open_sans():
+    def open_sans_regular():
         return AssetPath.fonts + "/Open_Sans/OpenSans-Regular.ttf"
+    def open_sans_semibold():
+        return AssetPath.fonts + "/Open_Sans/OpenSans-SemiBold.ttf"
+    def dm_sans_medium():
+        return AssetPath.fonts + "/DM_Sans/DMSans-Medium.ttf"
+    def goldman_regular():
+        return AssetPath.fonts + "/Goldman/Goldman-Regular.ttf"
+    def fira_code_variable():
+        return AssetPath.fonts + "/Fira_Code/FiraCode-VariableFont_wght.ttf"
+    def fira_code_semibold():
+        return AssetPath.fonts + "/Fira_Code/static/FiraCode-SemiBold.ttf"
 
 # TODO: (Adam) 2020-11-14 This is a bit of mess, could use something like Pint for slick unit handling
 class Unit:
@@ -110,23 +123,65 @@ class DashData:
     cpu8_util = DataField("cpu8_util", "CPU Core 8 Utilization", Units.percent, min_value=0, max_value=100)
 
 
-class DashboardPainter:
+class DashPainter:
 
-    def paint(data, display_surface):
+    def __init__(self, display_surface):
+        self.display_surface = display_surface 
 
-        display_surface.fill(Color.black)
-        
-        font_name, font_size = Font.open_sans(), 32
-        font = pygame.font.SysFont(font_name, font_size)
+    def __get_next_vertical_stack_origin__(self, last_origin, font, padding = 0):
+        x = last_origin[0]
+        y = last_origin[1] + font.get_sized_height() + padding
+        return (x,y)
 
-        text_surface = font.render(
-            DashData.cpu_temp.description + ": {}".format(data[DashData.cpu_temp.field_name]) + DashData.cpu_temp.unit.symbol, 
-            True, Color.yellow, None
-        )
-        display_surface.blit(text_surface, (10, 10))
+    def paint(self, data):
 
-        text_surface = font.render(
-            DashData.cpu_util.description + ": {}".format(data[DashData.cpu_util.field_name]) + DashData.cpu_util.unit.symbol,
-            True, Color.yellow, None
-        )
-        display_surface.blit(text_surface, (10, 40))
+        self.display_surface.fill(Color.black)
+
+        font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        font_normal.strong = True
+
+        cpu_detail_stack_origin = (325, 33)
+        gpu_detail_stack_origin = (325, 110)
+        stack_vertical_padding = -2
+
+        # CPU Text Stack
+        text_origin = cpu_detail_stack_origin
+        text = "{} {}".format(data[DashData.cpu_power.field_name], DashData.cpu_power.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "{} {}".format(data[DashData.cpu_clock.field_name], DashData.cpu_clock.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "{}{}".format(data[DashData.cpu_util.field_name], DashData.cpu_util.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "RAM"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+
+        #GPU Text Stack
+        text_origin = gpu_detail_stack_origin
+        text = "PerfCap:"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "{} {}".format(data[DashData.gpu_clock.field_name], DashData.gpu_clock.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "{}{}".format(data[DashData.gpu_util.field_name], DashData.gpu_util.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
+        text = "RAM"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)

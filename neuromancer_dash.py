@@ -7,7 +7,7 @@ if __debug__:
     import traceback
 
 from aida64_sse_data import AIDA64SSEData
-from dashboard_painter import DashboardPainter
+from dashboard_painter import DashPainter
 
 class Hardware:
     screen_width = 480
@@ -45,6 +45,8 @@ def start_dashboard(server_address, display_surface):
     # Start connection to the AIDA64 SSE data stream
     server_messages = AIDA64SSEData.connect(server_address)
 
+    dash_painter = DashPainter(display_surface)
+
     # This is a generator loop, it will keep going as long as the AIDA64 stream is open
     # NOTE: (Adam) 2020-11-14 Stream data is sometimes out of sync with the generated loop,
     #       just skip and try again on the next go-around
@@ -55,7 +57,7 @@ def start_dashboard(server_address, display_surface):
         parsed_data = AIDA64SSEData.parse_data(server_message.data)
         assert(0 != len(parsed_data))
         
-        DashboardPainter.paint(parsed_data, display_surface)
+        dash_painter.paint(parsed_data)
         pygame.display.flip()
 
 
