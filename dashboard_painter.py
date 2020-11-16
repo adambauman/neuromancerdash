@@ -133,7 +133,59 @@ class DashPainter:
         y = last_origin[1] + font.get_sized_height() + padding
         return (x,y)
 
+    def __paint_cpu_text_stack__(self, origin, font_normal, data):
+        assert(0 != len(data))
+
+        stack_vertical_adjustment = -2
+
+        text_origin = origin
+        text = "{} {}".format(data[DashData.cpu_power.field_name], DashData.cpu_power.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{} {}".format(data[DashData.cpu_clock.field_name], DashData.cpu_clock.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{}{}".format(data[DashData.cpu_util.field_name], DashData.cpu_util.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "RAM"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+
+    def __paint_gpu_text_stack__(self, origin, font_normal, data):
+        assert(0 != len(data))
+
+        stack_vertical_adjustment = -2
+
+        text_origin = origin
+        text = "PerfCap:"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{} {}".format(data[DashData.gpu_clock.field_name], DashData.gpu_clock.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{}{}".format(data[DashData.gpu_util.field_name], DashData.gpu_util.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "RAM"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+
+
     def paint(self, data):
+        assert(0 != len(data))
 
         self.display_surface.fill(Color.black)
 
@@ -142,46 +194,10 @@ class DashPainter:
 
         cpu_detail_stack_origin = (325, 33)
         gpu_detail_stack_origin = (325, 110)
-        stack_vertical_padding = -2
 
         # CPU Text Stack
-        text_origin = cpu_detail_stack_origin
-        text = "{} {}".format(data[DashData.cpu_power.field_name], DashData.cpu_power.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "{} {}".format(data[DashData.cpu_clock.field_name], DashData.cpu_clock.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "{}{}".format(data[DashData.cpu_util.field_name], DashData.cpu_util.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "RAM"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+        self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
 
         #GPU Text Stack
-        text_origin = gpu_detail_stack_origin
-        text = "PerfCap:"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        self.__paint_gpu_text_stack__(gpu_detail_stack_origin, font_normal, data)
 
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "{} {}".format(data[DashData.gpu_clock.field_name], DashData.gpu_clock.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "{}{}".format(data[DashData.gpu_util.field_name], DashData.gpu_util.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_padding)
-        text = "RAM"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
