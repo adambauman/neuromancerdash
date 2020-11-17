@@ -195,7 +195,7 @@ class Gauges:
 
         # Shadow
         shadow = needle.copy()
-        shadow.fill((0, 0, 0, 60), special_flags=pygame.BLEND_RGBA_MULT)
+        shadow.fill((0, 0, 0, 50), special_flags=pygame.BLEND_RGBA_MULT)
 
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
         abs_change_from_zero = abs(arc_transposed_value)
@@ -210,7 +210,7 @@ class Gauges:
         #needle_shadow.set_alpha(20)
         shadow_x = gauge_center[0] - (rotated_shadow.get_width() / 2)
         shadow_y = gauge_center[1] - (rotated_shadow.get_height() / 2)
-        
+
         # Background
         if 0 != background_alpha:
             background_surface = pygame.Surface((gauge.get_width(), gauge.get_height()))
@@ -226,9 +226,9 @@ class Gauges:
         # Value
         if 0 != len(unit_text):
             font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 8)
-            font_unit.strong = False
-            font_unit.render_to(gauge, (43, 60), unit_text, Color.white)
-        
+            font_unit.strong = True
+            font_unit.render_to(gauge, (43, 59), unit_text, Color.white)
+
         # Readout text
         font_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
         font_value.strong = True
@@ -242,7 +242,7 @@ class Gauges:
 class DashPainter:
 
     def __init__(self, display_surface):
-        self.display_surface = display_surface 
+        self.display_surface = display_surface
 
     def __get_next_vertical_stack_origin__(self, last_origin, font, padding = 0):
         x = last_origin[0]
@@ -281,7 +281,7 @@ class DashPainter:
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
         text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
-        font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text, 9, ""), Color.yellow)
+        font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text,11, ""), Color.yellow)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
         text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
@@ -320,16 +320,17 @@ class DashPainter:
         self.__paint_gpu_text_stack__(gpu_detail_stack_origin, font_normal, data)
 
         #CPU and GPU Temps
+        cpugpu_gauge_bg_alpha = 200
         cpu_temp_gauge = Gauges.arc_gauge_flat_90x(
-            data[DashData.cpu_temp.field_name], 
+            data[DashData.cpu_temp.field_name],
             DashData.cpu_temp.min_value, DashData.cpu_temp.max_value, DashData.cpu_temp.unit.symbol,
-            128
+            cpugpu_gauge_bg_alpha
         )
         self.display_surface.blit(cpu_temp_gauge, cpu_temp_gauge_origin)
 
         gpu_temp_gauge = Gauges.arc_gauge_flat_90x(
-            data[DashData.gpu_temp.field_name], 
+            data[DashData.gpu_temp.field_name],
             DashData.gpu_temp.min_value, DashData.gpu_temp.max_value, DashData.gpu_temp.unit.symbol,
-            128
+            cpugpu_gauge_bg_alpha
         )
         self.display_surface.blit(gpu_temp_gauge, gpu_temp_gauge_origin)
