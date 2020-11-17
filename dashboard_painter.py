@@ -4,9 +4,47 @@ import pygame, pygame.freetype
 
 import os
 
+class TweenState:
+    unknown = 0
+    idle = 1
+    rising = 2
+    falling = 3
+class TweenAcceleration:
+    unknown = 0
+    stable = 1
+    accelerating = 2
+    decelerating = 3
+class Tweening:
+    tween_state = TweenState.unknown
+    tween_acceleration = TweenAcceleration.unknown
+    last_absolute_value = 0
+    tween_steps = 0
+
+    def calculate_tween_steps(self, new_absolute_value, frames_since_last_calculation):
+        new_tween_state = TweenState.unknown
+        if new_absolute_value == self.last_absolute_value:
+            new_tween_state = TweenState.idle
+        elif new_absolute_value > self.last_absolute_value:
+            new_tween_state = TweenState.rising
+        else:
+            new_tween_state = TweenState.falling
+
+        delta = new_absolute_value - self.last_absolute_value
+        if 0 != frames_since_last_calculation:
+            self.tween_steps = delta / frames_since_last_calculation
+
+        self.last_absolute_value = new_absolute_value
+
+class Helpers:
+    def transpose_ranges(input, input_high, input_low, output_high, output_low):
+        #print("transpose, input: {} iHI: {} iLO: {} oHI: {} oLO: {}".format(input, input_high, input_low, output_high, output_low))
+        diff_multiplier = (input - input_low) / (input_high - input_low)
+        return ((output_high - output_low) * diff_multiplier) + output_low
+
 class AssetPath:
     # No trailing slashes
     fonts = "assets/fonts"
+    gauges = "assets/images/gauges"
 
 class Color:
     yellow = "#ffff00"
@@ -39,12 +77,10 @@ class Unit:
     name = ""
     symbol = ""
     alt_symbol = ""
-
     def __init__(self, name = "", symbol = "", alt_symbol = ""):
         self.name = name
         self.symbol = symbol
         self.alt_symbol = alt_symbol
-
 class Units:
     null_unit = Unit()
     celsius = Unit("Celcius", "C")
@@ -70,7 +106,6 @@ class DataField:
     caution_value = None
     warn_value = None
     max_value = None
-
     def __init__(
         self, field_name = "", description = "", unit = Units.null_unit,
         min_value = None, caution_value = None, warn_value = None, max_value = None):
@@ -82,7 +117,6 @@ class DataField:
         self.caution_value = caution_value
         self.warn_value = warn_value
         self.max_value = max_value
-
 #TODO: (Adam) 2020-11-14 AIDA64 layout file is plain text, could write a converter to grab fields names
 class DashData:
     cpu_util = DataField("cpu_util", "CPU Utilization", Units.percent, min_value=0, max_value=100)
@@ -183,6 +217,46 @@ class DashPainter:
         text = "RAM"
         font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
 
+    def __paint_cpu_temp_gauge__(self, origin, data):
+        assert(0 != len(data))
+
+        gauge = pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_style1.png"))
+        needle = pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_needle.png"))
+
+        gauge_center = ((gauge.get_width() / 2), (gauge.get_height() / 2))
+
+        #needle_0 = 135, needle_redline = -90, needle_100 = -135
+        value_text = data[DashData.cpu_temp.field_name]
+        arc_transposed_value = Helpers.transpose_ranges(
+            float(value_text), 
+            DashData.cpu_temp.max_value, DashData.cpu_temp.min_value, 
+            -135, 135
+        )
+
+        rotated_needle = pygame.transform.rotozoom(needle, arc_transposed_value, 1)
+        needle_x = gauge_center[0] - (rotated_needle.get_width() / 2)
+        needle_y = gauge_center[1] - (rotated_needle.get_height() / 2)
+        gauge.blit(rotated_needle, (needle_x, needle_y))
+
+        font_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+        font_value.strong = True
+
+        font_value_surface = font_value.render("{}".format(value_text), Color.white)[0]
+
+        #font_value_surface_center = (font_value_surface.get_width() / 2, font_value_surface.get_height() / 2)
+        #value_text_x = gauge_center[0] - font_value_surface_center[0]
+        value_text_x = 35
+        value_text_y = 70
+        #value_text_y = gauge.get_height() - font_value_surface.get_height()
+        gauge.blit(font_value_surface, (value_text_x, value_text_y))
+
+        self.display_surface.blit(gauge, origin)
+
+
+    def __fill_woutline__(self, surface, fill_color, outline_color, border=1):
+        surface.fill(outline_color)
+        surface.fill(fill_color, surface.get_rect().inflate(-border, -border))
+
 
     def paint(self, data):
         assert(0 != len(data))
@@ -195,9 +269,11 @@ class DashPainter:
         cpu_detail_stack_origin = (325, 33)
         gpu_detail_stack_origin = (325, 110)
 
-        # CPU Text Stack
+        # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
 
-        #GPU Text Stack
+        #GPU Data
         self.__paint_gpu_text_stack__(gpu_detail_stack_origin, font_normal, data)
 
+        #CPU and GPU Temps
+        self.__paint_cpu_temp_gauge__((100,100), data)
