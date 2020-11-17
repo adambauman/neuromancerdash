@@ -59,6 +59,13 @@ def start_dashboard(server_address, display_surface):
         
         dash_painter.paint(parsed_data)
         pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                print("User quit")
+                pygame.quit()
+                sys.exit()
+        pygame.event.clear()
 
 
 def start_reconnect_screensaver(server_address, display_surface):

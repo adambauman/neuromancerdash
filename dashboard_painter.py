@@ -36,10 +36,23 @@ class Tweening:
         self.last_absolute_value = new_absolute_value
 
 class Helpers:
+    @staticmethod
     def transpose_ranges(input, input_high, input_low, output_high, output_low):
         #print("transpose, input: {} iHI: {} iLO: {} oHI: {} oLO: {}".format(input, input_high, input_low, output_high, output_low))
         diff_multiplier = (input - input_low) / (input_high - input_low)
         return ((output_high - output_low) * diff_multiplier) + output_low
+
+    @staticmethod
+    def clamp_text(text, max_characters, trailing_text="..."):
+        trimmed_text = text[0:max_characters]
+        return trimmed_text + trailing_text
+
+    @staticmethod
+    def multiply_surface(surface, value):
+        "Value is 0 to 255. So 128 would be 50% darken"
+        arr = pygame.surfarray.array3d(surface) * value
+        arr >>= 8
+        pygame.surfarray.blit_array(surface, arr)
 
 class AssetPath:
     # No trailing slashes
@@ -55,6 +68,7 @@ class Color:
     grey_20 = "#333333"
     grey_75 = "#c0c0c0"
     black = "#000000"
+    windows_dkgrey_1 = "#4c4a48"
 
 class FontPaths:
     # TODO: (Adam) 2020-11-15 Use os.path.join instead of string concact
@@ -120,14 +134,14 @@ class DataField:
 #TODO: (Adam) 2020-11-14 AIDA64 layout file is plain text, could write a converter to grab fields names
 class DashData:
     cpu_util = DataField("cpu_util", "CPU Utilization", Units.percent, min_value=0, max_value=100)
-    cpu_temp = DataField("cpu_temp", "CPU Temperature", Units.celsius, min_value=15, caution_value=75, max_value=80, warn_value=82)
+    cpu_temp = DataField("cpu_temp", "CPU Temperature", Units.celsius, min_value=20, caution_value=75, max_value=80, warn_value=82)
     cpu_clock = DataField("cpu_clock", "CPU Clock", Units.megahertz, min_value=799, max_value=4500)
     cpu_power = DataField("cpu_power", "CPU Power", Units.watts, min_value=0, max_value=91)
     gpu_clock = DataField("gpu_clock", "GPU Clock", Units.megahertz, min_value=300, max_value=1770)
     gpu_util = DataField("gpu_util", "GPU Utilization", Units.percent, min_value=0, max_value=100)
     gpu_ram_used = DataField("gpu_ram_used", "GPU RAM Used", Units.megabytes, min_value=0, max_value=8192)
     gpu_power = DataField("gpu_power", "GPU Power", Units.watts, min_value=0, max_value=215)
-    gpu_temp = DataField("gpu_temp", "GPU Temperature", Units.celsius, min_value=15, caution_value=75, max_value=80, warn_value=88)
+    gpu_temp = DataField("gpu_temp", "GPU Temperature", Units.celsius, min_value=20, caution_value=75, max_value=80, warn_value=88)
     gpu_perfcap_reason = DataField("gpu_perfcap_reason", "GPU Performance Cap Reason")
     sys_ram_used = DataField("sys_ram_used", "System RAM Used", Units.megabytes, min_value=0, caution_value=30000, max_value=32768)
     nic1_download_rate = DataField("nic1_download_rate", "NIC1 Download Rate", Units.kilobytes_per_second)
@@ -155,6 +169,74 @@ class DashData:
     cpu6_util = DataField("cpu6_util", "CPU Core 6 Utilization", Units.percent, min_value=0, max_value=100)
     cpu7_util = DataField("cpu7_util", "CPU Core 7 Utilization", Units.percent, min_value=0, max_value=100)
     cpu8_util = DataField("cpu8_util", "CPU Core 8 Utilization", Units.percent, min_value=0, max_value=100)
+
+class Gauges:
+    @staticmethod
+    def arc_gauge_flat_90x(value, min_value, max_value, unit_text = "", background_alpha = 0):
+        assert(min_value != max_value)
+
+        gauge = pygame.Surface((90,90))
+
+        # NOTE: (Adam) 2020-11-17 Leaning on lazy image loading to cache and discard images, after first call
+        #           these should remain in memory until the Image controller detects that no more references exist.
+        gauge_face =  pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_style1.png"))
+        needle = pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_needle.png"))
+
+        gauge_center = ((gauge.get_width() / 2), (gauge.get_height() / 2))
+
+        # needle_0 = 135, needle_redline = -90, needle_100 = -135
+        arc_transposed_value = Helpers.transpose_ranges(float(value), max_value, min_value, -135, 135)
+
+        # Needle
+        # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
+        rotated_needle = pygame.transform.rotozoom(needle, arc_transposed_value, 1)
+        needle_x = gauge_center[0] - (rotated_needle.get_width() / 2)
+        needle_y = gauge_center[1] - (rotated_needle.get_height() / 2)
+
+        # Shadow
+        shadow = needle.copy()
+        shadow.fill((0, 0, 0, 60), special_flags=pygame.BLEND_RGBA_MULT)
+
+        # Add a small %-change multiplier to give the shadow farther distance as values approach limits
+        abs_change_from_zero = abs(arc_transposed_value)
+        shadow_distance = 4 + ((abs(arc_transposed_value) / 135) * 10)
+
+        shadow_rotation = arc_transposed_value
+        if arc_transposed_value > 0: #counter-clockwise
+            shadow_rotation += shadow_distance
+        else: #clockwise
+            shadow_rotation += -shadow_distance
+        rotated_shadow = pygame.transform.rotozoom(shadow, shadow_rotation, 0.93)
+        #needle_shadow.set_alpha(20)
+        shadow_x = gauge_center[0] - (rotated_shadow.get_width() / 2)
+        shadow_y = gauge_center[1] - (rotated_shadow.get_height() / 2)
+        
+        # Background
+        if 0 != background_alpha:
+            background_surface = pygame.Surface((gauge.get_width(), gauge.get_height()))
+            pygame.draw.circle(background_surface, Color.windows_dkgrey_1, gauge_center, gauge.get_width() / 2)
+            background_surface.set_alpha(background_alpha)
+            gauge.blit(background_surface, (0, 0))
+
+        # Start blitting down the gauge components
+        gauge.blit(gauge_face, (0, 0))
+        gauge.blit(rotated_shadow, (shadow_x, shadow_y))
+        gauge.blit(rotated_needle, (needle_x, needle_y))
+
+        # Value
+        if 0 != len(unit_text):
+            font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 8)
+            font_unit.strong = False
+            font_unit.render_to(gauge, (43, 60), unit_text, Color.white)
+        
+        # Readout text
+        font_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+        font_value.strong = True
+        # NOTE: (Adam) 2020-11-17 Dynamic centered text dances around a little, sticking with
+        #           static placement for now.
+        font_value.render_to(gauge, (35, 70), value, Color.white)
+
+        return gauge
 
 
 class DashPainter:
@@ -199,7 +281,7 @@ class DashPainter:
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
         text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text, 9, ""), Color.yellow)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
         text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
@@ -217,57 +299,19 @@ class DashPainter:
         text = "RAM"
         font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
 
-    def __paint_cpu_temp_gauge__(self, origin, data):
-        assert(0 != len(data))
-
-        gauge = pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_style1.png"))
-        needle = pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_needle.png"))
-
-        gauge_center = ((gauge.get_width() / 2), (gauge.get_height() / 2))
-
-        #needle_0 = 135, needle_redline = -90, needle_100 = -135
-        value_text = data[DashData.cpu_temp.field_name]
-        arc_transposed_value = Helpers.transpose_ranges(
-            float(value_text), 
-            DashData.cpu_temp.max_value, DashData.cpu_temp.min_value, 
-            -135, 135
-        )
-
-        rotated_needle = pygame.transform.rotozoom(needle, arc_transposed_value, 1)
-        needle_x = gauge_center[0] - (rotated_needle.get_width() / 2)
-        needle_y = gauge_center[1] - (rotated_needle.get_height() / 2)
-        gauge.blit(rotated_needle, (needle_x, needle_y))
-
-        font_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
-        font_value.strong = True
-
-        font_value_surface = font_value.render("{}".format(value_text), Color.white)[0]
-
-        #font_value_surface_center = (font_value_surface.get_width() / 2, font_value_surface.get_height() / 2)
-        #value_text_x = gauge_center[0] - font_value_surface_center[0]
-        value_text_x = 35
-        value_text_y = 70
-        #value_text_y = gauge.get_height() - font_value_surface.get_height()
-        gauge.blit(font_value_surface, (value_text_x, value_text_y))
-
-        self.display_surface.blit(gauge, origin)
-
-
-    def __fill_woutline__(self, surface, fill_color, outline_color, border=1):
-        surface.fill(outline_color)
-        surface.fill(fill_color, surface.get_rect().inflate(-border, -border))
-
-
     def paint(self, data):
         assert(0 != len(data))
 
         self.display_surface.fill(Color.black)
 
         font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        font_normal.strong = True
+        font_normal.strong = False
+        font_normal.kerning = True
 
-        cpu_detail_stack_origin = (325, 33)
-        gpu_detail_stack_origin = (325, 110)
+        cpu_detail_stack_origin = (310, 33)
+        gpu_detail_stack_origin = (310, 110)
+        cpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 3)
+        gpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 107)
 
         # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
@@ -276,4 +320,16 @@ class DashPainter:
         self.__paint_gpu_text_stack__(gpu_detail_stack_origin, font_normal, data)
 
         #CPU and GPU Temps
-        self.__paint_cpu_temp_gauge__((100,100), data)
+        cpu_temp_gauge = Gauges.arc_gauge_flat_90x(
+            data[DashData.cpu_temp.field_name], 
+            DashData.cpu_temp.min_value, DashData.cpu_temp.max_value, DashData.cpu_temp.unit.symbol,
+            128
+        )
+        self.display_surface.blit(cpu_temp_gauge, cpu_temp_gauge_origin)
+
+        gpu_temp_gauge = Gauges.arc_gauge_flat_90x(
+            data[DashData.gpu_temp.field_name], 
+            DashData.gpu_temp.min_value, DashData.gpu_temp.max_value, DashData.gpu_temp.unit.symbol,
+            128
+        )
+        self.display_surface.blit(gpu_temp_gauge, gpu_temp_gauge_origin)
