@@ -578,6 +578,7 @@ class DashPainter:
         fps_graph_origin = (0, 220)
         fps_text_origin = (210, 230)
         fps_label_origin = (212, 275)
+        network_text_origin(300, 0)
 
         # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
@@ -622,6 +623,14 @@ class DashPainter:
         gpu_graph = self. __gpu_graph.update(data[DashData.gpu_util.field_name])
         self.display_surface.blit(gpu_graph, gpu_graph_origin)
 
+        # CPU Core Visualizer
+        if None == self.__core_visualizer:
+            core_visualizer_config = CoreVisualizerConfig
+            self.__core_visualizer = SimpleCoreVisualizer(data, core_visualizer_config)
+
+        core_visualizer = self.__core_visualizer.update(data)
+        self.display_surface.blit(core_visualizer, core_visualizer_origin)
+
         # FPS Graph and Text
         if None == self.__fps_graph:
             fps_graph_config = GraphConfig
@@ -637,11 +646,8 @@ class DashPainter:
         font_large.render_to(self.display_surface, fps_text_origin, "{}".format(fps_value), Color.white)
         font_normal.render_to(self.display_surface, fps_label_origin, "FPS", Color.white)
 
+        # Network Text
+        #    nic1_download_rate = DataField("nic1_download_rate", "NIC1 Download Rate", Units.kilobytes_per_second)
 
-        # CPU Core Visualizer
-        if None == self.__core_visualizer:
-            core_visualizer_config = CoreVisualizerConfig
-            self.__core_visualizer = SimpleCoreVisualizer(data, core_visualizer_config)
-
-        core_visualizer = self.__core_visualizer.update(data)
-        self.display_surface.blit(core_visualizer, core_visualizer_origin)
+        network_download_text = "NIC0 D: {} {}".format(data[DashData.nic1_download_rate.field_name], data[DashData.nic1_download_rate.units.symbol])
+        font_normal.render_to(self.display_surface, network_text_origin, network_download_text, Color.white)
