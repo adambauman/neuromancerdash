@@ -47,12 +47,6 @@ class Helpers:
         trimmed_text = text[0:max_characters]
         return trimmed_text + trailing_text
 
-    @staticmethod
-    def multiply_surface(surface, value):
-        "Value is 0 to 255. So 128 would be 50% darken"
-        arr = pygame.surfarray.array3d(surface) * value
-        arr >>= 8
-        pygame.surfarray.blit_array(surface, arr)
 
 class AssetPath:
     # No trailing slashes
@@ -69,6 +63,8 @@ class Color:
     grey_20 = "#333333"
     grey_75 = "#c0c0c0"
     black = "#000000"
+    windows_cyan_1 = "#00b693"
+    windows_cyan_1_dark = "#015b4a"
     windows_dkgrey_1 = "#4c4a48"
 
 class FontPaths:
@@ -173,22 +169,87 @@ class DashData:
     cpu8_util = DataField("cpu8_util", "CPU Core 8 Utilization", Units.percent, min_value=0, max_value=100)
 
 
+class SimpleCoreVisualizer:
+    __core_count = 0
+    __core_width = 0
+    __core_spacing = 0
+    __core_rows = 0
+    __base_surface = None
+    __cores_per_row = 0
+
+    def __init__(self, core_count, data, core_width = 20, core_spacing = 5, core_rows = 2):
+        assert(0 != core_count)
+        assert(0 != len(data))
+
+        self.__core_count = core_count
+        self.__core_width = core_width
+        self.__core_rows = core_rows
+        self.__core_spacing = core_spacing
+
+        # Setup the base surface
+
+        # Rounds up if reminder exists
+        self.__cores_per_row = int(core_count / core_rows) + (core_count % core_rows > 0)
+        base_width = 0
+        for index in range(self.__cores_per_row):
+            base_width += core_width + core_spacing
+
+        # Back off the last core spacing
+        base_width -= core_spacing
+
+        base_height = 0
+        for index in range(core_rows):
+            base_height += core_width + core_spacing
+
+        # Back off the last core spacing
+        base_height -= core_spacing
+
+        self.__base_surface = pygame.Surface((base_width, base_height))
+        self.update(data)
+
+    def update(self, data):
+        core_activity_threshold = 5
+        core_origin_x = 0
+        core_origin_y = 0
+        core_columns_drawn = 0
+        for index in range(self.__core_count):
+
+            core_color = pygame.Color(Color.windows_cyan_1_dark)
+            field_string = "cpu{}_util".format(index + 1) # core utils are 1-indexed
+            if int(data[field_string]) > core_activity_threshold:
+                core_color = pygame.Color(Color.windows_cyan_1)
+
+            pygame.draw.rect(
+                self.__base_surface, 
+                core_color, 
+                (core_origin_x, core_origin_y, self.__core_width, self.__core_width)
+            )
+
+            if core_columns_drawn == self.__cores_per_row:
+                # Move to the next row
+                core_origin_y += self.__core_width + self.__core_spacing
+                core_columns_drawn = 0
+                core_origin_x = 0
+            else:
+                # Move to the next column
+                core_columns_drawn += 1
+                core_origin_x += self.__core_width + self.__core_spacing
+            
+        return self.__base_surface
+
+
 class GraphConfiguration:
     height = 0
     width = 0
-    plot_padding = 1
+    plot_padding = 0
     data_field = None
-    font = None
     steps_per_update = 6
-    line_color = Color.white
-    blend_mode = 0
-    vertex_color = Color.white
+    line_color = Color.yellow
+    line_width = 2 # Line weights below 2 might result in missing segments
+    vertex_color = Color.yellow
     vertex_weight = 1
     draw_vertices = False
     display_background = False
-    display_range = False
-    display_keys = False
-    display_unit = False
 
 class LineGraphReverse:
     # Simple line graph that plots data from right to left
@@ -198,9 +259,6 @@ class LineGraphReverse:
     __graph_configuration = None
     __working_surface = None
     __background = None
-
-    # TODO: (Adam) 2020-11-17 Lots of little hacks and such, clean and add missing functions
-    # TODO: (Adam) 2020-11-17 Try to fix issue where we get blank line segments during fast changes
 
     def __init__(self, graph_configuration):
         assert(graph_configuration.height != 0 and graph_configuration.width != 0)
@@ -221,8 +279,6 @@ class LineGraphReverse:
             self.__background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_8px_dkcyan.png"))
             self.__working_surface.blit(self.__background, (0, 0))
 
-         # TODO: (Adam) 2020-11-17 Draw initial range, keys, background, etc.
-
     def update(self, value):
         assert(None != self.__graph_configuration)
         assert(None != self.__last_plot_surface)
@@ -233,8 +289,6 @@ class LineGraphReverse:
             self.__working_surface.blit(self.__background, (0, 0))
         else:
             self.__working_surface.fill(Color.black)
-      
-        # Re-draw or copy static bits
 
         # Transform self.__previous_plot_surface left by self.__steps_per_update
         steps_per_update = self.__graph_configuration.steps_per_update
@@ -248,20 +302,19 @@ class LineGraphReverse:
             self.__working_surface.get_height(), 0
         )
 
-        # Clamp the reanges in case something rounds funny
-        if transposed_value <= 0:
-            transposed_value == 1
-        elif transposed_value >= self.__working_surface.get_height():
-            transposed_value = self.__working_surface.get_height()
-
         plot_padding = self.__graph_configuration.plot_padding
         new_plot_y = int(self.__working_surface.get_height() - transposed_value)
+
+        # Clamp the reanges in case something rounds funny
+        if self.__graph_configuration.line_width >= new_plot_y:
+            new_plot_y = self.__graph_configuration.line_width
+        if (self.__working_surface.get_height() - self.__graph_configuration.line_width) <= new_plot_y:
+            new_plot_y = self.__working_surface.get_height() - self.__graph_configuration.line_width
+
         new_plot_position = (self.__working_surface.get_width() - plot_padding, new_plot_y)
 
         # Save values for the next update
         self.__last_plot_y = new_plot_y
-
-        #print("last_plot_position: {}, new_plot_position: {}".format(last_plot_position, new_plot_position))
 
         # Blit down self.__last_plot_surface and shift to the left by self.__steps_per_update, draw the new line segment
         plot_surface_width = self.__last_plot_surface.get_width()
@@ -270,11 +323,11 @@ class LineGraphReverse:
 
         # Copy down the previous surface but shifted left. TODO: Mess with scroll some more
         new_plot_surface.blit(self.__last_plot_surface, (-steps_per_update, 0))
-        pygame.draw.aaline(
-            new_plot_surface, 
-            self.__graph_configuration.line_color, 
-            last_plot_position, new_plot_position, 
-            self.__graph_configuration.blend_mode
+        pygame.draw.line(
+            new_plot_surface,
+            self.__graph_configuration.line_color,
+            last_plot_position, new_plot_position,
+            self.__graph_configuration.line_width
         )
 
         # Draw vertex if enabled
@@ -290,8 +343,6 @@ class LineGraphReverse:
 
         # Save values for the next update
         self.__last_plot_surface = new_plot_surface.copy()
-
-        # Blit out any remaining elements that should appear above the rest of the graph elements
 
         # Return completed working surface
         return self.__working_surface
@@ -370,6 +421,8 @@ class Gauge:
 class DashPainter:
     __cpu_graph = None
     __gpu_graph = None
+    __fps_graph = None
+    __core_visualizer = None
 
     def __init__(self, display_surface):
         self.display_surface = display_surface
@@ -438,12 +491,14 @@ class DashPainter:
         font_normal.strong = False
         font_normal.kerning = True
 
+        core_visualizer_origin = (310, 0)
         cpu_detail_stack_origin = (310, 33)
         gpu_detail_stack_origin = (310, 110)
         cpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 3)
         gpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 107)
         cpu_graph_origin = (0, 0)
         gpu_graph_origin = (0, 110)
+        fps_graph_origin = (0, 220)
 
         # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
@@ -471,10 +526,7 @@ class DashPainter:
         if None == self.__cpu_graph:
             cpu_graph_config = GraphConfiguration
             cpu_graph_config.data_field = DashData.cpu_util
-            cpu_graph_config.line_color = Color.yellow
-            cpu_graph_config.blend_mode = 0
             cpu_graph_config.height, cpu_graph_config.width = 70, 300
-            cpu_graph_config.steps_per_update = 6
             cpu_graph_config.display_background = True
             self.__cpu_graph = LineGraphReverse(cpu_graph_config)
 
@@ -484,13 +536,26 @@ class DashPainter:
         if None == self.__gpu_graph:
             gpu_graph_config = GraphConfiguration
             gpu_graph_config.data_field = DashData.gpu_util
-            gpu_graph_config.line_color = Color.yellow
-            gpu_graph_config.blend_mode = 0
             gpu_graph_config.height, gpu_graph_config.width = 70, 300
-            gpu_graph_config.steps_per_update = 6
             gpu_graph_config.display_background = True
             self.__gpu_graph = LineGraphReverse(gpu_graph_config)
 
         gpu_graph = self. __gpu_graph.update(data[DashData.gpu_util.field_name])
         self.display_surface.blit(gpu_graph, gpu_graph_origin)
 
+        if None == self.__fps_graph:
+            fps_graph_config = GraphConfiguration
+            fps_graph_config.data_field = DashData.rtss_fps
+            fps_graph_config.height, fps_graph_config.width = 70, 120
+            fps_graph_config.display_background = True
+            self.__fps_graph = LineGraphReverse(fps_graph_config)
+
+        fps_graph = self.__fps_graph.update(data[DashData.rtss_fps.field_name])
+        self.display_surface.blit(gpu_graph, gpu_graph_origin)
+
+        # CPU Core Visualizer
+        if None == self.__core_visualizer:
+            self.__core_visualizer = SimpleCoreVisualizer(8, data)
+
+        core_visualizer = self.__core_visualizer.update(data)
+        self.display_surface.blit(core_visualizer, core_visualizer_origin)
