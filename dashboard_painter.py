@@ -159,14 +159,17 @@ class DashData:
     disk_2_activity = DataField("disk_2_activity", "Disk 2 Activity", Units.percent, min_value=0, max_value=100)
     disk_3_activity = DataField("disk_3_activity", "Disk 3 Activity", Units.percent, min_value=0, max_value=100)
     disk_4_activity = DataField("disk_4_activity", "Disk 4 Activity", Units.percent, min_value=0, max_value=100)
-    cpu1_util = DataField("cpu1_util", "CPU Core 1 Utilization", Units.percent, min_value=0, max_value=100)
-    cpu2_util = DataField("cpu2_util", "CPU Core 2 Utilization", Units.percent, min_value=0, max_value=100)
-    cpu3_util = DataField("cpu3_util", "CPU Core 3 Utilization", Units.percent, min_value=0, max_value=100)
-    cpu4_util = DataField("cpu4_util", "CPU Core 4 Utilization", Units.percent, min_value=0, max_value=100)
-    cpu5_util = DataField("cpu5_util", "CPU Core 5 Utilization", Units.percent, min_value=0, max_value=100)
-    cpu6_util = DataField("cpu6_util", "CPU Core 6 Utilization", Units.percent, min_value=0, max_value=100)
-    cpu7_util = DataField("cpu7_util", "CPU Core 7 Utilization", Units.percent, min_value=0, max_value=100)
-    cpu8_util = DataField("cpu8_util", "CPU Core 8 Utilization", Units.percent, min_value=0, max_value=100)
+
+    cpu_core_utilization = [
+        DataField("cpu1_util", "CPU Core 1 Utilization", Units.percent, min_value=0, max_value=100),
+        DataField("cpu2_util", "CPU Core 2 Utilization", Units.percent, min_value=0, max_value=100),
+        DataField("cpu3_util", "CPU Core 3 Utilization", Units.percent, min_value=0, max_value=100),
+        DataField("cpu4_util", "CPU Core 4 Utilization", Units.percent, min_value=0, max_value=100),
+        DataField("cpu5_util", "CPU Core 5 Utilization", Units.percent, min_value=0, max_value=100),
+        DataField("cpu6_util", "CPU Core 6 Utilization", Units.percent, min_value=0, max_value=100),
+        DataField("cpu7_util", "CPU Core 7 Utilization", Units.percent, min_value=0, max_value=100),
+        DataField("cpu8_util", "CPU Core 8 Utilization", Units.percent, min_value=0, max_value=100)
+    ]
 
 
 class SimpleCoreVisualizer:
