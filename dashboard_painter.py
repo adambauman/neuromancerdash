@@ -578,7 +578,7 @@ class DashPainter:
         fps_graph_origin = (0, 220)
         fps_text_origin = (210, 230)
         fps_label_origin = (212, 275)
-        network_text_origin(300, 0)
+        network_text_origin = (0, 310)
 
         # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
@@ -648,6 +648,7 @@ class DashPainter:
 
         # Network Text
         #    nic1_download_rate = DataField("nic1_download_rate", "NIC1 Download Rate", Units.kilobytes_per_second)
-
-        network_download_text = "NIC0 D: {} {}".format(data[DashData.nic1_download_rate.field_name], data[DashData.nic1_download_rate.units.symbol])
+        network_download_text = "NIC 1 Down: {} {}".format(data[DashData.nic1_download_rate.field_name], DashData.nic1_download_rate.unit.symbol)
         font_normal.render_to(self.display_surface, network_text_origin, network_download_text, Color.white)
+        network_upload_text = "Up: {} {}".format(data[DashData.nic1_upload_rate.field_name], DashData.nic1_upload_rate.unit.symbol)
+        font_normal.render_to(self.display_surface, (network_text_origin[0] + 180, network_text_origin[1]), network_upload_text, Color.white)
