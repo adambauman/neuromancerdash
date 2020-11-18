@@ -47,6 +47,29 @@ class Helpers:
         trimmed_text = text[0:max_characters]
         return trimmed_text + trailing_text
 
+    # TODO: (Adam) 2020-11-18 Switch to regex for tighter comparisons
+    # TODO: (Adam) 2020-11-18 Maybe move this into the DataField class with a count method
+    @staticmethod
+    def is_cpu_core_utilization(key):
+        # Skip combined cpu_util
+        if "cpu_util" == key:
+            return False
+
+        is_match = False
+        # cpu(n)_util
+        if "cpu" == key[0:3] and "_util" == key[-5: ]:
+            is_match = True
+
+        return is_match
+
+    @staticmethod
+    def is_disk_activity(key):
+        is_match = False
+        # disk(n)_activity
+        if "disk_" == key[0:3] and "_activity" == key[-9: ]:
+            is_match = True
+        return is_match
+
 
 class AssetPath:
     # No trailing slashes
@@ -155,72 +178,106 @@ class DashData:
     desktop_refresh_rate = DataField("vertical_refresh_rate", "Display Vertical Refresh Rate")
     motherboard_temp = DataField("motherboard_temp", "Motherboard Temperature", Units.celsius, min_value=15, caution_value=50, max_value=60, warn_value=62)
     rtss_fps = DataField("rtss_fps", "Frames Per Second", Units.fps, min_value=0, max_value=60) #Capping at desired max 'cuz slow monitor
-    disk_1_activity = DataField("disk_1_activity", "Disk 1 Activity", Units.percent, min_value=0, max_value=100)
-    disk_2_activity = DataField("disk_2_activity", "Disk 2 Activity", Units.percent, min_value=0, max_value=100)
-    disk_3_activity = DataField("disk_3_activity", "Disk 3 Activity", Units.percent, min_value=0, max_value=100)
-    disk_4_activity = DataField("disk_4_activity", "Disk 4 Activity", Units.percent, min_value=0, max_value=100)
 
-    cpu_core_utilization = [
-        DataField("cpu1_util", "CPU Core 1 Utilization", Units.percent, min_value=0, max_value=100),
-        DataField("cpu2_util", "CPU Core 2 Utilization", Units.percent, min_value=0, max_value=100),
-        DataField("cpu3_util", "CPU Core 3 Utilization", Units.percent, min_value=0, max_value=100),
-        DataField("cpu4_util", "CPU Core 4 Utilization", Units.percent, min_value=0, max_value=100),
-        DataField("cpu5_util", "CPU Core 5 Utilization", Units.percent, min_value=0, max_value=100),
-        DataField("cpu6_util", "CPU Core 6 Utilization", Units.percent, min_value=0, max_value=100),
-        DataField("cpu7_util", "CPU Core 7 Utilization", Units.percent, min_value=0, max_value=100),
-        DataField("cpu8_util", "CPU Core 8 Utilization", Units.percent, min_value=0, max_value=100)
-    ]
+    # Iterate the following, labels in data source should be setup to be 0-indexed
+    disk_activity = DataField("disk_{}_activity", "Disk {} Activity", Units.percent, min_value=0, max_value=100)
+    cpu_core_utilization = DataField("cpu{}_util", "CPU Core {} Utilization", Units.percent, min_value=0, max_value=100)
+
+
+class CoreVisualizerConfig:
+    core_width = 13
+    core_spacing = 2
+    core_rows = 2
+    core_height = None
+    active_color = Color.windows_cyan_1
+    inactive_color = Color.windows_cyan_1_dark
+    # Percentage of activity required to light up core representation
+    activity_threshold_percent = 12
 
 
 class SimpleCoreVisualizer:
-    __core_count = 0
-    __core_width = 0
-    __core_spacing = 0
-    __core_rows = 0
+    __config = CoreVisualizerConfig
+    __core_count = 0 # Found by iterating all "cpu{}_util" fields
     __base_surface = None
     __cores_per_row = 0
 
-    def __init__(self, core_count, data, core_width = 20, core_spacing = 5, core_rows = 2):
-        assert(0 != core_count)
+    # Tracking outside config in case we need to adjust on the fly
+    __core_height = 0
+    __core_width = 0
+    
+    __last_core_activity = []
+    __last_base_surface = None
+
+    __first_run = True
+
+    def __init__(self, data, core_visualizer_config = CoreVisualizerConfig):
+        assert(0 != self.__config.core_width)
         assert(0 != len(data))
 
-        self.__core_count = core_count
-        self.__core_width = core_width
-        self.__core_rows = core_rows
-        self.__core_spacing = core_spacing
+        self.__config = core_visualizer_config
 
-        # Setup the base surface
+        self.__core_count = 0
+        for single_data in data:
+            if Helpers.is_cpu_core_utilization(single_data):
+                self.__core_count += 1
+
+        assert(0 != self.__core_count)
+
+        self.__core_width = self.__config.core_width
+        self.__core_height = self.__config.core_height
+        if None == self.__core_height:
+            self.__core_height = self.__core_width
+
+        assert(0 != self.__core_height)
 
         # Rounds up if reminder exists
-        self.__cores_per_row = int(core_count / core_rows) + (core_count % core_rows > 0)
-        base_width = 0
-        for index in range(self.__cores_per_row):
-            base_width += core_width + core_spacing
+        self.__cores_per_row = int(self.__core_count / self.__config.core_rows) + (self.__core_count % self.__config.core_rows > 0)
 
-        # Back off the last core spacing
-        base_width -= core_spacing
+        # Initialize last surface
+        base_width = (self.__core_width * self.__cores_per_row) + (self.__config.core_spacing * (self.__cores_per_row -1))
+        base_height = (self.__core_height * self.__config.core_rows) + (self.__config.core_spacing * (self.__config.core_rows - 1))
+        self.__last_base_surface = pygame.Surface((base_width, base_height))
 
-        base_height = 0
-        for index in range(core_rows):
-            base_height += core_width + core_spacing
+        # Initialize last core activity and do a hack update
+        initialize_data = {}
+        for index in range(self.__core_count):
+            key = "cpu{}_util".format(index)
+            initialize_data[key] = 0
+            self.__last_core_activity.append(False)
 
-        # Back off the last core spacing
-        base_height -= core_spacing
-
-        self.__base_surface = pygame.Surface((base_width, base_height))
-        self.update(data)
+        self.update(initialize_data)
+        self.__first_run = False
 
     def update(self, data):
-        core_activity_threshold = 5
+        assert(None != self.__last_base_surface and 0 != len(self.__last_core_activity))
+        assert(self.__core_count == len(self.__last_core_activity))
+        assert(len(data) >= self.__core_count)
+
+        # Copy in last core surface, we will only update the altered representations
+        self.__base_surface = self.__last_base_surface.copy()
+
         core_origin_x = 0
         core_origin_y = 0
-        core_columns_drawn = 0
+        core_activity_tracking = []
         for index in range(self.__core_count):
 
-            core_color = pygame.Color(Color.windows_cyan_1_dark)
-            field_string = "cpu{}_util".format(index + 1) # core utils are 1-indexed
-            if int(data[field_string]) > core_activity_threshold:
-                core_color = pygame.Color(Color.windows_cyan_1)
+            key_name = "cpu{}_util".format(index)
+            core_activity_value = int(data[key_name])
+            core_active = False
+            if core_activity_value >= self.__config.activity_threshold_percent:
+                #print("Core{} active at {}%".format(index, core_activity_value))
+                core_active = True
+
+            # Track activity for the next update call
+            core_activity_tracking.append(core_active)
+
+            # No need to re-draw if status hasn't changed
+            if self.__last_core_activity[index] == core_active and self.__first_run != False:
+                continue
+
+            core_color = self.__config.inactive_color
+            if core_active:
+                core_color = self.__config.active_color
 
             pygame.draw.rect(
                 self.__base_surface, 
@@ -228,20 +285,26 @@ class SimpleCoreVisualizer:
                 (core_origin_x, core_origin_y, self.__core_width, self.__core_width)
             )
 
-            if core_columns_drawn == self.__cores_per_row:
+            if len(core_activity_tracking) == self.__cores_per_row:
                 # Move to the next row
-                core_origin_y += self.__core_width + self.__core_spacing
+                core_origin_y += self.__core_width + self.__config.core_spacing
                 core_columns_drawn = 0
                 core_origin_x = 0
             else:
                 # Move to the next column
-                core_columns_drawn += 1
-                core_origin_x += self.__core_width + self.__core_spacing
-            
+                core_origin_x += self.__core_width + self.__config.core_spacing
+
+
+        assert(len(self.__last_core_activity) == len(core_activity_tracking))
+        self.__last_core_activity = core_activity_tracking
+
+        # Save for next update
+        self.__last_base_surface = self.__base_surface.copy()
+
         return self.__base_surface
 
 
-class GraphConfiguration:
+class GraphConfig:
     height = 0
     width = 0
     plot_padding = 0
@@ -259,31 +322,31 @@ class LineGraphReverse:
 
     __last_plot_y = 0
     __last_plot_surface = None
-    __graph_configuration = None
+    __graph_config = None
     __working_surface = None
     __background = None
 
-    def __init__(self, graph_configuration):
-        assert(graph_configuration.height != 0 and graph_configuration.width != 0)
-        assert(None != graph_configuration.data_field)
+    def __init__(self, graph_config):
+        assert(graph_config.height != 0 and graph_config.width != 0)
+        assert(None != graph_config.data_field)
         
-        self.__graph_configuration = graph_configuration
+        self.__graph_config = graph_config
 
-        self.__working_surface = pygame.Surface((graph_configuration.width, graph_configuration.height), pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface((graph_config.width, graph_config.height), pygame.SRCALPHA)
 
-        plot_width = graph_configuration.width - (graph_configuration.plot_padding * 2)
-        plot_height = graph_configuration.height - (graph_configuration.plot_padding * 2)
-        self.__last_plot_surface = pygame.Surface((graph_configuration.width, graph_configuration.height), pygame.SRCALPHA)
+        plot_width = graph_config.width - (graph_config.plot_padding * 2)
+        plot_height = graph_config.height - (graph_config.plot_padding * 2)
+        self.__last_plot_surface = pygame.Surface((graph_config.width, graph_config.height), pygame.SRCALPHA)
         
-        steps_per_update = graph_configuration.steps_per_update
+        steps_per_update = graph_config.steps_per_update
         self.__last_plot_y = self.__last_plot_surface.get_height()
 
-        if self.__graph_configuration.display_background:
+        if self.__graph_config.display_background:
             self.__background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_8px_dkcyan.png"))
             self.__working_surface.blit(self.__background, (0, 0))
 
     def update(self, value):
-        assert(None != self.__graph_configuration)
+        assert(None != self.__graph_config)
         assert(None != self.__last_plot_surface)
         assert(None != self.__working_surface)
 
@@ -294,25 +357,25 @@ class LineGraphReverse:
             self.__working_surface.fill(Color.black)
 
         # Transform self.__previous_plot_surface left by self.__steps_per_update
-        steps_per_update = self.__graph_configuration.steps_per_update
+        steps_per_update = self.__graph_config.steps_per_update
         last_plot_position = (self.__working_surface.get_width() - steps_per_update, self.__last_plot_y)
 
         # Calculate self.__previous_plot_position lefy by self.__steps_per_update, calculate new plot position
-        data_field = self.__graph_configuration.data_field
+        data_field = self.__graph_config.data_field
         transposed_value = Helpers.transpose_ranges(
             float(value), 
             data_field.max_value, data_field.min_value, 
             self.__working_surface.get_height(), 0
         )
 
-        plot_padding = self.__graph_configuration.plot_padding
+        plot_padding = self.__graph_config.plot_padding
         new_plot_y = int(self.__working_surface.get_height() - transposed_value)
 
         # Clamp the reanges in case something rounds funny
-        if self.__graph_configuration.line_width >= new_plot_y:
-            new_plot_y = self.__graph_configuration.line_width
-        if (self.__working_surface.get_height() - self.__graph_configuration.line_width) <= new_plot_y:
-            new_plot_y = self.__working_surface.get_height() - self.__graph_configuration.line_width
+        if self.__graph_config.line_width >= new_plot_y:
+            new_plot_y = self.__graph_config.line_width
+        if (self.__working_surface.get_height() - self.__graph_config.line_width) <= new_plot_y:
+            new_plot_y = self.__working_surface.get_height() - self.__graph_config.line_width
 
         new_plot_position = (self.__working_surface.get_width() - plot_padding, new_plot_y)
 
@@ -328,18 +391,18 @@ class LineGraphReverse:
         new_plot_surface.blit(self.__last_plot_surface, (-steps_per_update, 0))
         pygame.draw.line(
             new_plot_surface,
-            self.__graph_configuration.line_color,
+            self.__graph_config.line_color,
             last_plot_position, new_plot_position,
-            self.__graph_configuration.line_width
+            self.__graph_config.line_width
         )
 
         # Draw vertex if enabled
-        if self.__graph_configuration.draw_vertices:
+        if self.__graph_config.draw_vertices:
             pygame.draw.circle(
                 new_plot_surface,
-                self.__graph_configuration.vertex_color,
+                self.__graph_config.vertex_color,
                 last_plot_position,
-                1 * self.__graph_configuration.vertex_weight
+                1 * self.__graph_config.vertex_weight
             )
 
         self.__working_surface.blit(new_plot_surface, (plot_padding, plot_padding))
@@ -527,7 +590,7 @@ class DashPainter:
 
         # CPU and GPU Utilization
         if None == self.__cpu_graph:
-            cpu_graph_config = GraphConfiguration
+            cpu_graph_config = GraphConfig
             cpu_graph_config.data_field = DashData.cpu_util
             cpu_graph_config.height, cpu_graph_config.width = 70, 300
             cpu_graph_config.display_background = True
@@ -537,7 +600,7 @@ class DashPainter:
         self.display_surface.blit(cpu_graph, cpu_graph_origin)
 
         if None == self.__gpu_graph:
-            gpu_graph_config = GraphConfiguration
+            gpu_graph_config = GraphConfig
             gpu_graph_config.data_field = DashData.gpu_util
             gpu_graph_config.height, gpu_graph_config.width = 70, 300
             gpu_graph_config.display_background = True
@@ -547,18 +610,19 @@ class DashPainter:
         self.display_surface.blit(gpu_graph, gpu_graph_origin)
 
         if None == self.__fps_graph:
-            fps_graph_config = GraphConfiguration
+            fps_graph_config = GraphConfig
             fps_graph_config.data_field = DashData.rtss_fps
             fps_graph_config.height, fps_graph_config.width = 70, 120
             fps_graph_config.display_background = True
             self.__fps_graph = LineGraphReverse(fps_graph_config)
 
         fps_graph = self.__fps_graph.update(data[DashData.rtss_fps.field_name])
-        self.display_surface.blit(gpu_graph, gpu_graph_origin)
+        self.display_surface.blit(fps_graph, fps_graph_origin)
 
         # CPU Core Visualizer
         if None == self.__core_visualizer:
-            self.__core_visualizer = SimpleCoreVisualizer(8, data)
+            core_visualizer_config = CoreVisualizerConfig
+            self.__core_visualizer = SimpleCoreVisualizer(data, core_visualizer_config)
 
         core_visualizer = self.__core_visualizer.update(data)
         self.display_surface.blit(core_visualizer, core_visualizer_origin)

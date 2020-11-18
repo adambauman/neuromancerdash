@@ -90,11 +90,11 @@ class AIDA64SSEData:
                 continue
 
             # Don't add incomplete data
-            if 0 != len(key) and 0 != len(value):
-                parsed_datas[key] = value
-            else:
+            if 0 == len(key) or 0 == len(value):
                 assert(False)
-                continue;
+                continue
+
+            parsed_datas[key] = value
 
         return parsed_datas
 
