@@ -90,6 +90,7 @@ def main(argv):
 
     pygame.init()
     pygame.mouse.set_visible(False)
+    pygame.event.set_allowed([pygame.QUIT])
     
     display_surface = pygame.display.set_mode(
         (Hardware.screen_width, Hardware.screen_height),

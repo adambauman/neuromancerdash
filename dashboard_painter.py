@@ -133,6 +133,7 @@ class DataField:
         self.max_value = max_value
 #TODO: (Adam) 2020-11-14 AIDA64 layout file is plain text, could write a converter to grab fields names
 class DashData:
+    unknown = DataField("", "Unknown", Units.null_unit)
     cpu_util = DataField("cpu_util", "CPU Utilization", Units.percent, min_value=0, max_value=100)
     cpu_temp = DataField("cpu_temp", "CPU Temperature", Units.celsius, min_value=20, caution_value=75, max_value=80, warn_value=82)
     cpu_clock = DataField("cpu_clock", "CPU Clock", Units.megahertz, min_value=799, max_value=4500)
@@ -170,7 +171,101 @@ class DashData:
     cpu7_util = DataField("cpu7_util", "CPU Core 7 Utilization", Units.percent, min_value=0, max_value=100)
     cpu8_util = DataField("cpu8_util", "CPU Core 8 Utilization", Units.percent, min_value=0, max_value=100)
 
-class Gauges:
+
+class GraphConfiguration:
+    height = 0
+    width = 0
+    data_field = None
+    font = None
+    steps_per_update = 6
+    line_color = Color.white
+    blend_mode = 0
+    vertex_color = Color.white
+    vertex_weight = 1
+    draw_vertices = False
+    display_background = False
+    display_range = False
+    display_keys = False
+    display_unit = False
+
+class LineGraphReverse:
+    # Simple line graph that plots data from right to left
+
+    __last_value = 0
+    __last_plot_y = 0
+    __last_plot_surface = None
+    __graph_configuration = None
+    __working_surface = None
+
+    def __init__(self, graph_configuration):
+        assert(graph_configuration.height != 0 and graph_configuration.width != 0)
+        assert(None != graph_configuration.data_field)
+        
+        self.__graph_configuration = graph_configuration
+
+        self.__working_surface = pygame.Surface((graph_configuration.width, graph_configuration.height))
+        self.__last_plot_surface = pygame.Surface((graph_configuration.width, graph_configuration.height))
+        
+        steps_per_update = graph_configuration.steps_per_update
+        self.__last_plot_position = (self.__working_surface.get_width() - steps_per_update, self.__working_surface.get_height())
+
+         # TODO: (Adam) 2020-11-17 Draw initial range, keys, background, etc.
+
+    def update(self, value):
+        assert(None != self.__graph_configuration)
+        assert(None != self.__last_plot_surface)
+        assert(None != self.__working_surface)
+
+        # Clear working surface
+        self.__working_surface.fill(Color.black)
+       
+        # Re-draw or copy static bits
+
+        # Transform self.__previous_plot_surface left by self.__steps_per_update
+        steps_per_update = self.__graph_configuration.steps_per_update
+        last_plot_position = (self.__working_surface.get_width() - steps_per_update, self.__last_plot_y)
+
+        # Calculate self.__previous_plot_position lefy by self.__steps_per_update, calculate new plot position
+        data_field = self.__graph_configuration.data_field
+        transposed_value = Helpers.transpose_ranges(
+            float(value), 
+            data_field.max_value, data_field.min_value, 
+            self.__working_surface.get_height(), 0
+        )
+        new_plot_y = int(self.__working_surface.get_height() - transposed_value)
+        new_plot_position = (self.__working_surface.get_width(), new_plot_y)
+
+        # Save values for the next update
+        self.__last_plot_y = new_plot_y
+
+        #print("last_plot_position: {}, new_plot_position: {}".format(last_plot_position, new_plot_position))
+
+        # Blit down self.__last_plot_surface and shift to the left by self.__steps_per_update, draw the new line segment
+        plot_surface_width = self.__last_plot_surface.get_width()
+        plot_surface_height = self.__last_plot_surface.get_height()
+        new_plot_surface = pygame.Surface((plot_surface_width, plot_surface_height))
+
+        # Copy down the previous surface but shifted left. TODO: Mess with scroll some more
+        new_plot_surface.blit(self.__last_plot_surface, (-steps_per_update, 0))
+        pygame.draw.aaline(
+            new_plot_surface, 
+            self.__graph_configuration.line_color, 
+            last_plot_position, new_plot_position, 
+            self.__graph_configuration.blend_mode
+        )
+        self.__working_surface.blit(new_plot_surface, (0, 0))
+
+        # Save values for the next update
+        self.__last_plot_surface = new_plot_surface.copy()
+
+        # Blit out any remaining elements that should appear above the rest of the graph elements
+
+        # Return completed working surface
+        return self.__working_surface
+
+
+# TODO: (Adam) 2020-11-17 Gauge config class, make a little more customizable for broader use
+class Gauge:
     @staticmethod
     def arc_gauge_flat_90x(value, min_value, max_value, unit_text = "", background_alpha = 0):
         assert(min_value != max_value)
@@ -240,6 +335,8 @@ class Gauges:
 
 
 class DashPainter:
+    __cpu_graph = None
+    __gpu_graph = None
 
     def __init__(self, display_surface):
         self.display_surface = display_surface
@@ -312,25 +409,40 @@ class DashPainter:
         gpu_detail_stack_origin = (310, 110)
         cpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 3)
         gpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 107)
+        cpu_graph_origin = (0, 2)
 
         # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
 
-        #GPU Data
+        # GPU Data
         self.__paint_gpu_text_stack__(gpu_detail_stack_origin, font_normal, data)
 
-        #CPU and GPU Temps
+        # CPU and GPU Temps
         cpugpu_gauge_bg_alpha = 200
-        cpu_temp_gauge = Gauges.arc_gauge_flat_90x(
+        cpu_temp_gauge = Gauge.arc_gauge_flat_90x(
             data[DashData.cpu_temp.field_name],
             DashData.cpu_temp.min_value, DashData.cpu_temp.max_value, DashData.cpu_temp.unit.symbol,
             cpugpu_gauge_bg_alpha
         )
         self.display_surface.blit(cpu_temp_gauge, cpu_temp_gauge_origin)
 
-        gpu_temp_gauge = Gauges.arc_gauge_flat_90x(
+        gpu_temp_gauge = Gauge.arc_gauge_flat_90x(
             data[DashData.gpu_temp.field_name],
             DashData.gpu_temp.min_value, DashData.gpu_temp.max_value, DashData.gpu_temp.unit.symbol,
             cpugpu_gauge_bg_alpha
         )
         self.display_surface.blit(gpu_temp_gauge, gpu_temp_gauge_origin)
+
+        # CPU and GPU Utilization
+        if None == self.__cpu_graph:
+            graph_config = GraphConfiguration
+            graph_config.data_field = DashData.cpu_util
+            graph_config.line_color = Color.yellow
+            graph_config.blend_mode = 0
+            graph_config.height = 68
+            graph_config.width = 300
+            self.__cpu_graph = LineGraphReverse(graph_config)
+
+        cpu_graph = self.__cpu_graph.update(data[DashData.cpu_util.field_name])
+        self.display_surface.blit(cpu_graph, cpu_graph_origin)
+        
