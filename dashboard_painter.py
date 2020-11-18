@@ -561,8 +561,12 @@ class DashPainter:
         self.display_surface.fill(Color.black)
 
         font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        font_normal.strong = False
+        #font_normal.strong = True
         font_normal.kerning = True
+
+        font_large = pygame.freetype.Font(FontPaths.fira_code_semibold(), 50)
+        #font_large.strong = True
+        font_large_kerning = True
 
         core_visualizer_origin = (310, 0)
         cpu_detail_stack_origin = (310, 33)
@@ -572,6 +576,8 @@ class DashPainter:
         cpu_graph_origin = (0, 0)
         gpu_graph_origin = (0, 110)
         fps_graph_origin = (0, 220)
+        fps_text_origin = (210, 230)
+        fps_label_origin = (212, 275)
 
         # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
@@ -616,16 +622,21 @@ class DashPainter:
         gpu_graph = self. __gpu_graph.update(data[DashData.gpu_util.field_name])
         self.display_surface.blit(gpu_graph, gpu_graph_origin)
 
+        # FPS Graph and Text
         if None == self.__fps_graph:
             fps_graph_config = GraphConfig
             fps_graph_config.data_field = DashData.rtss_fps
-            fps_graph_config.height, fps_graph_config.width = 70, 120
+            fps_graph_config.height, fps_graph_config.width = 70, 200
             fps_graph_config.display_background = True
             fps_graph_config.draw_on_zero = False
             self.__fps_graph = LineGraphReverse(fps_graph_config)
 
-        fps_graph = self.__fps_graph.update(data[DashData.rtss_fps.field_name])
+        fps_value = data[DashData.rtss_fps.field_name]
+        fps_graph = self.__fps_graph.update(fps_value)
         self.display_surface.blit(fps_graph, fps_graph_origin)
+        font_large.render_to(self.display_surface, fps_text_origin, "{}".format(fps_value), Color.white)
+        font_normal.render_to(self.display_surface, fps_label_origin, "FPS", Color.white)
+
 
         # CPU Core Visualizer
         if None == self.__core_visualizer:
