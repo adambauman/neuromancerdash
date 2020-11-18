@@ -58,6 +58,7 @@ class AssetPath:
     # No trailing slashes
     fonts = "assets/fonts"
     gauges = "assets/images/gauges"
+    graphs = "assets/images/graphs"
 
 class Color:
     yellow = "#ffff00"
@@ -175,6 +176,7 @@ class DashData:
 class GraphConfiguration:
     height = 0
     width = 0
+    plot_padding = 1
     data_field = None
     font = None
     steps_per_update = 6
@@ -191,11 +193,14 @@ class GraphConfiguration:
 class LineGraphReverse:
     # Simple line graph that plots data from right to left
 
-    __last_value = 0
     __last_plot_y = 0
     __last_plot_surface = None
     __graph_configuration = None
     __working_surface = None
+    __background = None
+
+    # TODO: (Adam) 2020-11-17 Lots of little hacks and such, clean and add missing functions
+    # TODO: (Adam) 2020-11-17 Try to fix issue where we get blank line segments during fast changes
 
     def __init__(self, graph_configuration):
         assert(graph_configuration.height != 0 and graph_configuration.width != 0)
@@ -203,11 +208,18 @@ class LineGraphReverse:
         
         self.__graph_configuration = graph_configuration
 
-        self.__working_surface = pygame.Surface((graph_configuration.width, graph_configuration.height))
-        self.__last_plot_surface = pygame.Surface((graph_configuration.width, graph_configuration.height))
+        self.__working_surface = pygame.Surface((graph_configuration.width, graph_configuration.height), pygame.SRCALPHA)
+
+        plot_width = graph_configuration.width - (graph_configuration.plot_padding * 2)
+        plot_height = graph_configuration.height - (graph_configuration.plot_padding * 2)
+        self.__last_plot_surface = pygame.Surface((graph_configuration.width, graph_configuration.height), pygame.SRCALPHA)
         
         steps_per_update = graph_configuration.steps_per_update
-        self.__last_plot_position = (self.__working_surface.get_width() - steps_per_update, self.__working_surface.get_height())
+        self.__last_plot_y = self.__last_plot_surface.get_height()
+
+        if self.__graph_configuration.display_background:
+            self.__background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_8px_dkcyan.png"))
+            self.__working_surface.blit(self.__background, (0, 0))
 
          # TODO: (Adam) 2020-11-17 Draw initial range, keys, background, etc.
 
@@ -217,8 +229,11 @@ class LineGraphReverse:
         assert(None != self.__working_surface)
 
         # Clear working surface
-        self.__working_surface.fill(Color.black)
-       
+        if None != self.__background:
+            self.__working_surface.blit(self.__background, (0, 0))
+        else:
+            self.__working_surface.fill(Color.black)
+      
         # Re-draw or copy static bits
 
         # Transform self.__previous_plot_surface left by self.__steps_per_update
@@ -232,8 +247,16 @@ class LineGraphReverse:
             data_field.max_value, data_field.min_value, 
             self.__working_surface.get_height(), 0
         )
+
+        # Clamp the reanges in case something rounds funny
+        if transposed_value <= 0:
+            transposed_value == 1
+        elif transposed_value >= self.__working_surface.get_height():
+            transposed_value = self.__working_surface.get_height()
+
+        plot_padding = self.__graph_configuration.plot_padding
         new_plot_y = int(self.__working_surface.get_height() - transposed_value)
-        new_plot_position = (self.__working_surface.get_width(), new_plot_y)
+        new_plot_position = (self.__working_surface.get_width() - plot_padding, new_plot_y)
 
         # Save values for the next update
         self.__last_plot_y = new_plot_y
@@ -243,7 +266,7 @@ class LineGraphReverse:
         # Blit down self.__last_plot_surface and shift to the left by self.__steps_per_update, draw the new line segment
         plot_surface_width = self.__last_plot_surface.get_width()
         plot_surface_height = self.__last_plot_surface.get_height()
-        new_plot_surface = pygame.Surface((plot_surface_width, plot_surface_height))
+        new_plot_surface = pygame.Surface((plot_surface_width, plot_surface_height), pygame.SRCALPHA)
 
         # Copy down the previous surface but shifted left. TODO: Mess with scroll some more
         new_plot_surface.blit(self.__last_plot_surface, (-steps_per_update, 0))
@@ -253,7 +276,17 @@ class LineGraphReverse:
             last_plot_position, new_plot_position, 
             self.__graph_configuration.blend_mode
         )
-        self.__working_surface.blit(new_plot_surface, (0, 0))
+
+        # Draw vertex if enabled
+        if self.__graph_configuration.draw_vertices:
+            pygame.draw.circle(
+                new_plot_surface,
+                self.__graph_configuration.vertex_color,
+                last_plot_position,
+                1 * self.__graph_configuration.vertex_weight
+            )
+
+        self.__working_surface.blit(new_plot_surface, (plot_padding, plot_padding))
 
         # Save values for the next update
         self.__last_plot_surface = new_plot_surface.copy()
@@ -409,7 +442,8 @@ class DashPainter:
         gpu_detail_stack_origin = (310, 110)
         cpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 3)
         gpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 107)
-        cpu_graph_origin = (0, 2)
+        cpu_graph_origin = (0, 0)
+        gpu_graph_origin = (0, 110)
 
         # CPU Data
         self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
@@ -435,14 +469,28 @@ class DashPainter:
 
         # CPU and GPU Utilization
         if None == self.__cpu_graph:
-            graph_config = GraphConfiguration
-            graph_config.data_field = DashData.cpu_util
-            graph_config.line_color = Color.yellow
-            graph_config.blend_mode = 0
-            graph_config.height = 68
-            graph_config.width = 300
-            self.__cpu_graph = LineGraphReverse(graph_config)
+            cpu_graph_config = GraphConfiguration
+            cpu_graph_config.data_field = DashData.cpu_util
+            cpu_graph_config.line_color = Color.yellow
+            cpu_graph_config.blend_mode = 0
+            cpu_graph_config.height, cpu_graph_config.width = 70, 300
+            cpu_graph_config.steps_per_update = 6
+            cpu_graph_config.display_background = True
+            self.__cpu_graph = LineGraphReverse(cpu_graph_config)
 
         cpu_graph = self.__cpu_graph.update(data[DashData.cpu_util.field_name])
         self.display_surface.blit(cpu_graph, cpu_graph_origin)
-        
+
+        if None == self.__gpu_graph:
+            gpu_graph_config = GraphConfiguration
+            gpu_graph_config.data_field = DashData.gpu_util
+            gpu_graph_config.line_color = Color.yellow
+            gpu_graph_config.blend_mode = 0
+            gpu_graph_config.height, gpu_graph_config.width = 70, 300
+            gpu_graph_config.steps_per_update = 6
+            gpu_graph_config.display_background = True
+            self.__gpu_graph = LineGraphReverse(gpu_graph_config)
+
+        gpu_graph = self. __gpu_graph.update(data[DashData.gpu_util.field_name])
+        self.display_surface.blit(gpu_graph, gpu_graph_origin)
+

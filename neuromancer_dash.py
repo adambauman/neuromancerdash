@@ -60,6 +60,8 @@ def start_dashboard(server_address, display_surface):
         dash_painter.paint(parsed_data)
         pygame.display.flip()
         
+        # TODO: (Adam) 2020-11-17 Refactor so we can tween gauge contents while waiting for data
+        #           updates. Current model is pretty choppy looking.
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 print("User quit")
