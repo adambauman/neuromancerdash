@@ -177,7 +177,7 @@ class DashData:
     desktop_resolution = DataField("desktop_resolution", "Desktop Display Resolution")
     desktop_refresh_rate = DataField("vertical_refresh_rate", "Display Vertical Refresh Rate")
     motherboard_temp = DataField("motherboard_temp", "Motherboard Temperature", Units.celsius, min_value=15, caution_value=50, max_value=60, warn_value=62)
-    rtss_fps = DataField("rtss_fps", "Frames Per Second", Units.fps, min_value=0, max_value=60) #Capping at desired max 'cuz slow monitor
+    rtss_fps = DataField("rtss_fps", "Frames Per Second", Units.fps, min_value=0, max_value=120)
 
     # Iterate the following, labels in data source should be setup to be 0-indexed
     disk_activity = DataField("disk_{}_activity", "Disk {} Activity", Units.percent, min_value=0, max_value=100)
@@ -316,6 +316,7 @@ class GraphConfig:
     vertex_weight = 1
     draw_vertices = False
     display_background = False
+    draw_on_zero = True
 
 class LineGraphReverse:
     # Simple line graph that plots data from right to left
@@ -389,21 +390,27 @@ class LineGraphReverse:
 
         # Copy down the previous surface but shifted left. TODO: Mess with scroll some more
         new_plot_surface.blit(self.__last_plot_surface, (-steps_per_update, 0))
-        pygame.draw.line(
-            new_plot_surface,
-            self.__graph_config.line_color,
-            last_plot_position, new_plot_position,
-            self.__graph_config.line_width
-        )
 
-        # Draw vertex if enabled
-        if self.__graph_config.draw_vertices:
-            pygame.draw.circle(
+        enable_draw = True
+        if 0 == int(value) and self.__graph_config.draw_on_zero == False:
+            enable_draw = False
+
+        if enable_draw:
+            pygame.draw.line(
                 new_plot_surface,
-                self.__graph_config.vertex_color,
-                last_plot_position,
-                1 * self.__graph_config.vertex_weight
+                self.__graph_config.line_color,
+                last_plot_position, new_plot_position,
+                self.__graph_config.line_width
             )
+
+            # Draw vertex if enabled
+            if self.__graph_config.draw_vertices:
+                pygame.draw.circle(
+                    new_plot_surface,
+                    self.__graph_config.vertex_color,
+                    last_plot_position,
+                    1 * self.__graph_config.vertex_weight
+                )
 
         self.__working_surface.blit(new_plot_surface, (plot_padding, plot_padding))
 
@@ -614,6 +621,7 @@ class DashPainter:
             fps_graph_config.data_field = DashData.rtss_fps
             fps_graph_config.height, fps_graph_config.width = 70, 120
             fps_graph_config.display_background = True
+            fps_graph_config.draw_on_zero = False
             self.__fps_graph = LineGraphReverse(fps_graph_config)
 
         fps_graph = self.__fps_graph.update(data[DashData.rtss_fps.field_name])
