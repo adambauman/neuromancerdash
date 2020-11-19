@@ -23,35 +23,14 @@ class Helpers:
         return (child_align_x, child_align_y)
 
     @staticmethod
-    def get_aa_circle(color, radius, aa_scale = 2, surface_flags = pygame.SRCALPHA):
-        assert(0 != radius)
-
-        diameter = int(radius * 2)
-        aa_surface = pygame.Surface((diameter * aa_scale, diameter * aa_scale), surface_flags)
-        aa_center = (aa_surface.get_width() / 2, aa_surface.get_height() / 2)
-        pygame.draw.circle(aa_surface, color, aa_center, radius * aa_scale)
-        return pygame.transform.smoothscale(aa_surface, (diameter, diameter))
-
-    # Following taken and modified from here: https://sites.cs.ucsb.edu/~pconrad/cs5nm/08F/ex/ex09/drawCircleArcExample.py
-    @staticmethod
-    def degreesToRadians(deg):
-        return deg/180.0 * math.pi
-
-    # Draw an arc that is a portion of a circle.
-    # We pass in screen and color,
-    # followed by a tuple (x,y) that is the center of the circle, and the radius.
-    # Next comes the start and ending angle on the "unit circle" (0 to 360)
-    #  of the circle we want to draw, and finally the thickness in pixels
-    @staticmethod
-    def drawCircleArc(screen, color, center, radius, startDeg, endDeg, thickness):
-        (x,y) = center
-        rect = (x-radius,y-radius,radius*2,radius*2)
-        startRad = Helpers.degreesToRadians(startDeg)
-        endRad = Helpers.degreesToRadians(endDeg)
-        pygame.draw.arc(screen, color, rect, startRad, endRad, thickness)
+    def transpose_ranges(input, input_high, input_low, output_high, output_low):
+        #print("transpose, input: {} iHI: {} iLO: {} oHI: {} oLO: {}".format(input, input_high, input_low, output_high, output_low))
+        diff_multiplier = (input - input_low) / (input_high - input_low)
+        return ((output_high - output_low) * diff_multiplier) + output_low
+            
 
 class GaugeConfig:
-    def __init__(self, data_field, radius = 135):
+    def __init__(self, data_field, radius = 45):
         self.radius = radius
         self.data_field = data_field
         self.redline_degrees = 35
@@ -61,7 +40,7 @@ class GaugeConfig:
         self.arc_redline_color = Color.windows_red_1
         self.needle_color = Color.windows_light_grey_1
         self.shadow_color = Color.black
-        self.shadow_alpha = 50
+        self.shadow_alpha = 20
         self.text_color = Color.white
         self.bg_color = Color.windows_dkgrey_1
         self.bg_alpha = 200
@@ -91,28 +70,31 @@ class FlatArcGauge:
         self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
         self.__static_elements_surface = self.__working_surface.copy()
 
-        self.__paint_static_elements()
+        self.__prepare_constant_elements()
 
-    def __paint_static_elements(self):
+        assert(None != self.__static_elements_surface)
+        #assert(None != self.__needle_surface and None != self.__needle_shadow_surface)
+
+    def __prepare_constant_elements(self):
         assert(None != self.__static_elements_surface)
         assert(0 < self.__config.aa_multiplier)
         
         # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
         # PNG shapes to build up the gauge then scaling down to final size.
-        arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1.png"))
+        arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_base_1.png"))
         redline_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_redline_1.png"))
 
         assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
         base_scaled_size = (arc_bitmap.get_width(), arc_bitmap.get_width())
 
-        temp_surface = pygame.Surface(base_scaled_size)
+        temp_surface = pygame.Surface(base_scaled_size, pygame.SRCALPHA)
         center = (temp_surface.get_width() / 2, temp_surface.get_height() / 2)
 
         #scaled_radius = self.__config.radius * self.__config.aa_multiplier
         scaled_radius = arc_bitmap.get_width() / 2
 
         # Draw background
-        bg_surface = pygame.Surface((temp_surface.get_height(), temp_surface.get_width()))
+        bg_surface = pygame.Surface((temp_surface.get_height(), temp_surface.get_width()), pygame.SRCALPHA)
         bg_color = pygame.Color(self.__config.bg_color)
         pygame.draw.circle(bg_surface, bg_color, center, scaled_radius)
         bg_surface.set_alpha(self.__config.bg_alpha)
@@ -149,13 +131,63 @@ class FlatArcGauge:
 
         # Clear member static_elements surface and blit our scaled surface
         self.__static_elements_surface.fill((0, 0, 0, 0))
-        self.__static_elements_surface.blit(scaled_surface, (0, 0))
+        self.__static_elements_surface = scaled_surface.copy()
+     
+        # Setup needle elements
+        needle_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_needle_1.png"))
+        
+        # Apply color to needle, scale, then blit out to the needle surface
+        needle_color = pygame.Color(self.__config.needle_color)
+        needle_bitmap.fill(needle_color, special_flags = pygame.BLEND_RGBA_MULT)
+        needle_center = Helpers.calculate_center_align(temp_surface, needle_bitmap)
+        temp_surface.fill((0, 0, 0, 0))
+        temp_surface.blit(needle_bitmap, needle_center)
 
+        needle_scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
+        self.__needle_surface = needle_scaled_surface.copy()
+
+        # Setup the shadow
+        self.__needle_shadow_surface = self.__needle_surface.copy()
+        shadow_color = pygame.Color(self.__config.shadow_color)
+        shadow_color.a = 50
+        self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
+        
+        #self.__static_elements_surface.blit(needle_scaled_surface, (0, 0))
 
     def update(self, value):
         assert(None != self.__working_surface)
 
         self.__working_surface = self.__static_elements_surface.copy()
+
+        max_value = self.__config.data_field.max_value
+        min_value = self.__config.data_field.min_value
+        arc_transposed_value = Helpers.transpose_ranges(float(value), max_value, min_value, -135, 135)
+
+        # Needle
+        # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
+        rotated_needle = pygame.transform.rotozoom(self.__needle_surface, arc_transposed_value, 1)
+        #needle_x = self.__working_surface.get_width() - (rotated_needle.get_width() / 2)
+        #needle_y = self.__working_surface.get_height() - (rotated_needle.get_height() / 2)
+
+        # Shadow
+        # Add a small %-change multiplier to give the shadow farther distance as values approach limits
+        abs_change_from_zero = abs(arc_transposed_value)
+        shadow_distance = 4 + ((abs(arc_transposed_value) / 135) * 10)
+
+        shadow_rotation = arc_transposed_value
+        if arc_transposed_value > 0: #counter-clockwise
+            shadow_rotation += shadow_distance
+        else: #clockwise
+            shadow_rotation += -shadow_distance
+        rotated_shadow = pygame.transform.rotozoom(self.__needle_shadow_surface, shadow_rotation, 0.93)
+        #needle_shadow.set_alpha(20)
+        shadow_center = Helpers.calculate_center_align(self.__working_surface, rotated_shadow)
+        self.__working_surface.blit(rotated_shadow, shadow_center)
+
+        needle_center = Helpers.calculate_center_align(self.__working_surface, rotated_needle)
+        self.__working_surface.blit(rotated_needle, needle_center)
+
+        #self.__working_surface.blit(self.__needle_surface, (0, 0))
         return self.__working_surface
 
 
@@ -176,13 +208,6 @@ def main(argv):
         pygame.HWSURFACE | pygame.DOUBLEBUF
     )
 
-    display_surface.fill(Color.black)
-
-    gauge_config = GaugeConfig(DashData.cpu_temp)
-    cpu_temp_gauge = FlatArcGauge(gauge_config)
-    display_surface.blit(cpu_temp_gauge.update(30), (20,20))
-
-
     #bg_color = gauge_config.bg_color
     #radius = 45
     #pygame.gfxdraw.aacircle(self.__static_elements_surface, surface_center_x, surface_center_y, radius, bg_color)
@@ -196,10 +221,26 @@ def main(argv):
     #gauge_face =  pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_style1.png"))
     #display_surface.blit(gauge_face, (110, 110))
 
-    
-    pygame.display.flip()
+    gauge_config = GaugeConfig(DashData.cpu_temp)
+    cpu_temp_gauge = FlatArcGauge(gauge_config)
 
+    test_value = 20
+    reverse = False
     while True:
+        display_surface.fill(Color.black)
+
+        if test_value >= 80:
+            reverse = True
+        elif test_value <= 20:
+            reverse = False
+
+        if reverse:
+            test_value -= 1
+        else:
+            test_value += 1
+
+        display_surface.blit(cpu_temp_gauge.update(test_value), (20,20))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 print("User quit")
@@ -208,7 +249,9 @@ def main(argv):
 
         pygame.event.clear()
 
-        sleep(0.200)
+        pygame.display.flip()
+
+        sleep(0.100)
 
     pygame.quit()
 
