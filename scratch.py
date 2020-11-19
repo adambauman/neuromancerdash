@@ -149,7 +149,7 @@ class FlatArcGauge:
         # Setup the shadow
         self.__needle_shadow_surface = self.__needle_surface.copy()
         shadow_color = pygame.Color(self.__config.shadow_color)
-        shadow_color.a = 50
+        shadow_color.a = self.__config.shadow_alpha
         self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
         
         #self.__static_elements_surface.blit(needle_scaled_surface, (0, 0))
