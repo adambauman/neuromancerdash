@@ -131,7 +131,6 @@ class Units:
     rpm = Unit("Revolutions Per Second", "RPM")
     fps = Unit("Frames Per Second", "FPS")
     watts = Unit("Watts", "W")
-
 class DataField:
     field_name = ""
     description = ""
@@ -193,8 +192,6 @@ class CoreVisualizerConfig:
     inactive_color = Color.windows_cyan_1_dark
     # Percentage of activity required to light up core representation
     activity_threshold_percent = 12
-
-
 class SimpleCoreVisualizer:
     __config = CoreVisualizerConfig
     __core_count = 0 # Found by iterating all "cpu{}_util" fields
@@ -303,7 +300,7 @@ class SimpleCoreVisualizer:
 
         return self.__base_surface
 
-
+# TODO: (Adam) 2020-11-18 Really dumbed here with Python classes, configurations need to be re-structured
 class GraphConfig:
     height = 0
     width = 0
@@ -317,7 +314,6 @@ class GraphConfig:
     draw_vertices = False
     display_background = False
     draw_on_zero = True
-
 class LineGraphReverse:
     # Simple line graph that plots data from right to left
 
@@ -421,6 +417,57 @@ class LineGraphReverse:
         return self.__working_surface
 
 
+class BarGraphConfig:
+    width = 0
+    height = 0
+    data_field = None
+    foreground_color = Color.white
+    background_color = Color.windows_dkgrey_1
+
+    def __init__(self, width, height, data_field):
+        assert(0 != width and 0 != height)
+        self.width, self.height = width, height
+        self.data_field = data_field
+
+class BarGraph:
+    __config = None
+    __working_surface = None
+    __first_run = True
+    __last_value = 0
+
+    def __init__(self, bar_graph_config):
+        assert(0 != bar_graph_config.width and 0 != bar_graph_config.height)
+        assert(None != bar_graph_config.data_field)
+
+        self.__config = bar_graph_config
+        self.__working_surface = pygame.Surface((self.__config.width, self.__config.height))
+        
+        self.update(0)
+        self.__first_run = False
+
+    def update(self, value):
+        
+        # Reuse previous surface if value hasn't changed
+        if self.__last_value == value and self.__first_run != True:
+            return self.__working_surface
+
+        # Draw the background, we'll use the existing member surface
+        self.__working_surface.fill(self.__config.background_color)
+
+        # Draw the value rect
+        data_field = self.__config.data_field
+        transposed_value = Helpers.transpose_ranges(float(value), data_field.max_value, data_field.min_value, self.__config.width, 0)
+        draw_rect = (0, 0, transposed_value, self.__config.height)
+        pygame.draw.rect(self.__working_surface, self.__config.foreground_color, draw_rect)
+
+        self.__last_value = value
+
+        return self.__working_surface
+        
+
+
+
+
 # TODO: (Adam) 2020-11-17 Gauge config class, make a little more customizable for broader use
 class Gauge:
     @staticmethod
@@ -496,6 +543,8 @@ class DashPainter:
     __gpu_graph = None
     __fps_graph = None
     __core_visualizer = None
+    __sys_memory_bar = None
+    __gpu_memory_bar = None
 
     def __init__(self, display_surface):
         self.display_surface = display_surface
@@ -523,8 +572,12 @@ class DashPainter:
         font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "RAM"
+        text = "RAM Used"
         font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{} {}".format(data[DashData.sys_ram_used.field_name], DashData.sys_ram_used.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
     def __paint_gpu_text_stack__(self, origin, font_normal, data):
         assert(0 != len(data))
@@ -552,8 +605,12 @@ class DashPainter:
         font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "RAM"
+        text = "RAM Used"
         font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{} {}".format(data[DashData.gpu_ram_used.field_name], DashData.gpu_ram_used.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
     def paint(self, data):
         assert(0 != len(data))
@@ -570,11 +627,15 @@ class DashPainter:
 
         core_visualizer_origin = (310, 0)
         cpu_detail_stack_origin = (310, 33)
-        gpu_detail_stack_origin = (310, 110)
-        cpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 3)
-        gpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 107)
+        gpu_detail_stack_origin = (310, 115)
+        cpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 7)
+        gpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 117)
         cpu_graph_origin = (0, 0)
         gpu_graph_origin = (0, 110)
+
+        sys_memory_origin = (0, 75)
+        gpu_memory_origin = (0, 185)
+
         fps_graph_origin = (0, 220)
         fps_text_origin = (210, 230)
         fps_label_origin = (212, 275)
@@ -631,6 +692,21 @@ class DashPainter:
         core_visualizer = self.__core_visualizer.update(data)
         self.display_surface.blit(core_visualizer, core_visualizer_origin)
 
+        # System and GPU memory usage
+        if None == self.__sys_memory_bar:
+            sys_memory_bar_config = BarGraphConfig(300, 25, DashData.sys_ram_used)
+            self.__sys_memory_bar = BarGraph(sys_memory_bar_config)
+
+        sys_memory_bar_surface = self.__sys_memory_bar.update(data[DashData.sys_ram_used.field_name])
+        self.display_surface.blit(sys_memory_bar_surface, sys_memory_origin)
+
+        if None == self.__gpu_memory_bar:
+            gpu_memory_bar_config = BarGraphConfig(300, 25, DashData.gpu_ram_used)
+            self.__gpu_memory_bar = BarGraph(gpu_memory_bar_config)
+
+        gpu_memory_bar_surface = self.__gpu_memory_bar.update(data[DashData.gpu_ram_used.field_name])
+        self.display_surface.blit(gpu_memory_bar_surface, gpu_memory_origin)
+
         # FPS Graph and Text
         if None == self.__fps_graph:
             fps_graph_config = GraphConfig
@@ -647,7 +723,6 @@ class DashPainter:
         font_normal.render_to(self.display_surface, fps_label_origin, "FPS", Color.white)
 
         # Network Text
-        #    nic1_download_rate = DataField("nic1_download_rate", "NIC1 Download Rate", Units.kilobytes_per_second)
         network_download_text = "NIC 1 Down: {} {}".format(data[DashData.nic1_download_rate.field_name], DashData.nic1_download_rate.unit.symbol)
         font_normal.render_to(self.display_surface, network_text_origin, network_download_text, Color.white)
         network_upload_text = "Up: {} {}".format(data[DashData.nic1_upload_rate.field_name], DashData.nic1_upload_rate.unit.symbol)
