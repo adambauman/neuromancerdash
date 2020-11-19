@@ -40,7 +40,7 @@ class GaugeConfig:
         self.arc_redline_color = Color.windows_red_1
         self.needle_color = Color.windows_light_grey_1
         self.shadow_color = Color.black
-        self.shadow_alpha = 20
+        self.shadow_alpha = 50
         self.text_color = Color.white
         self.bg_color = Color.windows_dkgrey_1
         self.bg_alpha = 200
