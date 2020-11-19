@@ -8,9 +8,20 @@ import math
 import pygame
 import pygame.gfxdraw
 
-from dashboard_painter import Color, DataField, DashData, AssetPath
+from dashboard_painter import Color, FontPaths, DataField, DashData, AssetPath
 
 class Helpers:
+    @staticmethod
+    def calculate_center_align(parent_surface, child_surface):
+
+        parent_center = (parent_surface.get_width() / 2, parent_surface.get_height() / 2)
+        child_center = (child_surface.get_width() / 2, child_surface.get_height() / 2)
+        
+        child_align_x = parent_center[0] - child_center[0]
+        child_align_y = parent_center[1] - child_center[1]
+
+        return (child_align_x, child_align_y)
+
     @staticmethod
     def get_aa_circle(color, radius, aa_scale = 2, surface_flags = pygame.SRCALPHA):
         assert(0 != radius)
@@ -62,9 +73,11 @@ class GaugeConfig:
 class FlatArcGauge:
     __config = None
     __last_value = None
-    __static_elements_surface = None # Only drawn to on init
-    __needle_surface = None # Only drawn to on init
     __working_surface = None
+
+    __static_elements_surface = None # Should not be changed after init
+    __needle_surface = None # Should not be changed after init
+    __needle_shadow_surface = None  # Should not be changed after init
 
     def __init__(self, gauge_config):
         assert(None != gauge_config.data_field)
@@ -84,17 +97,14 @@ class FlatArcGauge:
         assert(None != self.__static_elements_surface)
         assert(0 < self.__config.aa_multiplier)
         
+        # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
+        # PNG shapes to build up the gauge then scaling down to final size.
         arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1.png"))
         redline_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_redline_1.png"))
 
         assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
         base_scaled_size = (arc_bitmap.get_width(), arc_bitmap.get_width())
 
-        # If aa_multiplier != 1 we will draw to a bigger surface and smoothscale it down at the end
-        #base_scaled_size = (
-        #    self.__working_surface.get_width() * self.__config.aa_multiplier, 
-        #    self.__working_surface.get_height() * self.__config.aa_multiplier
-        #)
         temp_surface = pygame.Surface(base_scaled_size)
         center = (temp_surface.get_width() / 2, temp_surface.get_height() / 2)
 
@@ -108,29 +118,34 @@ class FlatArcGauge:
         bg_surface.set_alpha(self.__config.bg_alpha)
         temp_surface.blit(bg_surface, (0, 0))
 
+        # Apply color to main arc and blit
         arc_main_color = pygame.Color(self.__config.arc_main_color)
         arc_bitmap.fill(arc_main_color, special_flags = pygame.BLEND_RGBA_MULT)
         temp_surface.blit(arc_bitmap, (0, 0))
 
-        
+        # Apply color to redline and blit
+        arc_redline_color = pygame.Color(self.__config.arc_redline_color)
+        redline_bitmap.fill(arc_redline_color, special_flags = pygame.BLEND_RGBA_MULT)
+        if self.__config.counter_sweep:
+            temp_surface.blit(pygame.transform.flip(redline_bitmap, True, False), (0, 0))
+        else:
+            temp_surface.blit(redline_bitmap, (0, 0))
 
-        # Draw arcs
-        #arc(surface, color, rect, start_angle, stop_angle) -> Rect
-        #arc(surface, color, rect, start_angle, stop_angle, width=1) -> Rect
-        #arc_main_color = pygame.Color(self.__config.arc_main_color)
-        #arc_main_color = pygame.Color(255, 0, 0, 255)
-        #arc_thickness = int((self.__config.radius * 0.50) * 2)
-        #pygame.draw.arc(temp_surface, arc_main_color, (0, 0, base_scaled_size[0], base_scaled_size[1]), -0.8, 4, arc_thickness)
-        #Helpers.drawCircleArc(temp_surface, arc_main_color, center, scaled_radius, 0, 90, arc_thickness)
+        # Draw static text
+        # Unit
+        if self.__config.show_unit_symbol:
+            font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 120)
+            font_unit.strong = False
+            unit_text_surface = font_unit.render(self.__config.data_field.unit.symbol, self.__config.text_color)
+            center_align = Helpers.calculate_center_align(temp_surface, unit_text_surface[0])
+            temp_surface.blit(unit_text_surface[0], (center_align[0], center_align[1] + 300))
 
-        # Scale before writing text
+        # Scale to the final size
         scale_to_size = (
             self.__static_elements_surface.get_width(), 
             self.__static_elements_surface.get_height()
         )
         scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
-
-        # Draw static text, perform after scaling or it gets too blurry
 
         # Clear member static_elements surface and blit our scaled surface
         self.__static_elements_surface.fill((0, 0, 0, 0))
