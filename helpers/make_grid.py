@@ -2,7 +2,10 @@
 
 from time import sleep
 import sys
+
 import pygame
+
+from dashboard_painter import Color
 
 def main(argv):
 
@@ -10,13 +13,14 @@ def main(argv):
 
     ### SETUP
     ###
+
     grid_background_color = "#000000"
     grid_width = 400
     grid_height = 200
     grid_spacing = 8
     grid_line_width = 1
-    #grid_color = "#4c4a48" #dk grey 1
-    grid_color = "#1c2f2b" #really dk cyanish green
+    grid_color = Color.cyan_dark 
+
     ###
     ###
 
@@ -43,6 +47,7 @@ def main(argv):
     
     pygame.display.flip()
     pygame.image.save(display_surface, "./pygrid.png")
+    print ("File saved to ./pygrid.png")
 
     while True:
         for event in pygame.event.get():

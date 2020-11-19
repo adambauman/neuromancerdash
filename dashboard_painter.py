@@ -86,9 +86,13 @@ class Color:
     grey_20 = "#333333"
     grey_75 = "#c0c0c0"
     black = "#000000"
+    cyan_dark = "#1c2f2b"
+    # Colors pulled from Win10 design doc swatches
     windows_cyan_1 = "#00b693"
     windows_cyan_1_dark = "#015b4a"
+    windows_red_1 = "#eb2400"
     windows_dkgrey_1 = "#4c4a48"
+    windows_light_grey_1 = "#7b7574"
 
 class FontPaths:
     # TODO: (Adam) 2020-11-15 Use os.path.join instead of string concact
@@ -428,7 +432,6 @@ class BarGraphConfig:
         assert(0 != width and 0 != height)
         self.width, self.height = width, height
         self.data_field = data_field
-
 class BarGraph:
     __config = None
     __working_surface = None

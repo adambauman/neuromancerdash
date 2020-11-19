@@ -28,7 +28,6 @@
     <Content Include="assets\fonts\Roboto_Mono\LICENSE.txt" />
     <Content Include="assets\fonts\Roboto_Mono\README.txt" />
     <Content Include="install_command_history.txt" />
-    <Content Include="periscope_docs\dashboard.gif" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="aida64_sse_data.py">
@@ -41,8 +40,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="neuromancer_dash.py" />
-    <Compile Include="periscope.py" />
-    <Compile Include="periscope_docs\periscope.py" />
     <Compile Include="scratch.py" />
   </ItemGroup>
   <ItemGroup>
@@ -52,7 +49,6 @@
     <Folder Include="assets\fonts\Nanum_Gothic_Coding" />
     <Folder Include="assets\fonts\Open_Sans" />
     <Folder Include="assets\fonts\Roboto_Mono" />
-    <Folder Include="periscope_docs" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.8-32" />
