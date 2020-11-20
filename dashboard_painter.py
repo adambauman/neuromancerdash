@@ -465,7 +465,7 @@ class BarGraph:
         self.__last_value = value
 
         return self.__working_surface
-        
+
 
 class GaugeConfig:
     def __init__(self, data_field, radius = 45, value_font = None, value_font_origin = None):
@@ -679,6 +679,8 @@ class DashPage1:
         self.fan_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 10)
         #self.fan_gauge_value.strong = True
 
+        ### Positioning
+
         self.core_visualizer_origin = (310, 0)
         self.cpu_detail_stack_origin = (310, 33)
         self.gpu_detail_stack_origin = (310, 115)
@@ -701,6 +703,10 @@ class DashPage1:
         self.gpu_fan_gauge_origin = (self.fan_opt_gauge_origin[0], self.cpu_fan_gauge_origin[1])
 
         self.mobo_temp_origin = (display_width - 52, 268)
+
+        self.disk_activity_origin = (self.cpu_detail_stack_origin[0], 230)
+
+        #####
 
         cpu_temp_gauge_config = GaugeConfig(DashData.cpu_temp, 45, self.font_gauge_value, (35, 70))
         self.cpu_temp_gauge = FlatArcGauge(cpu_temp_gauge_config)
@@ -773,6 +779,11 @@ class DashPage1:
         gpu_fan_gauge_config.show_label_instead_of_value = True
         gpu_fan_gauge_config.label = "G"
         self.gpu_fan_gauge = FlatArcGauge(gpu_fan_gauge_config)
+
+        # Disk activity
+        disk_activity_bar_config = BarGraphConfig(65, 19, DashData.disk_activity)
+        self.disk_activity_bar = BarGraph(disk_activity_bar_config)
+        self.disk_activity_y_spacing = 21
 
 
 class DashPage1Painter:
@@ -912,6 +923,15 @@ class DashPage1Painter:
 
         # Motherboard temp (nestled between all the fans)
         self.page.font_normal.render_to(self.display_surface, self.page.mobo_temp_origin, "{}".format(data[DashData.motherboard_temp.field_name]), Color.white)
+
+        # Disk activity
+        disk_count = 4
+        disk_y_offset = 0
+        for index in range(disk_count):
+            self.display_surface.blit(
+                self.page.disk_activity_bar.update(data["disk_{}_activity".format(index)]), 
+                (self.page.disk_activity_origin[0], self.page.disk_activity_origin[1] + disk_y_offset))
+            disk_y_offset += self.page.disk_activity_y_spacing
 
         # Network Text
         network_download_text = "NIC 1 Down: {} {}".format(data[DashData.nic1_download_rate.field_name], DashData.nic1_download_rate.unit.symbol)
