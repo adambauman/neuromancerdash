@@ -312,19 +312,20 @@ class SimpleCoreVisualizer:
         return self.__base_surface
 
 # TODO: (Adam) 2020-11-18 Really dumbed here with Python classes, configurations need to be re-structured
-class GraphConfig:
-    height = 0
-    width = 0
-    plot_padding = 0
-    data_field = None
-    steps_per_update = 6
-    line_color = Color.yellow
-    line_width = 2 # Line weights below 2 might result in missing segments
-    vertex_color = Color.yellow
-    vertex_weight = 1
-    draw_vertices = False
-    display_background = False
-    draw_on_zero = True
+class LineGraphConfig:
+    def __init__(self, height, width, data_field):
+        self.height, width = height, width
+        self.plot_padding = 0
+        self.data_field = None
+        self.steps_per_update = 6
+        self.line_color = Color.yellow
+        self.line_width = 2 # Line weights below 2 might result in missing segments
+        self.vertex_color = Color.yellow
+        self.vertex_weight = 1
+        self.draw_vertices = False
+        self.display_background = False
+        self. draw_on_zero = True
+
 class LineGraphReverse:
     # Simple line graph that plots data from right to left
 
@@ -334,7 +335,7 @@ class LineGraphReverse:
     __working_surface = None
     __background = None
 
-    def __init__(self, graph_config):
+    def __init__(self, line_graph_config):
         assert(graph_config.height != 0 and graph_config.width != 0)
         assert(None != graph_config.data_field)
         
@@ -690,15 +691,11 @@ class DashPage1:
         self.gpu_temp_gauge = FlatArcGauge(self.__gpu_temp_gauge_config)
 
         #TODO: Fix Graphconfig!!!!
-        cpu_graph_config = GraphConfig
-        cpu_graph_config.data_field = DashData.cpu_util
-        cpu_graph_config.height, cpu_graph_config.width = 70, 300
+        cpu_graph_config = LineGraphConfig(70, 300, DashData.cpu_util)
         cpu_graph_config.display_background = True
         self.cpu_graph = LineGraphReverse(cpu_graph_config)
 
-        gpu_graph_config = GraphConfig
-        gpu_graph_config.data_field = DashData.gpu_util
-        gpu_graph_config.height, gpu_graph_config.width = 70, 300
+        gpu_graph_config = LineGraphConfig(70, 300, DashData.gpu_util)
         gpu_graph_config.display_background = True
         self.gpu_graph = LineGraphReverse(gpu_graph_config)
 
@@ -711,9 +708,7 @@ class DashPage1:
         gpu_memory_bar_config = BarGraphConfig(300, 25, DashData.gpu_ram_used)
         self.gpu_memory_bar = BarGraph(gpu_memory_bar_config)
 
-        fps_graph_config = GraphConfig
-        fps_graph_config.data_field = DashData.rtss_fps
-        fps_graph_config.height, fps_graph_config.width = 70, 200
+        fps_graph_config = LineGraphConfig(70, 200, DashData.rtss_fps)
         fps_graph_config.display_background = True
         fps_graph_config.draw_on_zero = False
         self.fps_graph = LineGraphReverse(fps_graph_config)
