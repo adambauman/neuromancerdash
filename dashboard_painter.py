@@ -99,6 +99,7 @@ class Color:
     windows_cyan_1_dark = "#015b4a"
     windows_cyan_2 = "#008589"
     windows_red_1 = "#eb2400"
+    windows_dkgrey_1_highlight = "#b3aeaa"
     windows_dkgrey_1 = "#4c4a48"
     windows_light_grey_1 = "#7b7574"
 
@@ -709,9 +710,11 @@ class DashPage1:
         #####
 
         cpu_temp_gauge_config = GaugeConfig(DashData.cpu_temp, 45, self.font_gauge_value, (35, 70))
+        cpu_temp_gauge_config.show_unit_symbol = False
         self.cpu_temp_gauge = FlatArcGauge(cpu_temp_gauge_config)
 
         gpu_temp_gauge_config = GaugeConfig(DashData.gpu_temp, 45, self.font_gauge_value, (35, 70))
+        gpu_temp_gauge_config.show_unit_symbol = False
         self.gpu_temp_gauge = FlatArcGauge(gpu_temp_gauge_config)
 
         cpu_graph_config = LineGraphConfig(70, 300, DashData.cpu_util)
@@ -726,9 +729,11 @@ class DashPage1:
         self.core_visualizer = SimpleCoreVisualizer(core_visualizer_config)
 
         sys_memory_bar_config = BarGraphConfig(300, 25, DashData.sys_ram_used)
+        sys_memory_bar_config.foreground_color = Color.windows_dkgrey_1_highlight
         self.sys_memory_bar = BarGraph(sys_memory_bar_config)
 
         gpu_memory_bar_config = BarGraphConfig(300, 25, DashData.gpu_ram_used)
+        gpu_memory_bar_config.foreground_color = Color.windows_dkgrey_1_highlight
         self.gpu_memory_bar = BarGraph(gpu_memory_bar_config)
 
         fps_graph_config = LineGraphConfig(70, 200, DashData.rtss_fps)
@@ -782,6 +787,7 @@ class DashPage1:
 
         # Disk activity
         disk_activity_bar_config = BarGraphConfig(65, 19, DashData.disk_activity)
+        disk_activity_bar_config.foreground_color = Color.windows_dkgrey_1_highlight
         self.disk_activity_bar = BarGraph(disk_activity_bar_config)
         self.disk_activity_y_spacing = 21
 
