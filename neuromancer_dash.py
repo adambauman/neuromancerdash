@@ -42,7 +42,7 @@ def get_command_args(argv):
 def start_dashboard(server_address, display_surface, dash_page_1_painter):
     assert(0 != len(server_address))
 
-    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
     font_message.strong = True
     font_message.kerning = True
     message_line_height = 20
@@ -122,6 +122,16 @@ def main(argv):
         (Hardware.screen_width, Hardware.screen_height),
         pygame.HWSURFACE | pygame.DOUBLEBUF
     )
+
+    display_surface.fill(Color.black)
+
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+    font_message.strong = True
+    font_message.kerning = True
+    message_line_height = 20
+
+    font_message.render_to(display_surface, (0, 0), "Preparing commponents, please wait...", Color.white)
+    pygame.display.flip()
 
     dash_page_1_painter = DashPage1Painter(display_surface)
 
