@@ -314,9 +314,9 @@ class SimpleCoreVisualizer:
 # TODO: (Adam) 2020-11-18 Really dumbed here with Python classes, configurations need to be re-structured
 class LineGraphConfig:
     def __init__(self, height, width, data_field):
-        self.height, width = height, width
+        self.height, self.width = height, width
         self.plot_padding = 0
-        self.data_field = None
+        self.data_field = data_field
         self.steps_per_update = 6
         self.line_color = Color.yellow
         self.line_width = 2 # Line weights below 2 might result in missing segments
@@ -331,31 +331,31 @@ class LineGraphReverse:
 
     __last_plot_y = 0
     __last_plot_surface = None
-    __graph_config = None
+    __config = None
     __working_surface = None
     __background = None
 
     def __init__(self, line_graph_config):
-        assert(graph_config.height != 0 and graph_config.width != 0)
-        assert(None != graph_config.data_field)
+        assert(line_graph_config.height != 0 and line_graph_config.width != 0)
+        assert(None != line_graph_config.data_field)
         
-        self.__graph_config = graph_config
+        self.__config = line_graph_config
 
-        self.__working_surface = pygame.Surface((graph_config.width, graph_config.height), pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface((self.__config.width, self.__config.height), pygame.SRCALPHA)
 
-        plot_width = graph_config.width - (graph_config.plot_padding * 2)
-        plot_height = graph_config.height - (graph_config.plot_padding * 2)
-        self.__last_plot_surface = pygame.Surface((graph_config.width, graph_config.height), pygame.SRCALPHA)
+        plot_width = self.__config.width - (self.__config.plot_padding * 2)
+        plot_height = self.__config.height - (self.__config.plot_padding * 2)
+        self.__last_plot_surface = pygame.Surface((self.__config.width, self.__config.height), pygame.SRCALPHA)
         
-        steps_per_update = graph_config.steps_per_update
+        steps_per_update = self.__config.steps_per_update
         self.__last_plot_y = self.__last_plot_surface.get_height()
 
-        if self.__graph_config.display_background:
+        if self.__config.display_background:
             self.__background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_8px_dkcyan.png"))
             self.__working_surface.blit(self.__background, (0, 0))
 
     def update(self, value):
-        assert(None != self.__graph_config)
+        assert(None != self.__config)
         assert(None != self.__last_plot_surface)
         assert(None != self.__working_surface)
 
@@ -366,25 +366,25 @@ class LineGraphReverse:
             self.__working_surface.fill(Color.black)
 
         # Transform self.__previous_plot_surface left by self.__steps_per_update
-        steps_per_update = self.__graph_config.steps_per_update
+        steps_per_update = self.__config.steps_per_update
         last_plot_position = (self.__working_surface.get_width() - steps_per_update, self.__last_plot_y)
 
         # Calculate self.__previous_plot_position lefy by self.__steps_per_update, calculate new plot position
-        data_field = self.__graph_config.data_field
+        data_field = self.__config.data_field
         transposed_value = Helpers.transpose_ranges(
             float(value), 
             data_field.max_value, data_field.min_value, 
             self.__working_surface.get_height(), 0
         )
 
-        plot_padding = self.__graph_config.plot_padding
+        plot_padding = self.__config.plot_padding
         new_plot_y = int(self.__working_surface.get_height() - transposed_value)
 
         # Clamp the reanges in case something rounds funny
-        if self.__graph_config.line_width >= new_plot_y:
-            new_plot_y = self.__graph_config.line_width
-        if (self.__working_surface.get_height() - self.__graph_config.line_width) <= new_plot_y:
-            new_plot_y = self.__working_surface.get_height() - self.__graph_config.line_width
+        if self.__config.line_width >= new_plot_y:
+            new_plot_y = self.__config.line_width
+        if (self.__working_surface.get_height() - self.__config.line_width) <= new_plot_y:
+            new_plot_y = self.__working_surface.get_height() - self.__config.line_width
 
         new_plot_position = (self.__working_surface.get_width() - plot_padding, new_plot_y)
 
@@ -400,24 +400,24 @@ class LineGraphReverse:
         new_plot_surface.blit(self.__last_plot_surface, (-steps_per_update, 0))
 
         enable_draw = True
-        if 0 == int(value) and self.__graph_config.draw_on_zero == False:
+        if 0 == int(value) and self.__config.draw_on_zero == False:
             enable_draw = False
 
         if enable_draw:
             pygame.draw.line(
                 new_plot_surface,
-                self.__graph_config.line_color,
+                self.__config.line_color,
                 last_plot_position, new_plot_position,
-                self.__graph_config.line_width
+                self.__config.line_width
             )
 
             # Draw vertex if enabled
-            if self.__graph_config.draw_vertices:
+            if self.__config.draw_vertices:
                 pygame.draw.circle(
                     new_plot_surface,
-                    self.__graph_config.vertex_color,
+                    self.__config.vertex_color,
                     last_plot_position,
-                    1 * self.__graph_config.vertex_weight
+                    1 * self.__config.vertex_weight
                 )
 
         self.__working_surface.blit(new_plot_surface, (plot_padding, plot_padding))
@@ -655,6 +655,7 @@ class FlatArcGauge:
 
         return self.__working_surface
 
+
 class DashPage1:
     def __init__(self, display_width, display_height):
         self.font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
@@ -690,7 +691,6 @@ class DashPage1:
         self.__gpu_temp_gauge_config = GaugeConfig(DashData.gpu_temp, 45, self.font_gauge_value, (35, 70))
         self.gpu_temp_gauge = FlatArcGauge(self.__gpu_temp_gauge_config)
 
-        #TODO: Fix Graphconfig!!!!
         cpu_graph_config = LineGraphConfig(70, 300, DashData.cpu_util)
         cpu_graph_config.display_background = True
         self.cpu_graph = LineGraphReverse(cpu_graph_config)
