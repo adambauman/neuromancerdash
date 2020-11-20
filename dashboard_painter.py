@@ -36,7 +36,6 @@ class Tweening:
         self.last_absolute_value = new_absolute_value
 
 class Helpers:
-    @staticmethod
     def calculate_center_align(parent_surface, child_surface):
 
         parent_center = (parent_surface.get_width() / 2, parent_surface.get_height() / 2)
@@ -47,20 +46,17 @@ class Helpers:
 
         return (child_align_x, child_align_y)
 
-    @staticmethod
     def transpose_ranges(input, input_high, input_low, output_high, output_low):
         #print("transpose, input: {} iHI: {} iLO: {} oHI: {} oLO: {}".format(input, input_high, input_low, output_high, output_low))
         diff_multiplier = (input - input_low) / (input_high - input_low)
         return ((output_high - output_low) * diff_multiplier) + output_low
 
-    @staticmethod
     def clamp_text(text, max_characters, trailing_text="..."):
         trimmed_text = text[0:max_characters]
         return trimmed_text + trailing_text
 
     # TODO: (Adam) 2020-11-18 Switch to regex for tighter comparisons
     # TODO: (Adam) 2020-11-18 Maybe move this into the DataField class with a count method
-    @staticmethod
     def is_cpu_core_utilization(key):
         # Skip combined cpu_util
         if "cpu_util" == key:
@@ -73,7 +69,6 @@ class Helpers:
 
         return is_match
 
-    @staticmethod
     def is_disk_activity(key):
         is_match = False
         # disk(n)_activity
@@ -123,9 +118,6 @@ class FontPaths:
 
 # TODO: (Adam) 2020-11-14 This is a bit of mess, could use something like Pint for slick unit handling
 class Unit:
-    name = ""
-    symbol = ""
-    alt_symbol = ""
     def __init__(self, name = "", symbol = "", alt_symbol = ""):
         self.name = name
         self.symbol = symbol
@@ -147,13 +139,6 @@ class Units:
     fps = Unit("Frames Per Second", "FPS")
     watts = Unit("Watts", "W")
 class DataField:
-    field_name = ""
-    description = ""
-    unit = Units.null_unit
-    min_value = None
-    caution_value = None
-    warn_value = None
-    max_value = None
     def __init__(
         self, field_name = "", description = "", unit = Units.null_unit,
         min_value = None, caution_value = None, warn_value = None, max_value = None):
@@ -166,6 +151,7 @@ class DataField:
         self.warn_value = warn_value
         self.max_value = max_value
 #TODO: (Adam) 2020-11-14 AIDA64 layout file is plain text, could write a converter to grab fields names
+#           from the client-side export file.
 class DashData:
     unknown = DataField("", "Unknown", Units.null_unit)
     cpu_util = DataField("cpu_util", "CPU Utilization", Units.percent, min_value=0, max_value=100)
@@ -270,7 +256,12 @@ class SimpleCoreVisualizer:
         for index in range(self.__core_count):
 
             key_name = "cpu{}_util".format(index)
-            core_activity_value = int(data[key_name])
+            core_activity_value = 0
+            if key_name in data:
+                # NOTE: (Adam) 2020-11-19 Util key data sometimes get mixed up, just set false if a \
+                #           core or two are missing
+                core_activity_value = int(data[key_name])
+
             core_active = False
             if core_activity_value >= self.__config.activity_threshold_percent:
                 #print("Core{} active at {}%".format(index, core_activity_value))

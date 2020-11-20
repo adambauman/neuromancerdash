@@ -7,7 +7,7 @@ if __debug__:
     import traceback
 
 from aida64_sse_data import AIDA64SSEData
-from dashboard_painter import DashPainter
+from dashboard_painter import DashPainter, FontPaths, Color
 
 class Hardware:
     screen_width = 480
@@ -42,10 +42,31 @@ def get_command_args(argv):
 def start_dashboard(server_address, display_surface):
     assert(0 != len(server_address))
 
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+    font_message.strong = True
+    font_message.kerning = True
+    message_line_height = 20
+
+    message_y = 0
+    font_message.render_to(display_surface, (0, message_y), "Connecting to {}...".format(server_address), Color.white)
+    pygame.display.flip()
+
     # Start connection to the AIDA64 SSE data stream
     server_messages = AIDA64SSEData.connect(server_address)
 
+    message_y += message_line_height
+    font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
+    pygame.display.flip()
+
+    message_y += message_line_height
+    font_message.render_to(display_surface, (0, message_y), "Initializing display...", Color.white)
+    pygame.display.flip()
+
     dash_painter = DashPainter(display_surface)
+
+    message_y += message_line_height
+    font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
+    pygame.display.flip()
 
     # This is a generator loop, it will keep going as long as the AIDA64 stream is open
     # NOTE: (Adam) 2020-11-14 Stream data is sometimes out of sync with the generated loop,
@@ -102,15 +123,14 @@ def main(argv):
     while True:
         # Dashboard will fail if the computer sleeps or is otherwise unavailable, keep
         # retrying until it starts to respond again.
-        #try:
-        start_dashboard(server_address, display_surface)
-        #except Exception:
-            #if __debug__:
-                #traceback.print_exc()
+        try:
+            start_dashboard(server_address, display_surface)
+        except Exception:
+            if __debug__:
+                traceback.print_exc()
             
             # TODO: (Adam) 2020-11-15 thread matrix screen saver during reconnect attempts
             #start_reconnect_screensaver(server_address, display_surface)
-
 
     pygame.quit()
 
