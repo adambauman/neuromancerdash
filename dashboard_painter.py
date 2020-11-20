@@ -37,6 +37,17 @@ class Tweening:
 
 class Helpers:
     @staticmethod
+    def calculate_center_align(parent_surface, child_surface):
+
+        parent_center = (parent_surface.get_width() / 2, parent_surface.get_height() / 2)
+        child_center = (child_surface.get_width() / 2, child_surface.get_height() / 2)
+        
+        child_align_x = parent_center[0] - child_center[0]
+        child_align_y = parent_center[1] - child_center[1]
+
+        return (child_align_x, child_align_y)
+
+    @staticmethod
     def transpose_ranges(input, input_high, input_low, output_high, output_low):
         #print("transpose, input: {} iHI: {} iLO: {} oHI: {} oLO: {}".format(input, input_high, input_low, output_high, output_low))
         diff_multiplier = (input - input_low) / (input_high - input_low)
@@ -188,17 +199,20 @@ class DashData:
 
 
 class CoreVisualizerConfig:
-    core_width = 13
-    core_spacing = 2
-    core_rows = 2
-    core_height = None
-    active_color = Color.windows_cyan_1
-    inactive_color = Color.windows_cyan_1_dark
-    # Percentage of activity required to light up core representation
-    activity_threshold_percent = 12
+    def __init__(self, core_count):
+        self.core_count = core_count
+        self.core_width = 13
+        self.core_spacing = 2
+        self.core_rows = 2
+        self.core_height = None
+        self.active_color = Color.windows_cyan_1
+        self.inactive_color = Color.windows_cyan_1_dark
+        # Percentage of activity required to light up core representation
+        self.activity_threshold_percent = 12
+
 class SimpleCoreVisualizer:
     __config = CoreVisualizerConfig
-    __core_count = 0 # Found by iterating all "cpu{}_util" fields
+    __core_count = 0
     __base_surface = None
     __cores_per_row = 0
 
@@ -211,18 +225,11 @@ class SimpleCoreVisualizer:
 
     __first_run = True
 
-    def __init__(self, data, core_visualizer_config = CoreVisualizerConfig):
-        assert(0 != self.__config.core_width)
-        assert(0 != len(data))
-
+    def __init__(self, core_visualizer_config):
         self.__config = core_visualizer_config
-
-        self.__core_count = 0
-        for single_data in data:
-            if Helpers.is_cpu_core_utilization(single_data):
-                self.__core_count += 1
-
-        assert(0 != self.__core_count)
+        
+        # NOTE: (Adam) 2020-11-19 Setting for compatability with new config setup
+        self.__core_count = self.__config.core_count
 
         self.__core_width = self.__config.core_width
         self.__core_height = self.__config.core_height
@@ -468,37 +475,152 @@ class BarGraph:
         return self.__working_surface
         
 
+class GaugeConfig:
+    def __init__(self, data_field, radius = 45, value_font = None, value_font_origin = None):
+        self.radius = radius
+        self.data_field = data_field
+        self.redline_degrees = 35
+        self.aa_multiplier = 2
+
+        self.value_font = value_font # Take from caller so you can match their other displays
+        self.value_font_origin = value_font_origin # If None the value will be centered
+
+        self.arc_main_color = Color.windows_cyan_1
+        self.arc_redline_color = Color.windows_red_1
+        self.needle_color = Color.windows_light_grey_1
+        self.shadow_color = Color.black
+        self.shadow_alpha = 50
+        self.unit_text_color = Color.white
+        self.value_text_color = Color.white
+        self.bg_color = Color.windows_dkgrey_1
+        self.bg_alpha = 200
+
+        self.counter_sweep = False
+        self.show_value = True
+        self.show_unit_symbol = True
 
 
+class FlatArcGauge:
+    __config = None
+    __last_value = None
+    __working_surface = None
 
-# TODO: (Adam) 2020-11-17 Gauge config class, make a little more customizable for broader use
-class Gauge:
-    @staticmethod
-    def arc_gauge_flat_90x(value, min_value, max_value, unit_text = "", background_alpha = 0):
-        assert(min_value != max_value)
+    __static_elements_surface = None # Should not be changed after init
+    __needle_surface = None # Should not be changed after init
+    __needle_shadow_surface = None  # Should not be changed after init
 
-        gauge = pygame.Surface((90,90))
+    def __init__(self, gauge_config):
+        assert(None != gauge_config.data_field)
+        assert(0 < gauge_config.radius)
 
-        # NOTE: (Adam) 2020-11-17 Leaning on lazy image loading to cache and discard images, after first call
-        #           these should remain in memory until the Image controller detects that no more references exist.
-        gauge_face =  pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_style1.png"))
-        needle = pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_needle.png"))
+        self.__config = gauge_config
 
-        gauge_center = ((gauge.get_width() / 2), (gauge.get_height() / 2))
+        # NOTE: (Adam) 2020-11-19 Bit of a hack, adding small amount of padding so AA edges don't get clipped
 
-        # needle_0 = 135, needle_redline = -90, needle_100 = -135
+        base_size = (self.__config.radius * 2, self.__config.radius * 2)
+        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__static_elements_surface = self.__working_surface.copy()
+
+        self.__prepare_constant_elements()
+
+        assert(None != self.__static_elements_surface)
+        assert(None != self.__needle_surface and None != self.__needle_shadow_surface)
+
+    def __prepare_constant_elements(self):
+        assert(None != self.__static_elements_surface)
+        assert(0 < self.__config.aa_multiplier)
+        
+        # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
+        # PNG shapes to build up the gauge then scaling down to final size.
+        arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_base_1.png"))
+        redline_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_redline_1.png"))
+
+        assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
+        base_scaled_size = (arc_bitmap.get_width(), arc_bitmap.get_width())
+
+        temp_surface = pygame.Surface(base_scaled_size, pygame.SRCALPHA)
+        center = (temp_surface.get_width() / 2, temp_surface.get_height() / 2)
+
+        scaled_radius = arc_bitmap.get_width() / 2
+
+        # Draw background
+        bg_surface = pygame.Surface((temp_surface.get_height(), temp_surface.get_width()), pygame.SRCALPHA)
+        bg_color = pygame.Color(self.__config.bg_color)
+        pygame.draw.circle(bg_surface, bg_color, center, scaled_radius)
+        bg_surface.set_alpha(self.__config.bg_alpha)
+        temp_surface.blit(bg_surface, (0, 0))
+
+        # Apply color to main arc and blit
+        arc_main_color = pygame.Color(self.__config.arc_main_color)
+        arc_bitmap.fill(arc_main_color, special_flags = pygame.BLEND_RGBA_MULT)
+        temp_surface.blit(arc_bitmap, (0, 0))
+
+        # Apply color to redline and blit
+        arc_redline_color = pygame.Color(self.__config.arc_redline_color)
+        redline_bitmap.fill(arc_redline_color, special_flags = pygame.BLEND_RGBA_MULT)
+        if self.__config.counter_sweep:
+            temp_surface.blit(pygame.transform.flip(redline_bitmap, True, False), (0, 0))
+        else:
+            temp_surface.blit(redline_bitmap, (0, 0))
+
+        # Draw static text
+        # Unit
+        if self.__config.show_unit_symbol:
+            font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 120)
+            font_unit.strong = False
+            unit_text_surface = font_unit.render(self.__config.data_field.unit.symbol, self.__config.unit_text_color)
+            center_align = Helpers.calculate_center_align(temp_surface, unit_text_surface[0])
+            temp_surface.blit(unit_text_surface[0], (center_align[0], center_align[1] + 300))
+
+        # Scale to the final size
+        scale_to_size = (
+            self.__static_elements_surface.get_width(), 
+            self.__static_elements_surface.get_height()
+        )
+        scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
+
+        # Clear member static_elements surface and blit our scaled surface
+        self.__static_elements_surface.fill((0, 0, 0, 0))
+        self.__static_elements_surface = scaled_surface.copy()
+     
+        # Setup needle elements, these will be rotated when blitted but the memeber surfaces will remain static
+        needle_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_needle_1.png"))
+        
+        # Apply color to needle, scale, then blit out to the needle surface
+        needle_color = pygame.Color(self.__config.needle_color)
+        needle_bitmap.fill(needle_color, special_flags = pygame.BLEND_RGBA_MULT)
+        needle_center = Helpers.calculate_center_align(temp_surface, needle_bitmap)
+        temp_surface.fill((0, 0, 0, 0))
+        temp_surface.blit(needle_bitmap, needle_center)
+
+        needle_scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
+        self.__needle_surface = needle_scaled_surface.copy()
+
+        # Needle shadow
+        self.__needle_shadow_surface = self.__needle_surface.copy()
+        shadow_color = pygame.Color(self.__config.shadow_color)
+        shadow_color.a = self.__config.shadow_alpha
+        self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
+        
+
+    def update(self, value):
+        assert(None != self.__working_surface)
+
+        # Don't draw if the value hasn't changed
+        if self.__last_value == value:
+            return(self.__working_surface)
+
+        self.__working_surface = self.__static_elements_surface.copy()
+
+        max_value = self.__config.data_field.max_value
+        min_value = self.__config.data_field.min_value
         arc_transposed_value = Helpers.transpose_ranges(float(value), max_value, min_value, -135, 135)
 
         # Needle
         # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
-        rotated_needle = pygame.transform.rotozoom(needle, arc_transposed_value, 1)
-        needle_x = gauge_center[0] - (rotated_needle.get_width() / 2)
-        needle_y = gauge_center[1] - (rotated_needle.get_height() / 2)
+        rotated_needle = pygame.transform.rotozoom(self.__needle_surface, arc_transposed_value, 1)
 
         # Shadow
-        shadow = needle.copy()
-        shadow.fill((0, 0, 0, 50), special_flags=pygame.BLEND_RGBA_MULT)
-
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
         abs_change_from_zero = abs(arc_transposed_value)
         shadow_distance = 4 + ((abs(arc_transposed_value) / 135) * 10)
@@ -508,49 +630,102 @@ class Gauge:
             shadow_rotation += shadow_distance
         else: #clockwise
             shadow_rotation += -shadow_distance
-        rotated_shadow = pygame.transform.rotozoom(shadow, shadow_rotation, 0.93)
+        rotated_shadow = pygame.transform.rotozoom(self.__needle_shadow_surface, shadow_rotation, 0.93)
         #needle_shadow.set_alpha(20)
-        shadow_x = gauge_center[0] - (rotated_shadow.get_width() / 2)
-        shadow_y = gauge_center[1] - (rotated_shadow.get_height() / 2)
+        shadow_center = Helpers.calculate_center_align(self.__working_surface, rotated_shadow)
+        self.__working_surface.blit(rotated_shadow, shadow_center)
 
-        # Background
-        if 0 != background_alpha:
-            background_surface = pygame.Surface((gauge.get_width(), gauge.get_height()))
-            pygame.draw.circle(background_surface, Color.windows_dkgrey_1, gauge_center, gauge.get_width() / 2)
-            background_surface.set_alpha(background_alpha)
-            gauge.blit(background_surface, (0, 0))
+        needle_center = Helpers.calculate_center_align(self.__working_surface, rotated_needle)
+        self.__working_surface.blit(rotated_needle, needle_center)
 
-        # Start blitting down the gauge components
-        gauge.blit(gauge_face, (0, 0))
-        gauge.blit(rotated_shadow, (shadow_x, shadow_y))
-        gauge.blit(rotated_needle, (needle_x, needle_y))
+        # Value Text
+        if None != self.__config.value_font:
+            value_surface = self.__config.value_font.render("{}".format(value), Color.white)
 
-        # Value
-        if 0 != len(unit_text):
-            font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 8)
-            font_unit.strong = True
-            font_unit.render_to(gauge, (43, 59), unit_text, Color.white)
+            if None != self.__config.value_font_origin:
+                value_origin = self.__config.value_font_origin
+            else:
+                value_origin = Helpers.calculate_center_align(self.__working_surface, value_surface[0])
 
-        # Readout text
-        font_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
-        font_value.strong = True
-        # NOTE: (Adam) 2020-11-17 Dynamic centered text dances around a little, sticking with
-        #           static placement for now.
-        font_value.render_to(gauge, (35, 70), value, Color.white)
+            self.__working_surface.blit(value_surface[0], value_origin)
 
-        return gauge
+        # Track for the next update
+        self.__last_value = value
+
+        return self.__working_surface
+
+class DashPage1:
+    def __init__(self, display_width, display_height):
+        self.font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        #font_normal.strong = True
+        self.font_normal.kerning = True
+
+        self.font_large = pygame.freetype.Font(FontPaths.fira_code_semibold(), 50)
+        #font_large.strong = True
+        self.font_large_kerning = True
+
+        self.font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+        self.font_gauge_value.strong = True
+
+        self.core_visualizer_origin = (310, 0)
+        self.cpu_detail_stack_origin = (310, 33)
+        self.gpu_detail_stack_origin = (310, 115)
+        self.cpu_temp_gauge_origin = (display_width - 90, 7)
+        self.gpu_temp_gauge_origin = (display_width - 90, 117)
+        self.cpu_graph_origin = (0, 0)
+        self.gpu_graph_origin = (0, 110)
+
+        self.sys_memory_origin = (0, 75)
+        self.gpu_memory_origin = (0, 185)
+
+        self.fps_graph_origin = (0, 230)
+        self.fps_text_origin = (210, 240)
+        self.fps_label_origin = (212, 285)
+        self.network_text_origin = (0, 310)
+
+        self.__cpu_temp_gauge_config = GaugeConfig(DashData.cpu_temp, 45, self.font_gauge_value, (35, 70))
+        self.cpu_temp_gauge = FlatArcGauge(self.__cpu_temp_gauge_config)
+
+        self.__gpu_temp_gauge_config = GaugeConfig(DashData.gpu_temp, 45, self.font_gauge_value, (35, 70))
+        self.gpu_temp_gauge = FlatArcGauge(self.__gpu_temp_gauge_config)
+
+        #TODO: Fix Graphconfig!!!!
+        cpu_graph_config = GraphConfig
+        cpu_graph_config.data_field = DashData.cpu_util
+        cpu_graph_config.height, cpu_graph_config.width = 70, 300
+        cpu_graph_config.display_background = True
+        self.cpu_graph = LineGraphReverse(cpu_graph_config)
+
+        gpu_graph_config = GraphConfig
+        gpu_graph_config.data_field = DashData.gpu_util
+        gpu_graph_config.height, gpu_graph_config.width = 70, 300
+        gpu_graph_config.display_background = True
+        self.gpu_graph = LineGraphReverse(gpu_graph_config)
+
+        core_visualizer_config = CoreVisualizerConfig(8)
+        self.core_visualizer = SimpleCoreVisualizer(core_visualizer_config)
+
+        sys_memory_bar_config = BarGraphConfig(300, 25, DashData.sys_ram_used)
+        self.sys_memory_bar = BarGraph(sys_memory_bar_config)
+
+        gpu_memory_bar_config = BarGraphConfig(300, 25, DashData.gpu_ram_used)
+        self.gpu_memory_bar = BarGraph(gpu_memory_bar_config)
+
+        fps_graph_config = GraphConfig
+        fps_graph_config.data_field = DashData.rtss_fps
+        fps_graph_config.height, fps_graph_config.width = 70, 200
+        fps_graph_config.display_background = True
+        fps_graph_config.draw_on_zero = False
+        self.fps_graph = LineGraphReverse(fps_graph_config)
 
 
 class DashPainter:
-    __cpu_graph = None
-    __gpu_graph = None
-    __fps_graph = None
-    __core_visualizer = None
-    __sys_memory_bar = None
-    __gpu_memory_bar = None
+    page = None
 
     def __init__(self, display_surface):
         self.display_surface = display_surface
+        self.page = DashPage1(display_surface.get_width(), display_surface.get_height())
+
 
     def __get_next_vertical_stack_origin__(self, last_origin, font, padding = 0):
         x = last_origin[0]
@@ -617,116 +792,63 @@ class DashPainter:
 
     def paint(self, data):
         assert(0 != len(data))
+        assert(None != self.page)
 
         self.display_surface.fill(Color.black)
 
-        font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        #font_normal.strong = True
-        font_normal.kerning = True
-
-        font_large = pygame.freetype.Font(FontPaths.fira_code_semibold(), 50)
-        #font_large.strong = True
-        font_large_kerning = True
-
-        core_visualizer_origin = (310, 0)
-        cpu_detail_stack_origin = (310, 33)
-        gpu_detail_stack_origin = (310, 115)
-        cpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 7)
-        gpu_temp_gauge_origin = (self.display_surface.get_width() - 90, 117)
-        cpu_graph_origin = (0, 0)
-        gpu_graph_origin = (0, 110)
-
-        sys_memory_origin = (0, 75)
-        gpu_memory_origin = (0, 185)
-
-        fps_graph_origin = (0, 220)
-        fps_text_origin = (210, 230)
-        fps_label_origin = (212, 275)
-        network_text_origin = (0, 310)
-
         # CPU Data
-        self.__paint_cpu_text_stack__(cpu_detail_stack_origin, font_normal, data)
+        self.__paint_cpu_text_stack__(self.page.cpu_detail_stack_origin, self.page.font_normal, data)
 
         # GPU Data
-        self.__paint_gpu_text_stack__(gpu_detail_stack_origin, font_normal, data)
+        self.__paint_gpu_text_stack__(self.page.gpu_detail_stack_origin, self.page.font_normal, data)
 
         # CPU and GPU Temps
-        cpugpu_gauge_bg_alpha = 200
-        cpu_temp_gauge = Gauge.arc_gauge_flat_90x(
-            data[DashData.cpu_temp.field_name],
-            DashData.cpu_temp.min_value, DashData.cpu_temp.max_value, DashData.cpu_temp.unit.symbol,
-            cpugpu_gauge_bg_alpha
-        )
-        self.display_surface.blit(cpu_temp_gauge, cpu_temp_gauge_origin)
+        self.display_surface.blit(        
+            self.page.cpu_temp_gauge.update(data[DashData.cpu_temp.field_name]),
+            self.page.cpu_temp_gauge_origin)
 
-        gpu_temp_gauge = Gauge.arc_gauge_flat_90x(
-            data[DashData.gpu_temp.field_name],
-            DashData.gpu_temp.min_value, DashData.gpu_temp.max_value, DashData.gpu_temp.unit.symbol,
-            cpugpu_gauge_bg_alpha
-        )
-        self.display_surface.blit(gpu_temp_gauge, gpu_temp_gauge_origin)
+        self.display_surface.blit(
+            self.page.gpu_temp_gauge.update(data[DashData.gpu_temp.field_name]), 
+            self.page.gpu_temp_gauge_origin)
 
         # CPU and GPU Utilization
-        if None == self.__cpu_graph:
-            cpu_graph_config = GraphConfig
-            cpu_graph_config.data_field = DashData.cpu_util
-            cpu_graph_config.height, cpu_graph_config.width = 70, 300
-            cpu_graph_config.display_background = True
-            self.__cpu_graph = LineGraphReverse(cpu_graph_config)
+        self.display_surface.blit(
+            self.page.cpu_graph.update(data[DashData.cpu_util.field_name]), 
+            self.page.cpu_graph_origin)
 
-        cpu_graph = self.__cpu_graph.update(data[DashData.cpu_util.field_name])
-        self.display_surface.blit(cpu_graph, cpu_graph_origin)
-
-        if None == self.__gpu_graph:
-            gpu_graph_config = GraphConfig
-            gpu_graph_config.data_field = DashData.gpu_util
-            gpu_graph_config.height, gpu_graph_config.width = 70, 300
-            gpu_graph_config.display_background = True
-            self.__gpu_graph = LineGraphReverse(gpu_graph_config)
-
-        gpu_graph = self. __gpu_graph.update(data[DashData.gpu_util.field_name])
-        self.display_surface.blit(gpu_graph, gpu_graph_origin)
+        self.display_surface.blit(
+            self.page.gpu_graph.update(data[DashData.gpu_util.field_name]), 
+            self.page.gpu_graph_origin)
 
         # CPU Core Visualizer
-        if None == self.__core_visualizer:
-            core_visualizer_config = CoreVisualizerConfig
-            self.__core_visualizer = SimpleCoreVisualizer(data, core_visualizer_config)
-
-        core_visualizer = self.__core_visualizer.update(data)
-        self.display_surface.blit(core_visualizer, core_visualizer_origin)
+        self.display_surface.blit(
+            self.page.core_visualizer.update(data), 
+            self.page.core_visualizer_origin)
 
         # System and GPU memory usage
-        if None == self.__sys_memory_bar:
-            sys_memory_bar_config = BarGraphConfig(300, 25, DashData.sys_ram_used)
-            self.__sys_memory_bar = BarGraph(sys_memory_bar_config)
+        self.display_surface.blit(
+            self.page.sys_memory_bar.update(data[DashData.sys_ram_used.field_name]), 
+            self.page.sys_memory_origin)
 
-        sys_memory_bar_surface = self.__sys_memory_bar.update(data[DashData.sys_ram_used.field_name])
-        self.display_surface.blit(sys_memory_bar_surface, sys_memory_origin)
-
-        if None == self.__gpu_memory_bar:
-            gpu_memory_bar_config = BarGraphConfig(300, 25, DashData.gpu_ram_used)
-            self.__gpu_memory_bar = BarGraph(gpu_memory_bar_config)
-
-        gpu_memory_bar_surface = self.__gpu_memory_bar.update(data[DashData.gpu_ram_used.field_name])
-        self.display_surface.blit(gpu_memory_bar_surface, gpu_memory_origin)
+        self.display_surface.blit(
+            self.page.gpu_memory_bar.update(data[DashData.gpu_ram_used.field_name]), 
+            self.page.gpu_memory_origin)
 
         # FPS Graph and Text
-        if None == self.__fps_graph:
-            fps_graph_config = GraphConfig
-            fps_graph_config.data_field = DashData.rtss_fps
-            fps_graph_config.height, fps_graph_config.width = 70, 200
-            fps_graph_config.display_background = True
-            fps_graph_config.draw_on_zero = False
-            self.__fps_graph = LineGraphReverse(fps_graph_config)
-
         fps_value = data[DashData.rtss_fps.field_name]
-        fps_graph = self.__fps_graph.update(fps_value)
-        self.display_surface.blit(fps_graph, fps_graph_origin)
-        font_large.render_to(self.display_surface, fps_text_origin, "{}".format(fps_value), Color.white)
-        font_normal.render_to(self.display_surface, fps_label_origin, "FPS", Color.white)
+        self.display_surface.blit(self.page.fps_graph.update(fps_value), self.page.fps_graph_origin)
+        self.page.font_large.render_to(self.display_surface, self.page.fps_text_origin, "{}".format(fps_value), Color.white)
+        self.page.font_normal.render_to(self.display_surface, self.page.fps_label_origin, "FPS", Color.white)
 
         # Network Text
         network_download_text = "NIC 1 Down: {} {}".format(data[DashData.nic1_download_rate.field_name], DashData.nic1_download_rate.unit.symbol)
-        font_normal.render_to(self.display_surface, network_text_origin, network_download_text, Color.white)
+        self.page.font_normal.render_to(
+            self.display_surface, 
+            self.page.network_text_origin, 
+            network_download_text, Color.white)
+        
         network_upload_text = "Up: {} {}".format(data[DashData.nic1_upload_rate.field_name], DashData.nic1_upload_rate.unit.symbol)
-        font_normal.render_to(self.display_surface, (network_text_origin[0] + 180, network_text_origin[1]), network_upload_text, Color.white)
+        self.page.font_normal.render_to(
+            self.display_surface, 
+            (self.page.network_text_origin[0] + 180, self.page.network_text_origin[1]),
+            network_upload_text, Color.white)
