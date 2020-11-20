@@ -7,7 +7,7 @@ if __debug__:
     import traceback
 
 from aida64_sse_data import AIDA64SSEData
-from dashboard_painter import DashPainter, FontPaths, Color
+from dashboard_painter import DashPage1Painter, FontPaths, Color
 
 class Hardware:
     screen_width = 480
@@ -62,10 +62,14 @@ def start_dashboard(server_address, display_surface):
     font_message.render_to(display_surface, (0, message_y), "Initializing display...", Color.white)
     pygame.display.flip()
 
-    dash_painter = DashPainter(display_surface)
+    dash_page_1_painter = DashPage1Painter(display_surface)
 
     message_y += message_line_height
     font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
+    pygame.display.flip()
+
+    message_y += message_line_height
+    font_message.render_to(display_surface, (0, message_y), "Preparing to parse data...", Color.white)
     pygame.display.flip()
 
     # This is a generator loop, it will keep going as long as the AIDA64 stream is open
@@ -78,7 +82,7 @@ def start_dashboard(server_address, display_surface):
         parsed_data = AIDA64SSEData.parse_data(server_message.data)
         assert(0 != len(parsed_data))
         
-        dash_painter.paint(parsed_data)
+        dash_page_1_painter.paint(parsed_data)
         pygame.display.flip()
         
         # TODO: (Adam) 2020-11-17 Refactor so we can tween gauge contents while waiting for data

@@ -90,12 +90,14 @@ class Color:
     red = "#dc0000"
     white = "#ffffff"
     grey_20 = "#333333"
+    grey_40 = "#666666"
     grey_75 = "#c0c0c0"
     black = "#000000"
     cyan_dark = "#1c2f2b"
     # Colors pulled from Win10 design doc swatches
     windows_cyan_1 = "#00b693"
     windows_cyan_1_dark = "#015b4a"
+    windows_cyan_2 = "#008589"
     windows_red_1 = "#eb2400"
     windows_dkgrey_1 = "#4c4a48"
     windows_light_grey_1 = "#7b7574"
@@ -155,7 +157,7 @@ class DataField:
 class DashData:
     unknown = DataField("", "Unknown", Units.null_unit)
     cpu_util = DataField("cpu_util", "CPU Utilization", Units.percent, min_value=0, max_value=100)
-    cpu_temp = DataField("cpu_temp", "CPU Temperature", Units.celsius, min_value=20, caution_value=75, max_value=80, warn_value=82)
+    cpu_temp = DataField("cpu_temp", "CPU Temperature", Units.celsius, min_value=20, caution_value=81, max_value=80, warn_value=82)
     cpu_clock = DataField("cpu_clock", "CPU Clock", Units.megahertz, min_value=799, max_value=4500)
     cpu_power = DataField("cpu_power", "CPU Power", Units.watts, min_value=0, max_value=91)
     gpu_clock = DataField("gpu_clock", "GPU Clock", Units.megahertz, min_value=300, max_value=1770)
@@ -167,12 +169,12 @@ class DashData:
     sys_ram_used = DataField("sys_ram_used", "System RAM Used", Units.megabytes, min_value=0, caution_value=30000, max_value=32768)
     nic1_download_rate = DataField("nic1_download_rate", "NIC1 Download Rate", Units.kilobytes_per_second)
     nic1_upload_rate = DataField("nic1_upload_rate", "NIC2 Upload Rate", Units.kilobytes_per_second, min_value=0, max_value=1000000)
-    cpu_fan = DataField("cpu_fan", "CPU Fan Speed", Units.rpm, min_value=0, max_value=1500)
-    cpu_opt_fan = DataField("cpu_opt_fan", "CPU OPT Fan Speed", Units.rpm, min_value=0, max_value=1500)
-    chassis_1_fan = DataField("chassis_1_fan", "Chassis 1 Fan Speed", Units.rpm, warn_value=300, min_value=400, max_value=2000)
-    chassis_2_fan = DataField("chassis_2_fan", "Chassis 2 Fan Speed", Units.rpm, warn_value=300,min_value=400, max_value=2000)
-    chassis_2_fan = DataField("chassis_3_fan", "Chassis 3 Fan Speed", Units.rpm, warn_value=300, min_value=400, max_value=2000)
-    gpu_fan = DataField("gpu_fan", "GPU Fan Speed", Units.rpm, warn_value=300, min_value=400, max_value=2000)
+    cpu_fan = DataField("cpu_fan", "CPU Fan Speed", Units.rpm, min_value=1000, max_value=1460, warn_value=1100)
+    cpu_opt_fan = DataField("cpu_opt_fan", "CPU OPT Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=1500)
+    chassis_1_fan = DataField("chassis_1_fan", "Chassis 1 Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=2000)
+    chassis_2_fan = DataField("chassis_2_fan", "Chassis 2 Fan Speed", Units.rpm, warn_value=300,min_value=500, max_value=2000)
+    chassis_2_fan = DataField("chassis_3_fan", "Chassis 3 Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=2000)
+    gpu_fan = DataField("gpu_fan", "GPU Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=2000)
     gpu_2_fan = DataField("gpu_2_fan", "GPU Fan Speed?", Units.rpm, min_value=0, max_value=2000)
     desktop_resolution = DataField("desktop_resolution", "Desktop Display Resolution")
     desktop_refresh_rate = DataField("vertical_refresh_rate", "Display Vertical Refresh Rate")
@@ -195,7 +197,6 @@ class CoreVisualizerConfig:
         self.inactive_color = Color.windows_cyan_1_dark
         # Percentage of activity required to light up core representation
         self.activity_threshold_percent = 12
-
 class SimpleCoreVisualizer:
     __config = CoreVisualizerConfig
     __core_count = 0
@@ -244,7 +245,7 @@ class SimpleCoreVisualizer:
 
     def update(self, data):
         assert(None != self.__last_base_surface and 0 != len(self.__last_core_activity))
-        assert(self.__core_count == len(self.__last_core_activity))
+        #assert(self.__core_count == len(self.__last_core_activity))
         assert(len(data) >= self.__core_count)
 
         # Copy in last core surface, we will only update the altered representations
@@ -294,7 +295,7 @@ class SimpleCoreVisualizer:
                 core_origin_x += self.__core_width + self.__config.core_spacing
 
 
-        assert(len(self.__last_core_activity) == len(core_activity_tracking))
+        #assert(len(self.__last_core_activity) == len(core_activity_tracking))
         self.__last_core_activity = core_activity_tracking
 
         # Save for next update
@@ -302,7 +303,7 @@ class SimpleCoreVisualizer:
 
         return self.__base_surface
 
-# TODO: (Adam) 2020-11-18 Really dumbed here with Python classes, configurations need to be re-structured
+
 class LineGraphConfig:
     def __init__(self, height, width, data_field):
         self.height, self.width = height, width
@@ -310,13 +311,12 @@ class LineGraphConfig:
         self.data_field = data_field
         self.steps_per_update = 6
         self.line_color = Color.yellow
-        self.line_width = 2 # Line weights below 2 might result in missing segments
+        self.line_width = 1
         self.vertex_color = Color.yellow
         self.vertex_weight = 1
         self.draw_vertices = False
         self.display_background = False
         self. draw_on_zero = True
-
 class LineGraphReverse:
     # Simple line graph that plots data from right to left
 
@@ -490,8 +490,8 @@ class GaugeConfig:
         self.counter_sweep = False
         self.show_value = True
         self.show_unit_symbol = True
-
-
+        self.show_label_instead_of_value = False
+        self.label = ""
 class FlatArcGauge:
     __config = None
     __last_value = None
@@ -522,6 +522,8 @@ class FlatArcGauge:
         assert(None != self.__static_elements_surface)
         assert(0 < self.__config.aa_multiplier)
         
+        print("Preparing {} arc gauge components...".format(self.__config.data_field.field_name))
+
         # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
         # PNG shapes to build up the gauge then scaling down to final size.
         arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_base_1.png"))
@@ -593,6 +595,8 @@ class FlatArcGauge:
         shadow_color = pygame.Color(self.__config.shadow_color)
         shadow_color.a = self.__config.shadow_alpha
         self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
+
+        print("Done generating components!")
         
 
     def update(self, value):
@@ -631,8 +635,20 @@ class FlatArcGauge:
         self.__working_surface.blit(rotated_needle, needle_center)
 
         # Value Text
-        if None != self.__config.value_font:
-            value_surface = self.__config.value_font.render("{}".format(value), Color.white)
+        value_color = self.__config.value_text_color
+        if None !=  self.__config.data_field.warn_value:
+            if not self.__config.counter_sweep and int(value) > self.__config.data_field.warn_value:
+                value_color = Color.windows_red_1 # TODO: configurable warn color?
+            elif self.__config.counter_sweep and int(value) < self.__config.data_field.warn_value:
+                value_color = Color.windows_red_1 # TODO: configurable warn color?
+
+        if None != self.__config.value_font and False != self.__config.show_value:
+
+            value_text = "{}".format(value)
+            if self.__config.show_label_instead_of_value:
+                value_text = self.__config.label
+
+            value_surface = self.__config.value_font.render(value_text, value_color)
 
             if None != self.__config.value_font_origin:
                 value_origin = self.__config.value_font_origin
@@ -660,6 +676,9 @@ class DashPage1:
         self.font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
         self.font_gauge_value.strong = True
 
+        self.fan_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 10)
+        #self.fan_gauge_value.strong = True
+
         self.core_visualizer_origin = (310, 0)
         self.cpu_detail_stack_origin = (310, 33)
         self.gpu_detail_stack_origin = (310, 115)
@@ -676,11 +695,18 @@ class DashPage1:
         self.fps_label_origin = (212, 285)
         self.network_text_origin = (0, 310)
 
-        self.__cpu_temp_gauge_config = GaugeConfig(DashData.cpu_temp, 45, self.font_gauge_value, (35, 70))
-        self.cpu_temp_gauge = FlatArcGauge(self.__cpu_temp_gauge_config)
+        self.fan1_gauge_origin = (self.cpu_temp_gauge_origin[0], 230)
+        self.fan_opt_gauge_origin = (display_width - 40, 230)
+        self.cpu_fan_gauge_origin = (self.cpu_temp_gauge_origin[0], 275)
+        self.gpu_fan_gauge_origin = (self.fan_opt_gauge_origin[0], self.cpu_fan_gauge_origin[1])
 
-        self.__gpu_temp_gauge_config = GaugeConfig(DashData.gpu_temp, 45, self.font_gauge_value, (35, 70))
-        self.gpu_temp_gauge = FlatArcGauge(self.__gpu_temp_gauge_config)
+        self.mobo_temp_origin = (display_width - 52, 268)
+
+        cpu_temp_gauge_config = GaugeConfig(DashData.cpu_temp, 45, self.font_gauge_value, (35, 70))
+        self.cpu_temp_gauge = FlatArcGauge(cpu_temp_gauge_config)
+
+        gpu_temp_gauge_config = GaugeConfig(DashData.gpu_temp, 45, self.font_gauge_value, (35, 70))
+        self.gpu_temp_gauge = FlatArcGauge(gpu_temp_gauge_config)
 
         cpu_graph_config = LineGraphConfig(70, 300, DashData.cpu_util)
         cpu_graph_config.display_background = True
@@ -704,8 +730,52 @@ class DashPage1:
         fps_graph_config.draw_on_zero = False
         self.fps_graph = LineGraphReverse(fps_graph_config)
 
+        # FAN1 = Upper intake (lower intake does not report)
+        fan1_gauge_config = GaugeConfig(DashData.chassis_1_fan, 20, self.fan_gauge_value, (17, 29))
+        fan1_gauge_config.arc_main_color = Color.grey_40
+        fan1_gauge_config.needle_color = Color.white
+        fan1_gauge_config.bg_alpha = 0
+        fan1_gauge_config.counter_sweep = True
+        fan1_gauge_config.show_unit_symbol = False
+        fan1_gauge_config.show_label_instead_of_value = True
+        fan1_gauge_config.label = "I"
+        self.fan1_gauge = FlatArcGauge(fan1_gauge_config)
 
-class DashPainter:
+        # FAN2 = Drive bay intake?
+        # FAN3 = Rear exhaust
+
+        # CPU OPT fan = Forward exhaust
+        fan_opt_gauge_config = GaugeConfig(DashData.cpu_opt_fan, 20, self.fan_gauge_value, (18, 29))
+        fan_opt_gauge_config.arc_main_color = Color.grey_40
+        fan_opt_gauge_config.needle_color = Color.white
+        fan_opt_gauge_config.bg_alpha = 0
+        fan_opt_gauge_config.counter_sweep = True
+        fan_opt_gauge_config.show_label_instead_of_value = True
+        fan_opt_gauge_config.label = "E"
+        self.fan_opt_gauge = FlatArcGauge(fan_opt_gauge_config)
+
+        cpu_fan_gauge_config = GaugeConfig(DashData.cpu_fan, 20, self.fan_gauge_value, (17, 29))
+        cpu_fan_gauge_config.arc_main_color = Color.grey_40
+        cpu_fan_gauge_config.needle_color = Color.white
+        cpu_fan_gauge_config.bg_alpha = 0
+        cpu_fan_gauge_config.counter_sweep = True
+        cpu_fan_gauge_config.show_unit_symbol = False
+        cpu_fan_gauge_config.show_label_instead_of_value = True
+        cpu_fan_gauge_config.label = "C"
+        self.cpu_fan_gauge = FlatArcGauge(cpu_fan_gauge_config)
+
+        gpu_fan_gauge_config = GaugeConfig(DashData.gpu_fan, 20, self.fan_gauge_value, (17, 29))
+        gpu_fan_gauge_config.arc_main_color = Color.grey_40
+        gpu_fan_gauge_config.needle_color = Color.white
+        gpu_fan_gauge_config.bg_alpha = 0
+        gpu_fan_gauge_config.counter_sweep = True
+        gpu_fan_gauge_config.show_unit_symbol = False
+        gpu_fan_gauge_config.show_label_instead_of_value = True
+        gpu_fan_gauge_config.label = "G"
+        self.gpu_fan_gauge = FlatArcGauge(gpu_fan_gauge_config)
+
+
+class DashPage1Painter:
     page = None
 
     def __init__(self, display_surface):
@@ -825,6 +895,23 @@ class DashPainter:
         self.display_surface.blit(self.page.fps_graph.update(fps_value), self.page.fps_graph_origin)
         self.page.font_large.render_to(self.display_surface, self.page.fps_text_origin, "{}".format(fps_value), Color.white)
         self.page.font_normal.render_to(self.display_surface, self.page.fps_label_origin, "FPS", Color.white)
+
+        # Fan gauges
+        self.display_surface.blit(        
+            self.page.fan1_gauge.update(data[DashData.chassis_1_fan.field_name]),
+            self.page.fan1_gauge_origin)
+        self.display_surface.blit(        
+            self.page.fan_opt_gauge.update(data[DashData.cpu_opt_fan.field_name]),
+            self.page.fan_opt_gauge_origin)
+        self.display_surface.blit(        
+            self.page.cpu_fan_gauge.update(data[DashData.cpu_fan.field_name]),
+            self.page.cpu_fan_gauge_origin)
+        self.display_surface.blit(        
+            self.page.gpu_fan_gauge.update(data[DashData.gpu_fan.field_name]),
+            self.page.gpu_fan_gauge_origin)
+
+        # Motherboard temp (nestled between all the fans)
+        self.page.font_normal.render_to(self.display_surface, self.page.mobo_temp_origin, "{}".format(data[DashData.motherboard_temp.field_name]), Color.white)
 
         # Network Text
         network_download_text = "NIC 1 Down: {} {}".format(data[DashData.nic1_download_rate.field_name], DashData.nic1_download_rate.unit.symbol)
