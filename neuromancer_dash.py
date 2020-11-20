@@ -39,7 +39,7 @@ def get_command_args(argv):
     return server_address
 
 
-def start_dashboard(server_address, display_surface):
+def start_dashboard(server_address, display_surface, dash_page_1_painter):
     assert(0 != len(server_address))
 
     font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
@@ -58,15 +58,14 @@ def start_dashboard(server_address, display_surface):
     font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
     pygame.display.flip()
 
-    message_y += message_line_height
-    font_message.render_to(display_surface, (0, message_y), "Initializing display...", Color.white)
-    pygame.display.flip()
+    #message_y += message_line_height
+    #font_message.render_to(display_surface, (0, message_y), "Initializing display...", Color.white)
+    #pygame.display.flip()
 
-    dash_page_1_painter = DashPage1Painter(display_surface)
 
-    message_y += message_line_height
-    font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
-    pygame.display.flip()
+    #message_y += message_line_height
+    #font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
+    #pygame.display.flip()
 
     message_y += message_line_height
     font_message.render_to(display_surface, (0, message_y), "Preparing to parse data...", Color.white)
@@ -124,11 +123,13 @@ def main(argv):
         pygame.HWSURFACE | pygame.DOUBLEBUF
     )
 
+    dash_page_1_painter = DashPage1Painter(display_surface)
+
     while True:
         # Dashboard will fail if the computer sleeps or is otherwise unavailable, keep
         # retrying until it starts to respond again.
         try:
-            start_dashboard(server_address, display_surface)
+            start_dashboard(server_address, display_surface, dash_page_1_painter)
         except Exception:
             if __debug__:
                 traceback.print_exc()
