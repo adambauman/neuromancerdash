@@ -2,6 +2,7 @@
 
 import pygame
 import sys, getopt
+from time import sleep
 
 if __debug__:
     import traceback
@@ -42,10 +43,12 @@ def get_command_args(argv):
 def start_dashboard(server_address, display_surface, dash_page_1_painter):
     assert(0 != len(server_address))
 
-    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-    font_message.strong = True
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 14)
+    #font_message.strong = True
     font_message.kerning = True
     message_line_height = 20
+
+    display_surface.fill(Color.black)
 
     message_y = 0
     font_message.render_to(display_surface, (0, message_y), "Connecting to {}...".format(server_address), Color.white)
@@ -125,10 +128,9 @@ def main(argv):
 
     display_surface.fill(Color.black)
 
-    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-    font_message.strong = True
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 14)
+    #font_message.strong = True
     font_message.kerning = True
-    message_line_height = 20
 
     font_message.render_to(display_surface, (0, 0), "Preparing commponents, please wait...", Color.white)
     pygame.display.flip()
@@ -143,7 +145,12 @@ def main(argv):
         except Exception:
             if __debug__:
                 traceback.print_exc()
-            
+
+            pygame.draw.rect(display_surface, Color.black, (0, 0, 480, 20))
+            font_message.render_to(display_surface, (0, 0), "Exception occurred, recovering...", Color.yellow)
+            pygame.display.flip()
+
+            sleep(2)
             # TODO: (Adam) 2020-11-15 thread matrix screen saver during reconnect attempts
             #start_reconnect_screensaver(server_address, display_surface)
 
