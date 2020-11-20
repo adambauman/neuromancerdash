@@ -30,18 +30,22 @@ class Helpers:
             
 
 class GaugeConfig:
-    def __init__(self, data_field, radius = 45):
+    def __init__(self, data_field, radius = 45, value_font = None, value_font_origin = None):
         self.radius = radius
         self.data_field = data_field
         self.redline_degrees = 35
         self.aa_multiplier = 2
+
+        self.value_font = value_font # Take from caller so you can match their other displays
+        self.value_font_origin = value_font_origin # If None the value will be centered
 
         self.arc_main_color = Color.windows_cyan_1
         self.arc_redline_color = Color.windows_red_1
         self.needle_color = Color.windows_light_grey_1
         self.shadow_color = Color.black
         self.shadow_alpha = 50
-        self.text_color = Color.white
+        self.unit_text_color = Color.white
+        self.value_text_color = Color.white
         self.bg_color = Color.windows_dkgrey_1
         self.bg_alpha = 200
 
@@ -73,7 +77,7 @@ class FlatArcGauge:
         self.__prepare_constant_elements()
 
         assert(None != self.__static_elements_surface)
-        #assert(None != self.__needle_surface and None != self.__needle_shadow_surface)
+        assert(None != self.__needle_surface and None != self.__needle_shadow_surface)
 
     def __prepare_constant_elements(self):
         assert(None != self.__static_elements_surface)
@@ -90,7 +94,6 @@ class FlatArcGauge:
         temp_surface = pygame.Surface(base_scaled_size, pygame.SRCALPHA)
         center = (temp_surface.get_width() / 2, temp_surface.get_height() / 2)
 
-        #scaled_radius = self.__config.radius * self.__config.aa_multiplier
         scaled_radius = arc_bitmap.get_width() / 2
 
         # Draw background
@@ -118,7 +121,7 @@ class FlatArcGauge:
         if self.__config.show_unit_symbol:
             font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 120)
             font_unit.strong = False
-            unit_text_surface = font_unit.render(self.__config.data_field.unit.symbol, self.__config.text_color)
+            unit_text_surface = font_unit.render(self.__config.data_field.unit.symbol, self.__config.unit_text_color)
             center_align = Helpers.calculate_center_align(temp_surface, unit_text_surface[0])
             temp_surface.blit(unit_text_surface[0], (center_align[0], center_align[1] + 300))
 
@@ -133,7 +136,7 @@ class FlatArcGauge:
         self.__static_elements_surface.fill((0, 0, 0, 0))
         self.__static_elements_surface = scaled_surface.copy()
      
-        # Setup needle elements
+        # Setup needle elements, these will be rotated when blitted but the memeber surfaces will remain static
         needle_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_needle_1.png"))
         
         # Apply color to needle, scale, then blit out to the needle surface
@@ -146,13 +149,12 @@ class FlatArcGauge:
         needle_scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
         self.__needle_surface = needle_scaled_surface.copy()
 
-        # Setup the shadow
+        # Needle shadow
         self.__needle_shadow_surface = self.__needle_surface.copy()
         shadow_color = pygame.Color(self.__config.shadow_color)
         shadow_color.a = self.__config.shadow_alpha
         self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
         
-        #self.__static_elements_surface.blit(needle_scaled_surface, (0, 0))
 
     def update(self, value):
         assert(None != self.__working_surface)
@@ -166,8 +168,6 @@ class FlatArcGauge:
         # Needle
         # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
         rotated_needle = pygame.transform.rotozoom(self.__needle_surface, arc_transposed_value, 1)
-        #needle_x = self.__working_surface.get_width() - (rotated_needle.get_width() / 2)
-        #needle_y = self.__working_surface.get_height() - (rotated_needle.get_height() / 2)
 
         # Shadow
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
@@ -187,7 +187,17 @@ class FlatArcGauge:
         needle_center = Helpers.calculate_center_align(self.__working_surface, rotated_needle)
         self.__working_surface.blit(rotated_needle, needle_center)
 
-        #self.__working_surface.blit(self.__needle_surface, (0, 0))
+        # Value Text
+        if None != self.__config.value_font:
+            value_surface = self.__config.value_font.render("{}".format(value), Color.white)
+
+            if None != self.__config.value_font_origin:
+                value_origin = self.__config.value_font_origin
+            else:
+                value_origin = Helpers.calculate_center_align(self.__working_surface, value_surface[0])
+
+            self.__working_surface.blit(value_surface[0], value_origin)
+
         return self.__working_surface
 
 
@@ -208,20 +218,10 @@ def main(argv):
         pygame.HWSURFACE | pygame.DOUBLEBUF
     )
 
-    #bg_color = gauge_config.bg_color
-    #radius = 45
-    #pygame.gfxdraw.aacircle(self.__static_elements_surface, surface_center_x, surface_center_y, radius, bg_color)
-    #pygame.gfxdraw.filled_circle(self.__static_elements_surface, surface_center_x, surface_center_y, radius, bg_color)
-    #pygame.draw.circle(display_surface, bg_color, (55, 55), radius)
-    #self.__static_elements_surface = pygame.transform.smoothscale(aa_surface, (self.__static_elements_surface.get_width(), self.__static_elements_surface.get_height()))
-    #display_surface.blit(Helpers.get_aa_circle(bg_color, radius, 2), (110, 10))
-    #display_surface.blit(Helpers.get_aa_circle(bg_color, radius, 4), (210, 10))
-    #display_surface.blit(Helpers.get_aa_circle(bg_color, radius, 100), (310, 10))
 
-    #gauge_face =  pygame.image.load(os.path.join(AssetPath.gauges, "arc_flat_90px_style1.png"))
-    #display_surface.blit(gauge_face, (110, 110))
-
-    gauge_config = GaugeConfig(DashData.cpu_temp)
+    font_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+    font_value.strong = True
+    gauge_config = GaugeConfig(DashData.cpu_temp, 45, font_value, (35, 70))
     cpu_temp_gauge = FlatArcGauge(gauge_config)
 
     test_value = 20
