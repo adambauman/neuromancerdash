@@ -799,7 +799,6 @@ class DashPage1Painter:
         self.display_surface = display_surface
         self.page = DashPage1(display_surface.get_width(), display_surface.get_height())
 
-
     def __get_next_vertical_stack_origin__(self, last_origin, font, padding = 0):
         x = last_origin[0]
         y = last_origin[1] + font.get_sized_height() + padding
@@ -809,26 +808,46 @@ class DashPage1Painter:
         assert(0 != len(data))
 
         stack_vertical_adjustment = -2
-
+        
         text_origin = origin
-        text = "{} {}".format(data[DashData.cpu_power.field_name], DashData.cpu_power.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        try:
+            text = "{} {}".format(data[DashData.cpu_power.field_name], DashData.cpu_power.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(data[DashData.cpu_clock.field_name], DashData.cpu_clock.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        try:
+            text = "{} {}".format(data[DashData.cpu_clock.field_name], DashData.cpu_clock.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{}{}".format(data[DashData.cpu_util.field_name], DashData.cpu_util.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        try:
+            text = "{}{}".format(data[DashData.cpu_util.field_name], DashData.cpu_util.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "RAM Used"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+        try:
+            text = "RAM Used"
+            font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(data[DashData.sys_ram_used.field_name], DashData.sys_ram_used.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        try:
+            text = "{} {}".format(data[DashData.sys_ram_used.field_name], DashData.sys_ram_used.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
     def __paint_gpu_text_stack__(self, origin, font_normal, data):
         assert(0 != len(data))
@@ -836,32 +855,60 @@ class DashPage1Painter:
         stack_vertical_adjustment = -2
 
         text_origin = origin
-        text = "PerfCap:"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        try:
+            text = "PerfCap:"
+            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
-        font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text,11, ""), Color.yellow)
+        try:
+            text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
+            font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text,11, ""), Color.yellow)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        try:
+            text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(data[DashData.gpu_clock.field_name], DashData.gpu_clock.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        try:
+            text = "{} {}".format(data[DashData.gpu_clock.field_name], DashData.gpu_clock.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{}{}".format(data[DashData.gpu_util.field_name], DashData.gpu_util.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        try:
+            text = "{}{}".format(data[DashData.gpu_util.field_name], DashData.gpu_util.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "RAM Used"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+        try:
+            text = "RAM Used"
+            font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(data[DashData.gpu_ram_used.field_name], DashData.gpu_ram_used.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        try:
+            text = "{} {}".format(data[DashData.gpu_ram_used.field_name], DashData.gpu_ram_used.unit.symbol)
+            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        except:
+             if __debug__:
+                traceback.print_exc()
 
     def paint(self, data):
         assert(0 != len(data))
