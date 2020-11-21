@@ -269,10 +269,12 @@ class SimpleCoreVisualizer:
 
             key_name = "cpu{}_util".format(index)
             core_activity_value = 0
-            if key_name in data:
-                # NOTE: (Adam) 2020-11-19 Util key data sometimes get mixed up, just set false if a \
-                #           core or two are missing
+            try:
                 core_activity_value = int(data[key_name])
+            except:
+                core_activity_value = 0
+                if __debug__:
+                    traceback.print_exc()
 
             core_active = False
             if core_activity_value >= self.__config.activity_threshold_percent:
@@ -820,44 +822,25 @@ class DashPage1Painter:
         stack_vertical_adjustment = -2
         
         text_origin = origin
-        try:
-            text = "{} {}".format(data[DashData.cpu_power.field_name], DashData.cpu_power.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{} {}".format(DashData.best_attempt_read(data, DashData.cpu_power, "0"), DashData.cpu_power.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{} {}".format(data[DashData.cpu_clock.field_name], DashData.cpu_clock.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{} {}".format(DashData.best_attempt_read(data, DashData.cpu_clock, "0"), DashData.cpu_clock.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{}{}".format(data[DashData.cpu_util.field_name], DashData.cpu_util.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{}{}".format(DashData.best_attempt_read(data, DashData.cpu_util, "0"), DashData.cpu_util.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "RAM Used"
-            font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "RAM Used"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{} {}".format(data[DashData.sys_ram_used.field_name], DashData.sys_ram_used.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{} {}".format(DashData.best_attempt_read(data, DashData.sys_ram_used, "0"), DashData.sys_ram_used.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
     def __paint_gpu_text_stack__(self, origin, font_normal, data):
         assert(0 != len(data))
@@ -865,60 +848,32 @@ class DashPage1Painter:
         stack_vertical_adjustment = -2
 
         text_origin = origin
-        try:
-            text = "PerfCap:"
-            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "PerfCap:"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{}".format(data[DashData.gpu_perfcap_reason.field_name])
-            font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text,11, ""), Color.yellow)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{}".format(DashData.best_attempt_read(data, DashData.gpu_perfcap_reason, "0"))
+        font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text,11, ""), Color.yellow)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{} {}".format(data[DashData.gpu_power.field_name], DashData.gpu_power.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_power, "0"), DashData.gpu_power.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{} {}".format(data[DashData.gpu_clock.field_name], DashData.gpu_clock.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.white)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_clock, "0"), DashData.gpu_clock.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{}{}".format(data[DashData.gpu_util.field_name], DashData.gpu_util.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{}{}".format(DashData.best_attempt_read(data, DashData.gpu_util, "0"), DashData.gpu_util.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "RAM Used"
-            font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "RAM Used"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        try:
-            text = "{} {}".format(data[DashData.gpu_ram_used.field_name], DashData.gpu_ram_used.unit.symbol)
-            font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-        except:
-             if __debug__:
-                traceback.print_exc()
+        text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_ram_used, "0"), DashData.gpu_ram_used.unit.symbol)
+        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
     def paint(self, data):
         assert(0 != len(data))
@@ -957,53 +912,65 @@ class DashPage1Painter:
 
         # System and GPU memory usage
         self.display_surface.blit(
-            self.page.sys_memory_bar.update(data[DashData.sys_ram_used.field_name]), 
+            self.page.sys_memory_bar.update(DashData.best_attempt_read(data, DashData.sys_ram_used, "0")), 
             self.page.sys_memory_origin)
 
         self.display_surface.blit(
-            self.page.gpu_memory_bar.update(data[DashData.gpu_ram_used.field_name]), 
+            self.page.gpu_memory_bar.update(DashData.best_attempt_read(data, DashData.gpu_ram_used, "0")), 
             self.page.gpu_memory_origin)
 
         # FPS Graph and Text
-        fps_value = data[DashData.rtss_fps.field_name]
+        fps_value = DashData.best_attempt_read(data, DashData.rtss_fps, "0")
         self.display_surface.blit(self.page.fps_graph.update(fps_value), self.page.fps_graph_origin)
         self.page.font_large.render_to(self.display_surface, self.page.fps_text_origin, "{}".format(fps_value), Color.white)
         self.page.font_normal.render_to(self.display_surface, self.page.fps_label_origin, "FPS", Color.white)
 
         # Fan gauges
         self.display_surface.blit(        
-            self.page.fan1_gauge.update(data[DashData.chassis_1_fan.field_name]),
+            self.page.fan1_gauge.update(DashData.best_attempt_read(data, DashData.chassis_1_fan, "0")),
             self.page.fan1_gauge_origin)
         self.display_surface.blit(        
-            self.page.fan_opt_gauge.update(data[DashData.cpu_opt_fan.field_name]),
+            self.page.fan_opt_gauge.update(DashData.best_attempt_read(data, DashData.cpu_opt_fan, "0")),
             self.page.fan_opt_gauge_origin)
         self.display_surface.blit(        
-            self.page.cpu_fan_gauge.update(data[DashData.cpu_fan.field_name]),
+            self.page.cpu_fan_gauge.update(DashData.best_attempt_read(data, DashData.cpu_fan, "0")),
             self.page.cpu_fan_gauge_origin)
         self.display_surface.blit(        
-            self.page.gpu_fan_gauge.update(data[DashData.gpu_fan.field_name]),
+            self.page.gpu_fan_gauge.update(DashData.best_attempt_read(data, DashData.gpu_fan, "0")),
             self.page.gpu_fan_gauge_origin)
 
         # Motherboard temp (nestled between all the fans)
-        self.page.font_normal.render_to(self.display_surface, self.page.mobo_temp_origin, "{}".format(data[DashData.motherboard_temp.field_name]), Color.white)
+        self.page.font_normal.render_to(
+            self.display_surface, self.page.mobo_temp_origin, 
+            "{}".format(DashData.best_attempt_read(data, DashData.motherboard_temp, "0")), 
+            Color.white)
 
         # Disk activity
         disk_count = 4
         disk_y_offset = 0
         for index in range(disk_count):
+            try:
+                disk_activity_value = data["disk_{}_activity".format(index)]
+            except:
+                disk_activity_value = "0"
+                if __debug__:
+                    traceback.print_exc()
+
             self.display_surface.blit(
-                self.page.disk_activity_bar.update(data["disk_{}_activity".format(index)]), 
+                self.page.disk_activity_bar.update(disk_activity_value), 
                 (self.page.disk_activity_origin[0], self.page.disk_activity_origin[1] + disk_y_offset))
             disk_y_offset += self.page.disk_activity_y_spacing
 
         # Network Text
-        network_download_text = "NIC 1 Down: {} {}".format(data[DashData.nic1_download_rate.field_name], DashData.nic1_download_rate.unit.symbol)
+        nic1_down_value = DashData.best_attempt_read(data, DashData.nic1_download_rate, "0")
+        network_download_text = "NIC 1 Down: {} {}".format(nic1_down_value, DashData.nic1_download_rate.unit.symbol)
         self.page.font_normal.render_to(
             self.display_surface, 
             self.page.network_text_origin, 
             network_download_text, Color.white)
         
-        network_upload_text = "Up: {} {}".format(data[DashData.nic1_upload_rate.field_name], DashData.nic1_upload_rate.unit.symbol)
+        nic1_up_value = DashData.best_attempt_read(data, DashData.nic1_upload_rate, "0")
+        network_upload_text = "Up: {} {}".format(nic1_up_value, DashData.nic1_upload_rate.unit.symbol)
         self.page.font_normal.render_to(
             self.display_surface, 
             (self.page.network_text_origin[0] + 180, self.page.network_text_origin[1]),
