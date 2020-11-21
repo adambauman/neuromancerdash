@@ -186,6 +186,16 @@ class DashData:
     disk_activity = DataField("disk_{}_activity", "Disk {} Activity", Units.percent, min_value=0, max_value=100)
     cpu_core_utilization = DataField("cpu{}_util", "CPU Core {} Utilization", Units.percent, min_value=0, max_value=100)
 
+    def best_attempt_read(data, data_field, default_value):
+        try:
+            value = data[data_field.field_name]
+        except:
+            value = default_value
+            if __debug__:
+                traceback.print_exc()
+
+        return value
+
 
 class CoreVisualizerConfig:
     def __init__(self, core_count):
@@ -924,20 +934,20 @@ class DashPage1Painter:
 
         # CPU and GPU Temps
         self.display_surface.blit(        
-            self.page.cpu_temp_gauge.update(data[DashData.cpu_temp.field_name]),
+            self.page.cpu_temp_gauge.update(DashData.best_attempt_read(data, DashData.cpu_temp, "0")),
             self.page.cpu_temp_gauge_origin)
 
         self.display_surface.blit(
-            self.page.gpu_temp_gauge.update(data[DashData.gpu_temp.field_name]), 
+            self.page.gpu_temp_gauge.update(DashData.best_attempt_read(data, DashData.gpu_temp, "0")), 
             self.page.gpu_temp_gauge_origin)
 
         # CPU and GPU Utilization
         self.display_surface.blit(
-            self.page.cpu_graph.update(data[DashData.cpu_util.field_name]), 
+            self.page.cpu_graph.update(DashData.best_attempt_read(data, DashData.cpu_util, "0")), 
             self.page.cpu_graph_origin)
 
         self.display_surface.blit(
-            self.page.gpu_graph.update(data[DashData.gpu_util.field_name]), 
+            self.page.gpu_graph.update(DashData.best_attempt_read(data, DashData.gpu_util, "0")), 
             self.page.gpu_graph_origin)
 
         # CPU Core Visualizer
