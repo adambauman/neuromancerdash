@@ -2,7 +2,6 @@
 
 import pygame
 import sys, getopt
-from time import sleep
 
 if __debug__:
     import traceback
@@ -146,13 +145,14 @@ def main(argv):
             if __debug__:
                 traceback.print_exc()
 
-            pygame.draw.rect(display_surface, Color.black, (0, 0, 480, 20))
-            font_message.render_to(display_surface, (0, 0), "Exception occurred, recovering...", Color.yellow)
-            pygame.display.flip()
-
-            sleep(2)
             # TODO: (Adam) 2020-11-15 thread matrix screen saver during reconnect attempts
             #start_reconnect_screensaver(server_address, display_surface)
+
+        display_surface.fill(Color.black)
+        font_message.render_to(display_surface, (0, 0), "Exception occurred, recovering...", Color.yellow)
+        pygame.display.flip()
+        pygame.time.wait(2000)
+
 
     pygame.quit()
 
