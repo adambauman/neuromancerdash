@@ -47,7 +47,7 @@ class AIDA64SSEData:
         assert(0 != len(server_address))
 
         print("Connecting to SSEClient \'" + server_address + "\'...")
-        messages = SSEClient(server_address, retry=100)
+        messages = SSEClient(server_address, timeout=0.500)
         print("Connected!")
 
         return messages

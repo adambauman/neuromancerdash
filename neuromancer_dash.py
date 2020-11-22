@@ -114,6 +114,8 @@ def main(argv):
                 print("Reconnect attempt #{}...".format(reconnect_attempt_count))
 
         if reconnect_attempts_until_screensaver <= reconnect_attempt_count and False == screensaver_running:
+            if __debug__:
+                print("Starting screensaver...")
             screensaver.start()
             screensaver_running = True
 
