@@ -535,7 +535,8 @@ class FlatArcGauge:
         assert(None != self.__static_elements_surface)
         assert(0 < self.__config.aa_multiplier)
         
-        print("Preparing {} arc gauge components...".format(self.__config.data_field.field_name))
+        if __debug__:
+            print("Preparing {} arc gauge components...".format(self.__config.data_field.field_name))
 
         # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
         # PNG shapes to build up the gauge then scaling down to final size.
@@ -609,7 +610,8 @@ class FlatArcGauge:
         shadow_color.a = self.__config.shadow_alpha
         self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
 
-        print("Done generating components!")
+        if __debug__:
+            print("Done generating components!")
         
 
     def update(self, value):

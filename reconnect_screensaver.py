@@ -30,6 +30,8 @@ class MatrixScreenSaver:
 
     def __init__(self, surface, startup_message = "", stop_requested = lambda : False):
 
+        surface.fill("#000000")
+
         #try:
         #    fo = open("indata.txt", "r+")
         #    str = fo.readline()
