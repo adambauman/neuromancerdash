@@ -358,6 +358,7 @@ def main(argv):
     assert(None != server_address)
 
     pygame.init()
+    pygame.mixer.quit()
     pygame.mouse.set_visible(False)
     pygame.event.set_allowed([pygame.QUIT])
     
