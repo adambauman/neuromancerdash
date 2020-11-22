@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import pygame
@@ -13,7 +14,6 @@ from aida64_sse_data import AIDA64SSEData
 from dashboard_painter import DashPage1Painter, FontPaths, Color
 #from reconnect_screensaver import MatrixScreenSaver
 
-global g_connection_test_success
 g_connection_test_success = False
 
 class Hardware:
@@ -241,6 +241,7 @@ class MatrixScreensaver:
 
         # main matrix, has char switch
         while notDone:
+            #print("{}".format(g_connection_test_success))
             if g_connection_test_success:
                 print("Screensaver: Connection test success")
                 return
@@ -342,10 +343,13 @@ def test_server_connection(server_address):
                 print("Making test request to {}".format(server_address))
 
             response = requests.get(server_address, timeout = 1)
-            if 200 == response.status.code:
-                break
+            print("Test success, setting global success variable...")
+            global g_connection_test_success
+            g_connection_test_success = True
+            break
         except:
             if __debug__:
+                traceback.print_exc()
                 print("Connect test failed")
 
 
