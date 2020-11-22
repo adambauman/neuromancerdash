@@ -15,7 +15,6 @@ class MatrixScreenSaver:
 
     def IsWritten(self, lettersOnScreen, str):
         defTemp = True
-        #for x in range((lettersOnScreen[0] / 2) - (len(str) / 2), (lettersOnScreen[0] / 2) + (len(str) / 2) + 1):
         for x in range(int((lettersOnScreen[0] / 2) - (len(str) / 2)), int((lettersOnScreen[0] / 2) + (len(str) / 2) + 1)):
             if self.__xHeads[x] == -1:
                 defTemp = False
@@ -88,34 +87,20 @@ class MatrixScreenSaver:
         if len(str) > 0:
             wordMode = True
 
-            #for x in range(int(lettersOnScreen[0] / 2) - int((len(str) / 2)),
-            #                int(lettersOnScreen[0] / 2) + (len(str) / 2)):
             for x in range(xRangeNeg, xRangePos):
-                #letters[x][int(lettersOnScreen[1] / 2)] = [fontObj.render(str[x - ((lettersOnScreen[0] / 2) - (len(str) / 2))],
-                #                                                     False, (255, 255, 255))
-                #                                      for col in range(self.__maxCol)]
                 letters[x][int(lettersOnScreen[1] / 2)] =\
                    [fontObj.render(str[x - xRangeNeg], False, (255, 255, 255)) for col in range(self.__maxCol)]
 
-            #for y in range(int(lettersOnScreen[1] / 2) + 1,
-            #                lettersOnScreen[1] + 1):
             for y in range(yRangePos, lettersOnScreen[1] + 1):
-                #for x in range(int(lettersOnScreen[0] / 2) - int((len(str) / 2)),
-                #                int(lettersOnScreen[0] / 2) + int(len(str) / 2)):
                 for x in range(xRangeNeg, xRangePos):
                     letters[x][y] = [fontObj.render(char, False, (0, 0, 0)) for col in range(self.__maxCol)]
                     char = chr(random.randint(32, 126))
 
             if len(str) % 2 == 1:
-
-                #letters[(lettersOnScreen[0] / 2) + int(len(str) / 2)][lettersOnScreen[1] / 2] = \
                 letters[xRangePos][lettersOnScreen[1] / 2] =\
                     [fontObj.render(str[len(str) - 1], False, (255, 255, 255)) for col in range(self.__maxCol)]
 
-                #for y in range(int(lettersOnScreen[1] / 2) + 1,
-                #               lettersOnScreen[1] + 1):
                 for y in range(yRangePos, lettersOnScreen[1] + 1):
-                    #letters[int(lettersOnScreen[0] / 2) + int(len(str) / 2)][y] = \
                     letter[xRangePos][y] = [fontObj.render(char, False, (0, 0, 0)) for col in range(self.__maxCol)]
                     char = chr(random.randint(32, 126))
 
@@ -173,25 +158,16 @@ class MatrixScreenSaver:
 
         # word delete
         if len(str) % 2 == 1:
-            #strLen = int((lettersOnScreen[0] / 2) + (len(str) / 2) + 1)
             strLen = xRangePos + 1
         else:
-            #strLen = int((lettersOnScreen[0] / 2) + (len(str) / 2))
             strLen = xRangePos
 
-        #for x in range(int((lettersOnScreen[0] / 2) - (len(str) / 2)),strLen):
         for x in range(xRangeNeg, strLen):
-            #letters[x][int(lettersOnScreen[1] / 2)] = \
-            #    [fontObj.render(str[x - ((lettersOnScreen[0] / 2) - (len(str) / 2))], False, colorList[col])
-            #     for col in range(self.__maxCol)]
             letters[x][int(lettersOnScreen[1] / 2)] =\
                 [fontObj.render(str[x - xRangeNeg], False, colorList[col]) for col in range(self.__maxCol)]
 
         char = chr(random.randint(32, 126))
         for y in range(int(lettersOnScreen[1] / 2 + 1), int(lettersOnScreen[1] + 1)):
-            #for x in range(int((lettersOnScreen[0] / 2) - (len(str) / 2)), int((lettersOnScreen[0] / 2) + (len(str) / 2) + 1)):
-            #    letters[x][y] = [fontObj.render(char, False, colorList[col]) for col in range(self.__maxCol)]
-            #    char = chr(random.randint(32, 126))
              for x in range(xRangeNeg, xRangePos + 1):
                 letters[x][y] = [fontObj.render(char, False, colorList[col]) for col in range(self.__maxCol)]
                 char = chr(random.randint(32, 126))
