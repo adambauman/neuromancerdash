@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import pygame
@@ -240,6 +241,7 @@ class MatrixScreensaver:
 
         # main matrix, has char switch
         while notDone:
+            #print("{}".format(g_connection_test_success))
             if g_connection_test_success:
                 print("Screensaver: Connection test success")
                 return
@@ -341,12 +343,13 @@ def test_server_connection(server_address):
                 print("Making test request to {}".format(server_address))
 
             response = requests.get(server_address, timeout = 1)
-            if 200 == response.status.code:
-                global g_connection_test_success
-                g_connection_test_success = True
-                break
+            print("Test success, setting global success variable...")
+            global g_connection_test_success
+            g_connection_test_success = True
+            break
         except:
             if __debug__:
+                traceback.print_exc()
                 print("Connect test failed")
 
 
