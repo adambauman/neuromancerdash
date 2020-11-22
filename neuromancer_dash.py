@@ -13,7 +13,6 @@ from aida64_sse_data import AIDA64SSEData
 from dashboard_painter import DashPage1Painter, FontPaths, Color
 #from reconnect_screensaver import MatrixScreenSaver
 
-global g_connection_test_success
 g_connection_test_success = False
 
 class Hardware:
@@ -343,6 +342,8 @@ def test_server_connection(server_address):
 
             response = requests.get(server_address, timeout = 1)
             if 200 == response.status.code:
+                global g_connection_test_success
+                g_connection_test_success = True
                 break
         except:
             if __debug__:
