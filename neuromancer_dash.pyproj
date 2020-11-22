@@ -36,7 +36,7 @@
     <Compile Include="dashboard_painter.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="matrix_screensaver.py">
+    <Compile Include="reconnect_screensaver.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="neuromancer_dash.py" />

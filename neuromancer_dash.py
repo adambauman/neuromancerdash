@@ -2,12 +2,14 @@
 
 import pygame
 import sys, getopt
+import threading
 
 if __debug__:
     import traceback
 
 from aida64_sse_data import AIDA64SSEData
 from dashboard_painter import DashPage1Painter, FontPaths, Color
+from reconnect_screensaver import MatrixScreenSaver
 
 class Hardware:
     screen_width = 480
@@ -42,36 +44,8 @@ def get_command_args(argv):
 def start_dashboard(server_address, display_surface, dash_page_1_painter):
     assert(0 != len(server_address))
 
-    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 14)
-    #font_message.strong = True
-    font_message.kerning = True
-    message_line_height = 20
-
-    display_surface.fill(Color.black)
-
-    message_y = 0
-    font_message.render_to(display_surface, (0, message_y), "Connecting to {}...".format(server_address), Color.white)
-    pygame.display.flip()
-
     # Start connection to the AIDA64 SSE data stream
     server_messages = AIDA64SSEData.connect(server_address)
-
-    message_y += message_line_height
-    font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
-    pygame.display.flip()
-
-    #message_y += message_line_height
-    #font_message.render_to(display_surface, (0, message_y), "Initializing display...", Color.white)
-    #pygame.display.flip()
-
-
-    #message_y += message_line_height
-    #font_message.render_to(display_surface, (0, message_y), "READY", Color.windows_cyan_1)
-    #pygame.display.flip()
-
-    message_y += message_line_height
-    font_message.render_to(display_surface, (0, message_y), "Preparing to parse data...", Color.white)
-    pygame.display.flip()
 
     # This is a generator loop, it will keep going as long as the AIDA64 stream is open
     # NOTE: (Adam) 2020-11-14 Stream data is sometimes out of sync with the generated loop,
@@ -96,22 +70,6 @@ def start_dashboard(server_address, display_surface, dash_page_1_painter):
         pygame.event.clear()
 
 
-def start_reconnect_screensaver(server_address, display_surface):
-    assert(0 != len(server_address))
-    assert(None != display_surface)
-
-    #font_name, font_size = Font.open_sans(), 32
-    #font = pygame.font.SysFont(font_name, font_size)
-
-    #seconds_remaining = 10
-    #while 0 < seconds_remaining:
-    #    display_surface.fill(Color.black)
-    #    text_surface = font.render("Connection timeout, retry in {} seconds...".format(seconds_remaining), True, Color.grey_75, None)
-    #    display_surface.blit(text_surface, (0, 0))
-    #    pygame.display.flip()
-    #    seconds_remaining -= 1
-    #    pygame.time.wait(1000)
-
 def main(argv):
     server_address = get_command_args(argv)
     assert(None != server_address)
@@ -126,31 +84,35 @@ def main(argv):
     )
 
     display_surface.fill(Color.black)
-
-    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 14)
-    #font_message.strong = True
-    font_message.kerning = True
-
-    font_message.render_to(display_surface, (0, 0), "Preparing commponents, please wait...", Color.white)
-    pygame.display.flip()
-
     dash_page_1_painter = DashPage1Painter(display_surface)
 
+    retry_attempt_count = 0
+    retry_attempts_until_screensaver = 1
+    screensaver_started = False
+    request_stop = False
+    screensaver_process = threading.Thread(target=MatrixScreenSaver, args=(display_surface, lambda:request_stop)) 
+    
     while True:
         # Dashboard will fail if the computer sleeps or is otherwise unavailable, keep
         # retrying until it starts to respond again.
         try:
             start_dashboard(server_address, display_surface, dash_page_1_painter)
         except Exception:
-            if __debug__:
-                traceback.print_exc()
+            print("retry_attempt_count: {}".format(retry_attempt_count))
+            #if __debug__:
+                #traceback.print_exc()
 
-            # TODO: (Adam) 2020-11-15 thread matrix screen saver during reconnect attempts
-            #start_reconnect_screensaver(server_address, display_surface)
 
-        display_surface.fill(Color.black)
-        font_message.render_to(display_surface, (0, 0), "Exception occurred, recovering...", Color.yellow)
-        pygame.display.flip()
+        if retry_attempts_until_screensaver < retry_attempt_count and False == screensaver_started:
+            screensaver_process.start()
+            screensaver_started = True
+
+        if 4 < retry_attempt_count:
+            print("Requesting stop...")
+            request_stop = True
+            screensaver_process.join()
+
+        retry_attempt_count += 1
         pygame.time.wait(2000)
 
 
