@@ -93,7 +93,7 @@ def main(argv):
     reconnect_attempts_until_screensaver = 1
     screensaver_running = False
     request_screensaver_stop = False
-    screensaver = threading.Thread(target=MatrixScreenSaver, args=(display_surface, "", lambda:request_screensaver_stop)) 
+    screensaver = threading.Thread(target=MatrixScreenSaver, args=(None, "", lambda:request_screensaver_stop)) 
     
     while True:
         # Dashboard will fail if the computer sleeps or is otherwise unavailable, keep

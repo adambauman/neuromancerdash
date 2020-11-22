@@ -28,7 +28,11 @@ class MatrixScreenSaver:
         else:
             return self.__maxCol-1
 
-    def __init__(self, surface, startup_message = "", stop_requested = lambda : False):
+    def __init__(self, surface= None, startup_message = "", stop_requested = lambda : False):
+
+        if None == surface:
+            surface = pygame.display.get_surface()
+            assert(None != surface)
 
         surface.fill("#000000")
 
