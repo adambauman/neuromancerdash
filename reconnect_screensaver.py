@@ -5,7 +5,7 @@ import random
 
 # TODO: (Adam) 2020-11-14 Copypasta'd from https://gist.github.com/MrKioZ/c07b9377d20bab53af6ebcdfbdeabb64, fork and properly link
 
-class MatrixScreenSaver:
+class MatrixScreensaver:
 
     __color = (0, 200, 200) #The Color of the Matrix
     __zero_one = False #Makes a rain of zeros and ones instead of random ASCII character  
@@ -36,23 +36,11 @@ class MatrixScreenSaver:
 
         surface.fill("#000000")
 
-        #try:
-        #    fo = open("indata.txt", "r+")
-        #    str = fo.readline()
-        #    # Close opend file
-        #    fo.close()
-        #except:
-        #    str = ''
         str = startup_message
         str = str.upper()  # for better placement
 
-        # Pygame init
-        #pygame.init()
         temp = pygame.display.Info()
         displLength = (temp.current_w, temp.current_h)
-        #surface = pygame.display.set_mode(displLength, pygame.FULLSCREEN)
-        # Font init
-        #pygame.font.init()
         fontObj = pygame.font.Font(pygame.font.get_default_font(), 14)
         sampleLetter = fontObj.render('_', False, (0, 111, 0))
         letterSize = (sampleLetter.get_width(), sampleLetter.get_height())
@@ -119,15 +107,15 @@ class MatrixScreenSaver:
         notDone = True
         ticksLeft = lettersOnScreen[1] + self.__maxCol
         while ticksLeft > 0 and (notDone) and (wordMode):
+            
+            # Used to signal stop if screensaver running in a seperate thread
             if stop_requested():
-                print("Stop request confirmed")
                 return
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     notDone = False
-                if event.type == pygame.KEYDOWN:
-                    notDone = False
+
             if self.IsWritten(lettersOnScreen, str):
                 ticksLeft -= 1
             if random.randint(1, 2) == 1:
@@ -181,15 +169,14 @@ class MatrixScreenSaver:
 
         # main matrix, has char switch
         while notDone:
+            # Used to signal stop if screensaver running in a seperate thread
             if stop_requested():
-                print("Stop request confirmed")
-                return
+                break
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     notDone = False
-                if event.type == pygame.KEYDOWN:
-                    notDone = False
+
             if random.randint(1, 2) == 1:
                 randomInt = random.randint(0, lettersOnScreen[0])
                 if self.__xHeads[randomInt] <= 0:
