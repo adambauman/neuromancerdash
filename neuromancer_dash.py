@@ -3,13 +3,18 @@
 import pygame
 import sys, getopt
 import threading
+import random
+import requests
 
 if __debug__:
     import traceback
 
 from aida64_sse_data import AIDA64SSEData
 from dashboard_painter import DashPage1Painter, FontPaths, Color
-from reconnect_screensaver import MatrixScreenSaver
+from reconnect_screensaver import MatrixScreensaver
+
+# Global that will be used to signal the reconnect screensaver that it's time to stop.
+g_host_available = False
 
 class Hardware:
     screen_width = 480
@@ -73,11 +78,31 @@ def start_dashboard(server_messages, display_surface, dash_page_1_painter):
         pygame.event.clear()
 
 
+# TODO: (Adam) 2020-11-22 Try to move away from using a global to control execution
+def test_server_connection(server_address):
+    assert(0 != len(server_address))
+
+    while True:
+        try:
+            response = requests.get(server_address, timeout = 3)
+            
+            # Request didn't throw, if status is HTTP 200 the host is ready.
+            if 200 == response.status_code:
+                global g_host_available
+                g_host_available = True
+                break
+        except:
+            if __debug__:
+                traceback.print_exc()
+                print("Connect test failed")
+
+
 def main(argv):
     server_address = get_command_args(argv)
     assert(None != server_address)
 
     pygame.init()
+    pygame.mixer.quit()
     pygame.mouse.set_visible(False)
     pygame.event.set_allowed([pygame.QUIT])
     
@@ -89,35 +114,27 @@ def main(argv):
     display_surface.fill(Color.black)
     dash_page_1_painter = DashPage1Painter(display_surface)
 
-    reconnect_attempt_count = 0
-    reconnect_attempts_until_screensaver = 1
-    screensaver_running = False
-    request_screensaver_stop = False
-    screensaver = threading.Thread(target=MatrixScreenSaver, args=(display_surface, "", lambda:request_screensaver_stop)) 
-    
+    retry_count = 0
     while True:
         # Dashboard will fail if the computer sleeps or is otherwise unavailable, keep
         # retrying until it starts to respond again.
         try:
             # Start connection to the AIDA64 SSE data stream
             server_messages = AIDA64SSEData.connect(server_address)
-            if screensaver_running:
-                reconnect_attempt_count = 0
-                request_screensaver_stop = True
-                screensaver.join()
-                screensaver_running = False
-
             start_dashboard(server_messages, display_surface, dash_page_1_painter)
         except Exception:
             if __debug__:
                 traceback.print_exc()
-                print("Reconnect attempt #{}...".format(reconnect_attempt_count))
 
-        if reconnect_attempts_until_screensaver <= reconnect_attempt_count and False == screensaver_running:
-            if __debug__:
-                print("Starting screensaver...")
-            screensaver.start()
-            screensaver_running = True
+        # NOTE: (Adam) 2020-11-22 Originally had the screensaver running in a new thread while
+        #           the main thread tested the connection. Had to abandon that because the
+        #           underlying bits of pygame on the Pi didn't like sharing display surfaces
+        #           between threads.
+        connection_test_thread = threading.Thread(target=test_server_connection, args=(server_address,))
+        connection_test_thread.start()
+        MatrixScreensaver(None, "", lambda : g_host_available)
+        #screensaver.start() # Will loop internally until the connection test thread signals 
+        connection_test_thread.join()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -126,19 +143,10 @@ def main(argv):
                 sys.exit()
         pygame.event.clear()
 
-        reconnect_attempt_count += 1
-
-        # Take it easy with the retry when the screen saver is active, host machine is offline or sleeping,
-        # otherwise use a short delay to avoid hammering network requests.
-        if screensaver_running:
-            pygame.time.wait(2000)
-        else:
-            if __debug__:
-                print("Short retry timeout")
-            pygame.time.wait(50)
-
+        #pygame.time.wait(2000)
 
     pygame.quit()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+

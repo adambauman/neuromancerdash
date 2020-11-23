@@ -4,6 +4,9 @@ import pygame, pygame.freetype
 
 import os
 
+if __debug__:
+    import traceback
+
 class TweenState:
     unknown = 0
     idle = 1
