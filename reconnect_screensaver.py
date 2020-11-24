@@ -7,8 +7,8 @@ import random
 
 class MatrixScreensaverConfig:
     def __init__(self):
-        self.matrix_color = (0, 200, 200, 255)
-        self.leading_character_color = (255, 255, 255, 255)
+        self.matrix_color = (0, 200, 200)
+        self.leading_character_color = (255, 255, 255)
         self.background_color = (0, 0, 0, 255)
         self.matrix_font = None
         self.binary_mode = False
