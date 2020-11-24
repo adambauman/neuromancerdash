@@ -84,17 +84,31 @@ def test_server_connection(server_address):
 
     while True:
         try:
-            response = requests.get(server_address, timeout = 3)
+            if __debug__:
+                print("Attempting to reach host...")
+
+            response = requests.get("http://192.168.1.202:8080", timeout=1.0)
             
+            if __debug__:
+                print("Received response: {}".format(response.status_code))
+
             # Request didn't throw, if status is HTTP 200 the host is ready.
             if 200 == response.status_code:
                 global g_host_available
                 g_host_available = True
-                break
+                return
         except:
             if __debug__:
                 traceback.print_exc()
                 print("Connect test failed")
+
+        if __debug__:
+            print("Waiting 3 seconds...")
+
+        pygame.time.wait(3000)
+
+        if __debug__:
+            print("Wait commplete, next attempt!")
 
 
 def main(argv):
@@ -124,17 +138,32 @@ def main(argv):
             start_dashboard(server_messages, display_surface, dash_page_1_painter)
         except Exception:
             if __debug__:
+                print("Exception!!!!")
                 traceback.print_exc()
+
+        if 3 > retry_count:
+            retry_count += 1
+            pygame.time.wait(100)
+            continue
+        else:
+            retry_count == 0
+
 
         # NOTE: (Adam) 2020-11-22 Originally had the screensaver running in a new thread while
         #           the main thread tested the connection. Had to abandon that because the
         #           underlying bits of pygame on the Pi didn't like sharing display surfaces
         #           between threads.
+        if __debug__:
+            print("General failure, starting connection test thread and screensaver...")
+
         connection_test_thread = threading.Thread(target=test_server_connection, args=(server_address,))
         connection_test_thread.start()
         MatrixScreensaver(None, "", lambda : g_host_available)
         #screensaver.start() # Will loop internally until the connection test thread signals 
         connection_test_thread.join()
+
+        if __debug__:
+            print("Connection test thread joined, processing events and continuing")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -143,7 +172,7 @@ def main(argv):
                 sys.exit()
         pygame.event.clear()
 
-        #pygame.time.wait(2000)
+        #pygame.time.wait(200)
 
     pygame.quit()
 

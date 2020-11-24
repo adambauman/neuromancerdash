@@ -174,11 +174,11 @@ class DashData:
     nic1_download_rate = DataField("nic1_download_rate", "NIC1 Download Rate", Units.kilobytes_per_second)
     nic1_upload_rate = DataField("nic1_upload_rate", "NIC2 Upload Rate", Units.kilobytes_per_second, min_value=0, max_value=1000000)
     cpu_fan = DataField("cpu_fan", "CPU Fan Speed", Units.rpm, min_value=1000, max_value=1460, warn_value=1100)
-    cpu_opt_fan = DataField("cpu_opt_fan", "CPU OPT Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=1500)
-    chassis_1_fan = DataField("chassis_1_fan", "Chassis 1 Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=2000)
-    chassis_2_fan = DataField("chassis_2_fan", "Chassis 2 Fan Speed", Units.rpm, warn_value=300,min_value=500, max_value=2000)
-    chassis_2_fan = DataField("chassis_3_fan", "Chassis 3 Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=2000)
-    gpu_fan = DataField("gpu_fan", "GPU Fan Speed", Units.rpm, warn_value=300, min_value=500, max_value=2000)
+    cpu_opt_fan = DataField("cpu_opt_fan", "CPU OPT Fan Speed", Units.rpm, warn_value=300, min_value=700, max_value=1500)
+    chassis_1_fan = DataField("chassis_1_fan", "Chassis 1 Fan Speed", Units.rpm, warn_value=300, min_value=700, max_value=2000)
+    chassis_2_fan = DataField("chassis_2_fan", "Chassis 2 Fan Speed", Units.rpm, warn_value=300,min_value=600, max_value=1800)
+    chassis_2_fan = DataField("chassis_3_fan", "Chassis 3 Fan Speed", Units.rpm, warn_value=300, min_value=700, max_value=2000)
+    gpu_fan = DataField("gpu_fan", "GPU Fan Speed", Units.rpm, warn_value=300, min_value=700, max_value=1800)
     gpu_2_fan = DataField("gpu_2_fan", "GPU Fan Speed?", Units.rpm, min_value=0, max_value=2000)
     desktop_resolution = DataField("desktop_resolution", "Desktop Display Resolution")
     desktop_refresh_rate = DataField("vertical_refresh_rate", "Display Vertical Refresh Rate")
@@ -195,7 +195,8 @@ class DashData:
         except:
             value = default_value
             if __debug__:
-                traceback.print_exc()
+                print("Data error: {}".format(data_field.field_name))
+                #traceback.print_exc()
 
         return value
 
@@ -277,7 +278,8 @@ class SimpleCoreVisualizer:
             except:
                 core_activity_value = 0
                 if __debug__:
-                    traceback.print_exc()
+                    print("Data error: core {}".format(index))
+                    #traceback.print_exc()
 
             core_active = False
             if core_activity_value >= self.__config.activity_threshold_percent:
@@ -959,7 +961,8 @@ class DashPage1Painter:
             except:
                 disk_activity_value = "0"
                 if __debug__:
-                    traceback.print_exc()
+                    print("Data error: disk_{}_activity".format(index))
+                    #traceback.print_exc()
 
             self.display_surface.blit(
                 self.page.disk_activity_bar.update(disk_activity_value), 
