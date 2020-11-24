@@ -20,8 +20,8 @@ class MatrixScreensaver:
         assert(0 != len(x_heads))
         assert(0 != len(the_string))
         
-        x_range_neg = int((max_letters[0] / 2) - (len(str) / 2))
-        x_range_pos = int((max_letters[0] / 2) + (len(str) / 2))
+        x_range_neg = int((max_letters[0] / 2) - (len(the_string) / 2))
+        x_range_pos = int((max_letters[0] / 2) + (len(the_string) / 2))
         is_written = True
         for x in range(x_range_neg, x_range_pos + 1):
             if x_heads[x] == -1:
@@ -74,7 +74,7 @@ class MatrixScreensaver:
         prime_colors = len(color_list) + 1
         R,G,B = config.matrix_color
         color_list += [(R+10, G+10, B+10)] * ((max_letters[1] - 10))
-        #end_colors = len(color_list)
+        end_colors = len(color_list)
         color_list += [
             (R-50 if R else 0, B-50 if B else 0, G-50 if G else 0), 
             (R-100 if R else 0, B-100 if B else 0, G-100 if G else 0), 
@@ -103,7 +103,7 @@ class MatrixScreensaver:
                 else:
                     character = chr(random.randint(32, 126))
 
-        x_range_neg = int((max_letters[0] / 2) - (len(startup_mmessage) / 2))
+        x_range_neg = int((max_letters[0] / 2) - (len(startup_message) / 2))
         x_range_pos = int((max_letters[0] / 2) + (len(startup_message) / 2))
         y_range_pos = int((max_letters[1] / 2) + 1)
 
@@ -151,7 +151,7 @@ class MatrixScreensaver:
                 if event.type == pygame.QUIT:
                     return
 
-            if __is_written__(max_letters, x_heads, startup_message):
+            if MatrixScreensaver.__is_written__(max_letters, x_heads, startup_message):
                 ticks_left -= 1
 
             if random.randint(1, 2) == 1:
@@ -173,9 +173,11 @@ class MatrixScreensaver:
                     if x_heads[random_integer] == 0:
                         x_heads[random_integer] = 1
 
+            assert(0 != len(x_heads))
+
             for x in range(max_letters[0]):
                 current_column = 0
-                counter = self.__xHeads[x]
+                counter = x_heads[x]
                 while (counter > 0) and (current_column < max_columns):
 
                     if (counter < max_letters[1] + 2) and (current_column < prime_colors or current_column > (max_columns - end_colors)):
@@ -203,12 +205,12 @@ class MatrixScreensaver:
 
         for x in range(x_range_neg, startup_message_length):
             letters[x][int(max_letters[1] / 2)] =\
-                [matrix_font.render(startup_message[x - x_range_neg], False, color_list[current_color]) for current_column in range(max_columns)]
+                [matrix_font.render(startup_message[x - x_range_neg], False, color_list[current_column]) for current_column in range(max_columns)]
 
         character = chr(random.randint(32, 126))
         for y in range(int(max_letters[1] / 2 + 1), int(max_letters[1] + 1)):
              for x in range(x_range_neg, x_range_pos + 1):
-                letters[x][y] = [matrix_font.render(character, False, color_list[current_color]) for current_column in range(max_columns)]
+                letters[x][y] = [matrix_font.render(character, False, color_list[current_column]) for current_column in range(max_columns)]
                 character = chr(random.randint(32, 126))
 
         # main matrix, has char switch
@@ -270,7 +272,7 @@ class MatrixScreensaver:
                         character_position_y * letter_size[1]))
 
                     surface.blit(
-                        letters[random_x][random_y][self.getColor(random_x,random_y)],
+                        letters[random_x][random_y][MatrixScreensaver.__get_column__(random_x, random_y, x_heads, max_columns)],
                         (random_x * letter_size[0], random_y * letter_size[1]))
 
                 # Limit position if it's off the screen
