@@ -143,7 +143,6 @@ def main(argv):
                 print("Exception in neuromancer_dash.py")
                 #traceback.print_exc()
 
-
         # NOTE: (Adam) 2020-11-24 Attempt a couple quick reconnects in case it's just a packet or two
         #           falling behind (happens a bit if connecting wirelessly)
         if __debug__:
@@ -158,7 +157,6 @@ def main(argv):
         retry_count = 0
         global g_host_available
         g_host_available = False
-
 
         # NOTE: (Adam) 2020-11-22 Originally had the screensaver running in a new thread while
         #           the main thread tested the connection. Had to abandon that because the
@@ -187,9 +185,7 @@ def main(argv):
         pygame.event.clear()
 
 
-
     pygame.quit()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
