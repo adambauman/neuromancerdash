@@ -8,7 +8,7 @@ import random
 class MatrixScreensaver:
 
     __color = (0, 200, 200) #The Color of the Matrix
-    __zero_one = False #Makes a rain of zeros and ones instead of random ASCII character  
+    __zero_one = False #Makes a rain of zeros and ones instead of random ASCII character
 
     __xHeads = None
     __maxCol = None
@@ -28,7 +28,7 @@ class MatrixScreensaver:
         else:
             return self.__maxCol-1
 
-    def __init__(self, surface= None, startup_message = "", stop_requested = lambda : False):
+    def __init__(self, surface = None, startup_message = "", stop_requested = lambda : False):
 
         if None == surface:
             surface = pygame.display.get_surface()

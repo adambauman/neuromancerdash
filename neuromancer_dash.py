@@ -64,10 +64,10 @@ def start_dashboard(server_messages, display_surface, dash_page_1_painter):
 
         parsed_data = AIDA64SSEData.parse_data(server_message.data)
         assert(0 != len(parsed_data))
-        
+
         dash_page_1_painter.paint(parsed_data)
         pygame.display.flip()
-        
+
         # TODO: (Adam) 2020-11-17 Refactor so we can tween gauge contents while waiting for data
         #           updates. Current model is pretty choppy looking.
         for event in pygame.event.get():
@@ -88,7 +88,7 @@ def test_server_connection(server_address):
                 print("Attempting to reach host...")
 
             response = requests.get("http://192.168.1.202:8080", timeout=1.0)
-            
+
             if __debug__:
                 print("Received response: {}".format(response.status_code))
 
@@ -99,16 +99,13 @@ def test_server_connection(server_address):
                 return
         except:
             if __debug__:
-                traceback.print_exc()
-                print("Connect test failed")
+                #traceback.print_exc()
+                print("Connect test exception, connection failed")
 
         if __debug__:
-            print("Waiting 3 seconds...")
+            print("3 seconds before next attempt...")
 
         pygame.time.wait(3000)
-
-        if __debug__:
-            print("Wait commplete, next attempt!")
 
 
 def main(argv):
@@ -119,13 +116,18 @@ def main(argv):
     pygame.mixer.quit()
     pygame.mouse.set_visible(False)
     pygame.event.set_allowed([pygame.QUIT])
-    
+
     display_surface = pygame.display.set_mode(
         (Hardware.screen_width, Hardware.screen_height),
         pygame.HWSURFACE | pygame.DOUBLEBUF
     )
 
     display_surface.fill(Color.black)
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 14)
+    font_message.kerning = True
+    font_message.render_to(display_surface, (10, 10), "Building display and connecting...", Color.white)
+    pygame.display.flip()
+
     dash_page_1_painter = DashPage1Painter(display_surface)
 
     retry_count = 0
@@ -138,15 +140,24 @@ def main(argv):
             start_dashboard(server_messages, display_surface, dash_page_1_painter)
         except Exception:
             if __debug__:
-                print("Exception!!!!")
-                traceback.print_exc()
+                print("Exception in neuromancer_dash.py")
+                #traceback.print_exc()
+
+
+        # NOTE: (Adam) 2020-11-24 Attempt a couple quick reconnects in case it's just a packet or two
+        #           falling behind (happens a bit if connecting wirelessly)
+        if __debug__:
+            print("Exception during server_message() or start_dashboard(), retry #{}".format(retry_count))
 
         if 3 > retry_count:
             retry_count += 1
             pygame.time.wait(100)
             continue
-        else:
-            retry_count == 0
+
+        # Reset retry_count and screensaver aborting global then move to screensaver mode
+        retry_count = 0
+        global g_host_available
+        g_host_available = False
 
 
         # NOTE: (Adam) 2020-11-22 Originally had the screensaver running in a new thread while
@@ -158,8 +169,11 @@ def main(argv):
 
         connection_test_thread = threading.Thread(target=test_server_connection, args=(server_address,))
         connection_test_thread.start()
-        MatrixScreensaver(None, "", lambda : g_host_available)
-        #screensaver.start() # Will loop internally until the connection test thread signals 
+        MatrixScreensaver(display_surface, "", lambda : g_host_available)
+
+        if __debug__:
+            print("Screensaver aborted, joining thread")
+        #screensaver.start() # Will loop internally until the connection test thread signals
         connection_test_thread.join()
 
         if __debug__:
@@ -172,7 +186,7 @@ def main(argv):
                 sys.exit()
         pygame.event.clear()
 
-        #pygame.time.wait(200)
+
 
     pygame.quit()
 
