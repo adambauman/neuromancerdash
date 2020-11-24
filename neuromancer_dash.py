@@ -123,7 +123,7 @@ def main(argv):
     )
 
     display_surface.fill(Color.black)
-    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 14)
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
     font_message.kerning = True
     font_message.render_to(display_surface, (10, 10), "Building display and connecting...", Color.white)
     pygame.display.flip()
@@ -167,7 +167,7 @@ def main(argv):
 
         connection_test_thread = threading.Thread(target=test_server_connection, args=(server_address,))
         connection_test_thread.start()
-        MatrixScreensaver(display_surface, "", lambda : g_host_available)
+        MatrixScreensaver.start(stop_requested = lambda : g_host_available)
 
         if __debug__:
             print("Screensaver aborted, joining thread")

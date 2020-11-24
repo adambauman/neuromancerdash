@@ -8,6 +8,7 @@ import random
 class MatrixScreensaverConfig:
     def __init__(self):
         self.matrix_color = (0, 200, 200)
+        #self.matrix_color = (240, 240, 240)
         self.leading_character_color = (255, 255, 255)
         self.background_color = (0, 0, 0, 255)
         self.matrix_font = None
@@ -38,8 +39,9 @@ class MatrixScreensaver:
         else:
             return max_columns -1
 
-    @staticmethod
+    @classmethod
     def start(
+        cls,
         surface = None, 
         startup_message = "", config = MatrixScreensaverConfig(), 
         stop_requested = lambda : False):
@@ -50,7 +52,7 @@ class MatrixScreensaver:
         assert(None != surface)
 
         x_heads = None
-        max_columns = None
+        max_colors = None
 
         surface.fill(config.background_color)
 
@@ -70,6 +72,7 @@ class MatrixScreensaver:
         max_letters = (int(display_size[0] / letter_size[0]), int(display_size[1] / letter_size[1]))
 
         # Color setup
+        # TODO: Optional, gradual RGB shifting of colors for a spectrum effect
         color_list = [(255, 255, 255)]
         prime_colors = len(color_list) + 1
         R,G,B = config.matrix_color
@@ -81,9 +84,9 @@ class MatrixScreensaver:
             (0, 0, 0)]
 
         end_colors = len(color_list) - end_colors + 1
-        max_columns = len(color_list)
+        max_colors = len(color_list)
 
-        current_column = 0
+        current_color = 0
 
         # Generate characters
         letters = [[0 for _ in range(max_letters[1] + 1)] for _ in range(max_letters[0])]
@@ -95,8 +98,7 @@ class MatrixScreensaver:
         for y in range(max_letters[1] + 1):
             for x in range(max_letters[0]):
 
-                letters[x][y] = [
-                    matrix_font.render(character, False, color_list[current_column]) for current_column in range(max_columns)]
+                letters[x][y] = [matrix_font.render(character, False, color_list[current_color]) for current_color in range(max_colors)]
 
                 if config.binary_mode:
                     character = chr(random.randint(48, 49))
@@ -114,19 +116,19 @@ class MatrixScreensaver:
 
             for x in range(x_range_neg, x_range_pos):
                 letters[x][int(max_letters[1] / 2)] =\
-                   [matrix_font.render(startup_message[x - x_range_neg], False, (255, 255, 255)) for current_column in range(max_columns)]
+                   [matrix_font.render(startup_message[x - x_range_neg], False, (255, 255, 255)) for current_color in range(max_colors)]
 
             for y in range(y_range_pos, max_letters[1] + 1):
                 for x in range(x_range_neg, x_range_pos):
-                    letters[x][y] = [matrix_font.render(character, False, (0, 0, 0)) for current_column in range(max_columns)]
+                    letters[x][y] = [matrix_font.render(character, False, (0, 0, 0)) for current_color in range(max_colors)]
                     character = chr(random.randint(32, 126))
 
             if len(startup_message) % 2 == 1:
                 letters[x_range_pos][max_letters[1] / 2] =\
-                    [matrix_font.render(startupmessage[len(startup_message) - 1], False, (255, 255, 255)) for current_column in range(max_columns)]
+                    [matrix_font.render(startupmessage[len(startup_message) - 1], False, (255, 255, 255)) for current_color in range(max_colors)]
 
                 for y in range(y_range_pos, max_letters[1] + 1):
-                    letter[x_range_pos][y] = [matrix_font.render(character, False, (0, 0, 0)) for current_column in range(max_columns)]
+                    letter[x_range_pos][y] = [matrix_font.render(character, False, (0, 0, 0)) for current_color in range(max_colors)]
                     character = chr(random.randint(32, 126))
 
         if startup_display_mode:
@@ -136,7 +138,7 @@ class MatrixScreensaver:
 
         # 1st loop - word write, no char switch
         not_done = True
-        ticks_left = max_letters[1] + max_columns
+        ticks_left = max_letters[1] + max_colors
         clock = pygame.time.Clock()
         while ticks_left > 0 and (not_done) and (startup_display_mode):
             
@@ -151,7 +153,7 @@ class MatrixScreensaver:
                 if event.type == pygame.QUIT:
                     return
 
-            if MatrixScreensaver.__is_written__(max_letters, x_heads, startup_message):
+            if cls.__is_written__(max_letters, x_heads, startup_message):
                 ticks_left -= 1
 
             if random.randint(1, 2) == 1:
@@ -176,22 +178,22 @@ class MatrixScreensaver:
             assert(0 != len(x_heads))
 
             for x in range(max_letters[0]):
-                current_column = 0
+                current_color = 0
                 counter = x_heads[x]
-                while (counter > 0) and (current_column < max_columns):
+                while (counter > 0) and (current_color < max_colors):
 
-                    if (counter < max_letters[1] + 2) and (current_column < prime_colors or current_column > (max_columns - end_colors)):
+                    if (counter < max_letters[1] + 2) and (current_color < prime_colors or current_color > (max_colors - end_colors)):
                         surface.blit(
-                            letters[x][counter - 1][current_column], (x * letter_size[0],
+                            letters[x][counter - 1][current_color], (x * letter_size[0],
                             (counter - 1) * letter_size[1]))
 
-                    current_column += 1
+                    current_color += 1
                     counter -= 1
 
                 if x_heads[x] > 0:
                     x_heads[x] += 1
 
-                if x_heads[x] - max_columns > max_letters[1]:
+                if x_heads[x] - max_colors > max_letters[1]:
                     x_heads[x] = 0
 
             pygame.display.flip()
@@ -205,12 +207,12 @@ class MatrixScreensaver:
 
         for x in range(x_range_neg, startup_message_length):
             letters[x][int(max_letters[1] / 2)] =\
-                [matrix_font.render(startup_message[x - x_range_neg], False, color_list[current_column]) for current_column in range(max_columns)]
+                [matrix_font.render(startup_message[x - x_range_neg], False, color_list[current_color]) for current_color in range(max_colors)]
 
         character = chr(random.randint(32, 126))
         for y in range(int(max_letters[1] / 2 + 1), int(max_letters[1] + 1)):
              for x in range(x_range_neg, x_range_pos + 1):
-                letters[x][y] = [matrix_font.render(character, False, color_list[current_column]) for current_column in range(max_columns)]
+                letters[x][y] = [matrix_font.render(character, False, color_list[current_color]) for current_color in range(max_colors)]
                 character = chr(random.randint(32, 126))
 
         # main matrix, has char switch
@@ -233,22 +235,21 @@ class MatrixScreensaver:
             assert(0 != len(x_heads))
 
             for x in range(max_letters[0]):
-                current_column = 0
+                current_color = 0
                 counter = x_heads[x]
 
                 # Main loop for redraw
-                while (counter > 0) and (current_column < max_columns):
+                while (counter > 0) and (current_color < max_colors):
 
-                    if (counter < max_letters[1] + 2) and (current_column < prime_colors or current_column > (max_columns - end_colors)):
+                    if (counter < max_letters[1] + 2) and (current_color < prime_colors or current_color > (max_colors - end_colors)):
                         surface.blit(
-                            letters[x][counter - 1][current_column], (x * letter_size[0],
-                            (counter - 1) * letter_size[1]))
-
-                    current_column += 1
+                            letters[x][counter - 1][current_color], 
+                            (x * letter_size[0], (counter - 1) * letter_size[1]))
+                    current_color += 1
                     counter -= 1
 
                 # Character Switch
-                random_integer = random.randint(1, max_columns - 1)
+                random_integer = random.randint(1, max_colors - 1)
                 character_position_y = x_heads[x] - random_integer
                 if (max_letters[1] - 1 > character_position_y > 0):
                     display_info = letters[x][character_position_y]
@@ -256,29 +257,29 @@ class MatrixScreensaver:
                     random_y = random.randint(1,max_letters[1] - 1)
 
                     surface.blit(
-                        letters[x][character_position_y][max_columns - 1], (x * letter_size[0],
-                        character_position_y * letter_size[1]))
+                        letters[x][character_position_y][max_colors - 1],
+                        (x * letter_size[0], character_position_y * letter_size[1]))
 
                     surface.blit(
-                        letters[random_x][random_y][max_columns - 1], (random_x * letter_size[0],
-                        random_y * letter_size[1]))
+                        letters[random_x][random_y][max_colors - 1], 
+                        (random_x * letter_size[0], random_y * letter_size[1]))
 
                     # Character swap action
                     letters[x][character_position_y] = letters[random_x][random_y]
                     letters[random_x][random_y] = display_info
 
                     surface.blit(
-                        letters[x][character_position_y][random_integer], (x * letter_size[0], 
-                        character_position_y * letter_size[1]))
+                        letters[x][character_position_y][random_integer], 
+                        (x * letter_size[0], character_position_y * letter_size[1]))
 
                     surface.blit(
-                        letters[random_x][random_y][MatrixScreensaver.__get_column__(random_x, random_y, x_heads, max_columns)],
+                        letters[random_x][random_y][cls.__get_column__(random_x, random_y, x_heads, max_colors)],
                         (random_x * letter_size[0], random_y * letter_size[1]))
 
                 # Limit position if it's off the screen
                 if x_heads[x] > 0:
                     x_heads[x] += 1
-                if x_heads[x] - max_columns > max_letters[1]:
+                if x_heads[x] - max_colors > max_letters[1]:
                     x_heads[x] = 0
 
             pygame.display.flip()
