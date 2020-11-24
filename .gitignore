@@ -3,6 +3,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Custom stuff
+__pycache__/
+__pycache__
+*.pyproj
+*.sln
+
+
 # User-specific files
 *.rsuser
 *.suo
