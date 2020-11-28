@@ -85,6 +85,8 @@ class AssetPath:
     fonts = "assets/fonts"
     gauges = "assets/images/gauges"
     graphs = "assets/images/graphs"
+    misc = "assets/images/misc"
+
 
 class Color:
     yellow = "#ffff00"
@@ -200,6 +202,9 @@ class DashData:
 
         return value
 
+
+
+        
 
 class CoreVisualizerConfig:
     def __init__(self, core_count):

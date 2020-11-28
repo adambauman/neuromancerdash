@@ -8,7 +8,7 @@ import math
 import pygame
 import pygame.gfxdraw
 
-from dashboard_painter import Color, FontPaths, DataField, DashData, AssetPath
+from dashboard_painter import Color, FontPaths, DataField, DashData, AssetPath, Units
 
 class Helpers:
     @staticmethod
@@ -28,178 +28,139 @@ class Helpers:
         diff_multiplier = (input - input_low) / (input_high - input_low)
         return ((output_high - output_low) * diff_multiplier) + output_low
             
+class DiskActivityVisualizer:
+    # TODO: Most of this can move to a config class
+    __disk_count = 4 # TODO: dynamic count
+    __disks_per_row = 2
+    __disk_spacing = 4
 
-class GaugeConfig:
-    def __init__(self, data_field, radius = 45, value_font = None, value_font_origin = None):
-        self.radius = radius
-        self.data_field = data_field
-        self.redline_degrees = 35
-        self.aa_multiplier = 2
+    __disk_active_bitmap = None
+    __disk_bitmap = None
+    __letter_font = None
 
-        self.value_font = value_font # Take from caller so you can match their other displays
-        self.value_font_origin = value_font_origin # If None the value will be centered
+    __last_activity_values = []
+    __last_base_surface = None
 
-        self.arc_main_color = Color.windows_cyan_1
-        self.arc_redline_color = Color.windows_red_1
-        self.needle_color = Color.windows_light_grey_1
-        self.shadow_color = Color.black
-        self.shadow_alpha = 50
-        self.unit_text_color = Color.white
-        self.value_text_color = Color.white
-        self.bg_color = Color.windows_dkgrey_1
-        self.bg_alpha = 200
+    def __init__(self, disk_letter_list):
+        assert(0 != len(disk_letter_list))
 
-        self.counter_sweep = False
-        self.show_value = True
-        self.show_unit_symbol = True
+        self.__disk_letter_list = disk_letter_list
+        self.__disk_bitmap = pygame.image.load(os.path.join(AssetPath.misc, "disk_02.png"))
+        self.__disk_active_bitmap = pygame.image.load(os.path.join(AssetPath.misc, "disk_02_active.png"))
+        self.__letter_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
 
-class FlatArcGauge:
-    __config = None
-    __last_value = None
-    __working_surface = None
+        for _ in range(self.__disk_count):
+            self.__last_activity_values.append(False)
 
-    __static_elements_surface = None # Should not be changed after init
-    __needle_surface = None # Should not be changed after init
-    __needle_shadow_surface = None  # Should not be changed after init
+    def __draw_activity__(self, is_active, index):
+        assert(None != self.__disk_active_bitmap and None != self.__disk_bitmap)
 
-    def __init__(self, gauge_config):
-        assert(None != gauge_config.data_field)
-        assert(0 < gauge_config.radius)
+        #disk_center = (int(disk_bitmap.get_width() / 2), int(disk_bitmap.get_height() / 2))
 
-        self.__config = gauge_config
-
-        # NOTE: (Adam) 2020-11-19 Bit of a hack, adding small amount of padding so AA edges don't get clipped
-
-        base_size = (self.__config.radius * 2, self.__config.radius * 2)
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
-        self.__static_elements_surface = self.__working_surface.copy()
-
-        self.__prepare_constant_elements()
-
-        assert(None != self.__static_elements_surface)
-        assert(None != self.__needle_surface and None != self.__needle_shadow_surface)
-
-    def __prepare_constant_elements(self):
-        assert(None != self.__static_elements_surface)
-        assert(0 < self.__config.aa_multiplier)
-        
-        # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
-        # PNG shapes to build up the gauge then scaling down to final size.
-        arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_base_1.png"))
-        redline_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_redline_1.png"))
-
-        assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
-        base_scaled_size = (arc_bitmap.get_width(), arc_bitmap.get_width())
-
-        temp_surface = pygame.Surface(base_scaled_size, pygame.SRCALPHA)
-        center = (temp_surface.get_width() / 2, temp_surface.get_height() / 2)
-
-        scaled_radius = arc_bitmap.get_width() / 2
-
-        # Draw background
-        bg_surface = pygame.Surface((temp_surface.get_height(), temp_surface.get_width()), pygame.SRCALPHA)
-        bg_color = pygame.Color(self.__config.bg_color)
-        pygame.draw.circle(bg_surface, bg_color, center, scaled_radius)
-        bg_surface.set_alpha(self.__config.bg_alpha)
-        temp_surface.blit(bg_surface, (0, 0))
-
-        # Apply color to main arc and blit
-        arc_main_color = pygame.Color(self.__config.arc_main_color)
-        arc_bitmap.fill(arc_main_color, special_flags = pygame.BLEND_RGBA_MULT)
-        temp_surface.blit(arc_bitmap, (0, 0))
-
-        # Apply color to redline and blit
-        arc_redline_color = pygame.Color(self.__config.arc_redline_color)
-        redline_bitmap.fill(arc_redline_color, special_flags = pygame.BLEND_RGBA_MULT)
-        if self.__config.counter_sweep:
-            temp_surface.blit(pygame.transform.flip(redline_bitmap, True, False), (0, 0))
+        if False == is_active:
+            text = self.__letter_font.render("D{}".format(index), Color.windows_dkgrey_1_highlight)
+            #letter_center = (int(text.get_width() / 2), int(text.get_height() / 2))
+            disk_status_bitmap = self.__disk_bitmap.copy()
+            disk_status_bitmap.blit(text[0], Helpers.calculate_center_align(disk_status_bitmap, text[0]))
+            return disk_status_bitmap
         else:
-            temp_surface.blit(redline_bitmap, (0, 0))
+            text = self.__letter_font.render("D{}".format(index), Color.windows_dkgrey_1)
+            #letter_center = (int(text.get_width() / 2), int(text.get_height() / 2))
+            disk_status_bitmap = self.__disk_bitmap_active.copy()
+            disk_status_bitmap.blit(text[0], Helpers.calculate_center_align(disk_status_bitmap, text[0]))
+            return disk_status_bitmap
 
-        # Draw static text
-        # Unit
-        if self.__config.show_unit_symbol:
-            font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 120)
-            font_unit.strong = False
-            unit_text_surface = font_unit.render(self.__config.data_field.unit.symbol, self.__config.unit_text_color)
-            center_align = Helpers.calculate_center_align(temp_surface, unit_text_surface[0])
-            temp_surface.blit(unit_text_surface[0], (center_align[0], center_align[1] + 300))
+    def update(self, data):
+        # TODO: (Adam) 2020-11-25 Add dynamic sizing, disk counts, etc. Right now this is written
+        #           to support a specific computer's disk setup
+        assert(0 != len(data))
 
-        # Scale to the final size
-        scale_to_size = (
-            self.__static_elements_surface.get_width(), 
-            self.__static_elements_surface.get_height()
-        )
-        scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
+        # Grab data
+        activity_values = []
+        for index in range(self.__disk_count):
+            key = "disk_{}_activity".format(index)
+            try:
+                activity_values.append(int(data[key]))
+            except:
+                if __debug__:
+                    print("Data error: {}".format(key))
+                activity_values.append(0)
 
-        # Clear member static_elements surface and blit our scaled surface
-        self.__static_elements_surface.fill((0, 0, 0, 0))
-        self.__static_elements_surface = scaled_surface.copy()
-     
-        # Setup needle elements, these will be rotated when blitted but the memeber surfaces will remain static
-        needle_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_needle_1.png"))
+        assert(0 != len(activity_values))
+        assert(len(self.__last_activity_values) == len(activity_values))
+
+        # Don't grind out a new surface if values are static
+        values_changed = False
+        for index in range(len(activity_values)):
+            if self.__last_activity_values[index] == activity_values[index]:
+                values_changed = True
+
+        ## But do create one if this is the first run and the last surface is None
+        #if False == values_changed and None != self.__last_base_surface: 
+        #    return self.__last_base_surface
         
-        # Apply color to needle, scale, then blit out to the needle surface
-        needle_color = pygame.Color(self.__config.needle_color)
-        needle_bitmap.fill(needle_color, special_flags = pygame.BLEND_RGBA_MULT)
-        needle_center = Helpers.calculate_center_align(temp_surface, needle_bitmap)
-        temp_surface.fill((0, 0, 0, 0))
-        temp_surface.blit(needle_bitmap, needle_center)
+        # TODO: (Adam) 2020-11-25 Move first surface setup into initializer
+        # Setup base surface, if values haven't changed we will re-use the base surface
+        if None == self.__last_base_surface:
+            row_count = int(self.__disk_count / self.__disks_per_row)
+            base_surface_x =\
+                (self.__disk_bitmap.get_width() * self.__disks_per_row) + (self.__disk_spacing * (self.__disks_per_row - 1))
+            base_surface_y =\
+                (self.__disk_bitmap.get_height() * row_count) + (self.__disk_spacing * (self.__disks_per_row - 1))
 
-        needle_scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
-        self.__needle_surface = needle_scaled_surface.copy()
+            self.__last_base_surface = pygame.Surface((base_surface_x, base_surface_y), pygame.SRCALPHA)
+            self.__last_base_surface.fill(Color.black)
 
-        # Needle shadow
-        self.__needle_shadow_surface = self.__needle_surface.copy()
-        shadow_color = pygame.Color(self.__config.shadow_color)
-        shadow_color.a = self.__config.shadow_alpha
-        self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
-        
+            # TODO: (Adam) 2020-11-25 Kinda all over the place with variable used with ranges,
+            #           make more consistent
+            base_disk_columns_drawn = 0
+            base_rows_drawn = 0
+            base_disk_x = 0
+            base_disk_y = 0
+            for index in range(self.__disk_count):
+                # Move to next row, reset column count
+                if self.__disks_per_row <= base_disk_columns_drawn:
+                    base_rows_drawn += 1
+                    base_disk_y += (self.__disk_bitmap.get_height() * base_rows_drawn) + self.__disk_spacing
+                    base_disk_columns_drawn = 0
 
-    def update(self, value):
-        assert(None != self.__working_surface)
+                # Move X up a column or return position to 0 if this is the first in a row
+                if 0 != base_disk_columns_drawn:
+                    base_disk_x += (self.__disk_bitmap.get_width() * base_disk_columns_drawn) + self.__disk_spacing
+                else:
+                    base_disk_x = 0
 
-        self.__working_surface = self.__static_elements_surface.copy()
+                self.__last_base_surface.blit(self.__draw_activity__(False, index), (base_disk_x, base_disk_y))
+                base_disk_columns_drawn += 1
 
-        max_value = self.__config.data_field.max_value
-        min_value = self.__config.data_field.min_value
-        arc_transposed_value = Helpers.transpose_ranges(float(value), max_value, min_value, -135, 135)
+        # Start draw disks, skipping disks that haven't changed
+        columns_drawn = 0
+        rows_drawn = 0
+        disk_x = 0
+        disk_y = 0
+        for index in range(len(activity_values)):
+            # NOTE: (Adam) 2020-11-25 Need to move the "draw cursor" regardless if the value changes
+            # Move to next row, reset column count
+            if self.__disks_per_row <= columns_drawn:
+                rows_drawn += 1
+                disk_y += (disk_bitmap.get_height * rows_drawn) + self.__disk_spacing
+                columns_drawn = 0
 
-        # Needle
-        # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
-        rotated_needle = pygame.transform.rotozoom(self.__needle_surface, arc_transposed_value, 1)
-
-        # Shadow
-        # Add a small %-change multiplier to give the shadow farther distance as values approach limits
-        abs_change_from_zero = abs(arc_transposed_value)
-        shadow_distance = 4 + ((abs(arc_transposed_value) / 135) * 10)
-
-        shadow_rotation = arc_transposed_value
-        if arc_transposed_value > 0: #counter-clockwise
-            shadow_rotation += shadow_distance
-        else: #clockwise
-            shadow_rotation += -shadow_distance
-        rotated_shadow = pygame.transform.rotozoom(self.__needle_shadow_surface, shadow_rotation, 0.93)
-        #needle_shadow.set_alpha(20)
-        shadow_center = Helpers.calculate_center_align(self.__working_surface, rotated_shadow)
-        self.__working_surface.blit(rotated_shadow, shadow_center)
-
-        needle_center = Helpers.calculate_center_align(self.__working_surface, rotated_needle)
-        self.__working_surface.blit(rotated_needle, needle_center)
-
-        # Value Text
-        if None != self.__config.value_font:
-            value_surface = self.__config.value_font.render("{}".format(value), Color.white)
-
-            if None != self.__config.value_font_origin:
-                value_origin = self.__config.value_font_origin
+            # Move X up a column or return position to 0 if this is the first in a row
+            if 0 != columns_drawn:
+                disk_x += (disk_bitmap.get_width() * columns_drawn) + self.__disk_spacing
             else:
-                value_origin = Helpers.calculate_center_align(self.__working_surface, value_surface[0])
+                disk_x = 0
+            
+            # Now check if value has changed, save a blit if it isn't necessary
+            if self.__last_activity_values[index] != activity_values[index]:
+                self.__last_base_surface.blit(
+                    self.__draw_activity__(activity_values[index], index),
+                    (base_disk_x, base_disk_y))
 
-            self.__working_surface.blit(value_surface[0], value_origin)
-
-        return self.__working_surface
-
+        # Store activity and return
+        self.__last_activity_values = activity_values
+        return self.__last_base_surface
 
 def main(argv):
 
@@ -218,29 +179,21 @@ def main(argv):
         pygame.HWSURFACE | pygame.DOUBLEBUF
     )
 
+    disk_activity = DiskActivityVisualizer(["C", "D", "E", "F"])
+    
+    data = {
+        "disk_0_activity": 0,
+        "disk_1_activity": 0,
+        "disk_2_activity": 0,
+        "disk_3_activity": 0
+        }
 
-    font_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
-    font_value.strong = True
-    gauge_config = GaugeConfig(DashData.cpu_temp, 45, font_value, (35, 70))
-    cpu_temp_gauge = FlatArcGauge(gauge_config)
 
-    test_value = 20
-    reverse = False
     while True:
         display_surface.fill(Color.black)
 
-        if test_value >= 80:
-            reverse = True
-        elif test_value <= 20:
-            reverse = False
-
-        if reverse:
-            test_value -= 1
-        else:
-            test_value += 1
-
-        display_surface.blit(cpu_temp_gauge.update(test_value), (20,20))
-
+        display_surface.blit(disk_activity.update(data), (20,20))
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 print("User quit")
