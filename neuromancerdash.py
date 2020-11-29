@@ -1,6 +1,6 @@
 #
-# neuromancer_dash - main script that starts and controls the dashboard display
-# =============================================================================
+# neuromancerdash - main script that starts and controls the dashboard display
+# ============================================================================
 #
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
@@ -16,7 +16,7 @@ if __debug__:
 
 from data.aida64lcdsse import AIDA64LCDSSE
 from elements.styles import FontPaths, Color
-from dash_pages import DashPage1Painter
+from dashpages import DashPage1Painter
 from utilities.screensaver import MatrixScreensaver
 
 # Global that will be used to signal the reconnect screensaver that it's time to stop.
