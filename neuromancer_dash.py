@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import pygame
 import sys, getopt
 import threading
@@ -10,7 +8,8 @@ if __debug__:
     import traceback
 
 from aida64_sse_data import AIDA64SSEData
-from dashboard_painter import DashPage1Painter, FontPaths, Color
+from elements.styles import FontPaths, Color
+from dashboard_painter import DashPage1Painter
 from reconnect_screensaver import MatrixScreensaver
 
 # Global that will be used to signal the reconnect screensaver that it's time to stop.
@@ -99,7 +98,7 @@ def test_server_connection(server_address):
                 return
         except:
             if __debug__:
-                #traceback.print_exc()
+                traceback.print_exc()
                 print("Connect test exception, connection failed")
 
         if __debug__:
@@ -141,7 +140,7 @@ def main(argv):
         except Exception:
             if __debug__:
                 print("Exception in neuromancer_dash.py")
-                #traceback.print_exc()
+                traceback.print_exc()
 
         # NOTE: (Adam) 2020-11-24 Attempt a couple quick reconnects in case it's just a packet or two
         #           falling behind (happens a bit if connecting wirelessly)
