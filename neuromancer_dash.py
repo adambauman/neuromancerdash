@@ -9,7 +9,7 @@ if __debug__:
 
 from aida64_sse_data import AIDA64SSEData
 from elements.styles import FontPaths, Color
-from dashboard_painter import DashPage1Painter
+from dash_pages import DashPage1Painter
 from utilities.reconnect_screensaver import MatrixScreensaver
 
 # Global that will be used to signal the reconnect screensaver that it's time to stop.
