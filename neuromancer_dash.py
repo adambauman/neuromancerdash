@@ -7,7 +7,7 @@ import requests
 if __debug__:
     import traceback
 
-from aida64_sse_data import AIDA64SSEData
+from data.aida64_lcd_sse import AIDA64LCDSSE
 from elements.styles import FontPaths, Color
 from dash_pages import DashPage1Painter
 from utilities.reconnect_screensaver import MatrixScreensaver
@@ -61,7 +61,7 @@ def start_dashboard(server_messages, display_surface, dash_page_1_painter):
                 print("Encountered reload message")
             continue
 
-        parsed_data = AIDA64SSEData.parse_data(server_message.data)
+        parsed_data = AIDA64LCDSSE.parse_data(server_message.data)
         assert(0 != len(parsed_data))
 
         dash_page_1_painter.paint(parsed_data)
@@ -135,7 +135,7 @@ def main(argv):
         # retrying until it starts to respond again.
         try:
             # Start connection to the AIDA64 SSE data stream
-            server_messages = AIDA64SSEData.connect(server_address)
+            server_messages = AIDA64LCDSSE.connect(server_address)
             start_dashboard(server_messages, display_surface, dash_page_1_painter)
         except Exception:
             if __debug__:

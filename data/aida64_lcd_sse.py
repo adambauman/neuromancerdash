@@ -1,16 +1,14 @@
-#!/usr/bin/env python
-
 import sys, getopt
 
 from sseclient import SSEClient
 
-class AIDA64SSEData:
+class AIDA64LCDSSE:
 
     # TODO: (Adam) 2020-11-14 Very simple static class right now, could definitely tighten things up, use
     #       user-specified callbacks to send out data, etc.
 
-    @staticmethod
-    def __extract_single_item_data__(data):
+    @classmethod
+    def __extract_single_item_data__(class_object, data):
         assert(0 != len(data))
 
         # Data is initially combined with the gauge type like so: Simple1|cpu_util 6
@@ -52,8 +50,8 @@ class AIDA64SSEData:
 
         return messages
 
-    @staticmethod
-    def parse_data(message_data):
+    @classmethod
+    def parse_data(class_object, message_data):
         assert(0 != len(message_data))
 
         #if __debug__:
@@ -80,7 +78,7 @@ class AIDA64SSEData:
         parsed_datas = {}
         for data in split_message_data:
             try:
-                key, value = AIDA64SSEData.__extract_single_item_data__(data)
+                key, value = class_object.__extract_single_item_data__(data)
             except:
                 # Skip any fields that failed to parse
                 if __debug__:
@@ -101,8 +99,6 @@ class AIDA64SSEData:
 
 def print_usage():
     print("\nUsage: aida64_sse_data.py --server <full http address to sse stream>\n")
-
-
 def get_command_args(argv):
     server_address = None
     try:
@@ -127,28 +123,27 @@ def get_command_args(argv):
 
 
 def main(argv):
-	server_address = get_command_args(argv)
-	assert(None != server_address)
+    server_address = get_command_args(argv)
+    assert(None != server_address)
 
-	# Example usage
-	messages = AIDA64SSEData.connect(server_address)
-	for message in messages:
-	
-		# Example data response: 'Page0 | {|}Simple1|cpu_util 6 {|} Simple2|cpu_temp 32 {|}'
-		# NOTE: (Adam) 2020-11-14 Message data isn't always in sync with the message? Continue looping
-		#		if it wasn't receieved.
-		if 0 == len(message.data) or None == message.data:
-			continue
+    # Example usage
+    messages = AIDA64LCDSSE.connect(server_address)
+    for message in messages:
 
-		parsed_datas = AIDA64SSEData.parse_data(message.data)
+        # Example data response: 'Page0 | {|}Simple1|cpu_util 6 {|} Simple2|cpu_temp 32 {|}'
+        # NOTE: (Adam) 2020-11-14 Message data isn't always in sync with the message? Continue looping
+        #       if it wasn't receieved.
+        if 0 == len(message.data) or None == message.data:
+            continue
 
-		# Draw your dashboard, process the message data, etc. 
-		for key in parsed_datas:
-			print(key + ": " + parsed_datas[key])
+        parsed_datas = AIDA64LCDSSE.parse_data(message.data)
 
-		print("\n")
+        # Draw your dashboard, process the message data, etc. 
+        for key in parsed_datas:
+                print(key + ": " + parsed_datas[key])
 
-	
+        print("\n")
+
+
 if __name__ == "__main__":
-	main(sys.argv[1:])
-	
+    main(sys.argv[1:])
