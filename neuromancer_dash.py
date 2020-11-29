@@ -20,12 +20,22 @@ class Hardware:
     screen_height = 320
 
 def print_usage():
-    print("\nUsage: neuromancer_dash.py --server <full http address to sse stream>\n")
+    print("")
+    print("Usage: neuromancer_dash.py <options>")
+    print("Example: python3 neuromancer_dash.py --aidasse http://localhost:8080/sse --gpioenabled")
+    print("")
+    print("       Required Options:")
+    print("           --aidasse <full http address:port to AIDA64 LCD SSE stream>")
+    print("")
+    print("       Optional Options:")
+    print("           --gpioenabled (specifying will enable features that require GPIO pins)")
 
 def get_command_args(argv):
-    server_address = None
+    aida_sse_server = None
+    gpio_enabled = False
+
     try:
-        opts, args = getopt.getopt(argv,"server:",["server="])
+        opts, args = getopt.getopt(argv,"aidasse:gpioenabled",["aidasse=", "gpioenabled"])
 
     except getopt.GetoptError:
         print_usage()
@@ -35,14 +45,16 @@ def get_command_args(argv):
         if opt == '-h':
             print_usage()
             sys.exit()
-        elif opt in ("--server"):
-            server_address = arg
+        elif opt in ("--aidasse"):
+            aida_sse_server = arg
+        elif opt in ("--gpioenabled"):
+            gpio_enabled = True
 
-    if (None == server_address):
+    if (None == aida_sse_server):
         print_usage()
         sys.exit()
 
-    return server_address
+    return aida_sse_server, gpio_enabled
 
 
 def start_dashboard(server_messages, display_surface, dash_page_1_painter):
@@ -108,8 +120,13 @@ def test_server_connection(server_address):
 
 
 def main(argv):
-    server_address = get_command_args(argv)
-    assert(None != server_address)
+    aida_sse_server, gpio_enabled = get_command_args(argv)
+    assert(None != aida_sse_server and None != gpio_enabled)
+
+    if __debug__:
+        print("Passed arguments:")
+        print("    aidasse = {}".format(aida_sse_server))
+        print("    gpioenabled = {}".format(gpio_enabled))
 
     pygame.init()
     pygame.mixer.quit()
@@ -135,7 +152,7 @@ def main(argv):
         # retrying until it starts to respond again.
         try:
             # Start connection to the AIDA64 SSE data stream
-            server_messages = AIDA64LCDSSE.connect(server_address)
+            server_messages = AIDA64LCDSSE.connect(aida_sse_server)
             start_dashboard(server_messages, display_surface, dash_page_1_painter)
         except Exception:
             if __debug__:
@@ -164,7 +181,7 @@ def main(argv):
         if __debug__:
             print("General failure, starting connection test thread and screensaver...")
 
-        connection_test_thread = threading.Thread(target=test_server_connection, args=(server_address,))
+        connection_test_thread = threading.Thread(target=test_server_connection, args=(aida_sse_server,))
         connection_test_thread.start()
         MatrixScreensaver.start(stop_requested = lambda : g_host_available)
 
