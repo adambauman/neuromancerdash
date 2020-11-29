@@ -1,6 +1,6 @@
 #
-# aida64_lcd_sse - Connects to an AIDA64 LCD SSE stream and extracts the field data
-# =================================================================================
+# aida64lcdsse - Connects to an AIDA64 LCD SSE stream and extracts the field data
+# ===============================================================================
 #
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #

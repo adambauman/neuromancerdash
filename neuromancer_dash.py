@@ -14,10 +14,10 @@ import requests
 if __debug__:
     import traceback
 
-from data.aida64_lcd_sse import AIDA64LCDSSE
+from data.aida64lcdsse import AIDA64LCDSSE
 from elements.styles import FontPaths, Color
 from dash_pages import DashPage1Painter
-from utilities.reconnect_screensaver import MatrixScreensaver
+from utilities.screensaver import MatrixScreensaver
 
 # Global that will be used to signal the reconnect screensaver that it's time to stop.
 g_host_available = False

@@ -1,6 +1,6 @@
 #
-# reconnect_screensaver - Falling Matrix code screensaver, supports basic cancellation token
-# ==========================================================================================
+# screensaver - Falling Matrix code screensaver, supports basic cancellation token
+# ================================================================================
 #
 # Author: MrKioZ (https://gist.github.com/MrKioZ)
 # Current modifications: Adam J. Bauman (https://gist.github.com/adambauman)
