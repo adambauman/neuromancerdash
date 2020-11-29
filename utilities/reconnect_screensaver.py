@@ -1,7 +1,16 @@
+#
+# reconnect_screensaver - Falling Matrix code screensaver, supports basic cancellation token
+# ==========================================================================================
+#
+# Author: MrKioZ (https://gist.github.com/MrKioZ)
+# Current modifications: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 import pygame, pygame.font
 import random
 
-# TODO: (Adam) 2020-11-14 Copypasta'd from https://gist.github.com/MrKioZ/c07b9377d20bab53af6ebcdfbdeabb64, fork and properly link
+# TODO: (Adam) 2020-11-14 Initial code copypasta'd from https://gist.github.com/MrKioZ/c07b9377d20bab53af6ebcdfbdeabb64,
+# fork and properly link.
 
 class MatrixScreensaverConfig:
     def __init__(self):

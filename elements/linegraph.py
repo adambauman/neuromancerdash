@@ -1,3 +1,10 @@
+#
+# linegraph - line graph element drawing
+# ======================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 import pygame
 import os
 

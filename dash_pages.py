@@ -1,3 +1,10 @@
+#
+# dash_pages - Contains layouts and methods to paint dashboard pages
+# ==================================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 import pygame, pygame.freetype
 
 import os

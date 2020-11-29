@@ -1,11 +1,16 @@
-#!/usr/bin/env python
+#
+# make_grid - Quick and dirty tool for building grid bitmaps with varying parameters
+# ==================================================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
 
 from time import sleep
 import sys
 
 import pygame
 
-from dashboard_painter import Color
+from elements.styles import Color
 
 def main(argv):
 

@@ -1,3 +1,10 @@
+#
+# styles - various style elements that are uniform across the project
+# ===================================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 class Color:
     yellow = "#ffff00"
     green = "#00dc00"

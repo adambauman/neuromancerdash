@@ -1,3 +1,10 @@
+#
+# helpers - various helper methods to support element drawing
+# ===========================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 import pygame
 
 class Helpers:

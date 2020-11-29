@@ -1,3 +1,10 @@
+#
+# bargraph - bargraph display elements
+# =============================================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 import pygame
 
 from .styles import Color

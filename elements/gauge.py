@@ -1,3 +1,10 @@
+#
+# gauge - gauge display elements
+# =============================================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 import pygame
 
 import os

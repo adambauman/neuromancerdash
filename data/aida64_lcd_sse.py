@@ -1,3 +1,10 @@
+#
+# aida64_lcd_sse - Connects to an AIDA64 LCD SSE stream and extracts the field data
+# =================================================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
+
 import sys, getopt
 
 from sseclient import SSEClient
@@ -41,11 +48,11 @@ class AIDA64LCDSSE:
         return split_item_data[0], item_value
 
     @staticmethod
-    def connect(server_address):
-        assert(0 != len(server_address))
+    def connect(aida_sse_server_address):
+        assert(0 != len(aida_sse_server_address))
 
-        print("Connecting to SSEClient \'" + server_address + "\'...")
-        messages = SSEClient(server_address, timeout=2.0)
+        print("Connecting to SSEClient \'" + aida_sse_server_address + "\'...")
+        messages = SSEClient(aida_sse_server_address, timeout=2.0)
         print("Connected!")
 
         return messages
@@ -98,7 +105,10 @@ class AIDA64LCDSSE:
 
 
 def print_usage():
-    print("\nUsage: aida64_sse_data.py --server <full http address to sse stream>\n")
+    print("")
+    print("Usage: aida64_lcd_sse.py --server <full http address:port to aida64 lcd sse stream>")
+    print("Example: aida64_lcd_sse --server http://localhost:8080/sse")
+
 def get_command_args(argv):
     server_address = None
     try:

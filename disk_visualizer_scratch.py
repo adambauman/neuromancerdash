@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+#
+# disk_visualizer_scratch - messing around with a new disk activity visualizer
+# ============================================================================
+#
+# Author: Adam J. Bauman (https://gist.github.com/adambauman)
+#
 
 from time import sleep
 import sys
