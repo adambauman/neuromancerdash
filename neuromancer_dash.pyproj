@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7335ad1a-b663-418a-976d-1fb2fce08aa0}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>scratch.py</StartupFile>
+    <StartupFile>neuromancer_dash.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -39,6 +39,9 @@
     <Compile Include="elements\bargraph.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="elements\gauge.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="elements\helpers.py">
       <SubType>Code</SubType>
     </Compile>
@@ -64,6 +67,7 @@
     <Folder Include="assets\fonts\Nanum_Gothic_Coding" />
     <Folder Include="assets\fonts\Open_Sans" />
     <Folder Include="assets\fonts\Roboto_Mono" />
+    <Folder Include="data\" />
     <Folder Include="elements\" />
   </ItemGroup>
   <ItemGroup>
