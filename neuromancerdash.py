@@ -29,17 +29,17 @@ class Hardware:
 def print_usage():
     print("")
     print("Usage: neuromancer_dash.py <options>")
-    print("Example: python3 neuromancer_dash.py --aidasse http://localhost:8080/sse --gpioenabled")
+    print("Example: python3 neuromancer_dash.py --aidasse http://localhost:8080/sse --disablegpio")
     print("")
     print("       Required Options:")
     print("           --aidasse <full http address:port to AIDA64 LCD SSE stream>")
     print("")
     print("       Optional Options:")
-    print("           --gpioenabled (specifying will enable features that require GPIO pins)")
+    print("           --disablegpio (specifying will disable functions that require gpio functionality)")
 
 def get_command_args(argv):
     aida_sse_server = None
-    gpio_enabled = False
+    gpio_enabled = True
 
     try:
         opts, args = getopt.getopt(argv,"aidasse:gpioenabled",["aidasse=", "gpioenabled"])
@@ -54,8 +54,8 @@ def get_command_args(argv):
             sys.exit()
         elif opt in ("--aidasse"):
             aida_sse_server = arg
-        elif opt in ("--gpioenabled"):
-            gpio_enabled = True
+        elif opt in ("--disablegpio"):
+            gpio_enabled = False
 
     if (None == aida_sse_server):
         print_usage()

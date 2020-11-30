@@ -48,6 +48,8 @@ class DashData:
     desktop_refresh_rate = DataField("vertical_refresh_rate", "Display Vertical Refresh Rate")
     motherboard_temp = DataField("motherboard_temp", "Motherboard Temperature", Units.celsius, min_value=15, caution_value=50, max_value=60, warn_value=62)
     rtss_fps = DataField("rtss_fps", "Frames Per Second", Units.fps, min_value=0, max_value=120)
+    ambient_temp = DataField("ambient_temp", "Ambient Temperature", Units.fahrenheit, min_value=40, max_value=110)
+    ambient_humidity = DataField("ambient_humidity", "Ambient Humidity", Units.percent, min_value=0, max_value=100)
 
     # Iterate the following, labels in data source should be setup to be 0-indexed
     disk_activity = DataField("disk_{}_activity", "Disk {} Activity", Units.percent, min_value=0, max_value=100)

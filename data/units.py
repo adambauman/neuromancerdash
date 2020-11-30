@@ -14,7 +14,8 @@ class Unit:
 
 class Units:
     null_unit = Unit()
-    celsius = Unit("Celcius", "C")
+    fahrenheit = Unit("Fahrenheit", "F")
+    celsius = Unit("Celsius", "C")
     percent = Unit("Percent", "%")
     megahertz = Unit("Megahertz", "Mhz")
     megabytes = Unit("Megabytes", "MB")
