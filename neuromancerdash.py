@@ -14,7 +14,9 @@ import requests
 if __debug__:
     import traceback
 
+
 from data.aida64lcdsse import AIDA64LCDSSE
+#from data.dht22 import DHT22
 from elements.styles import FontPaths, Color
 from dashpages import DashPage1Painter
 from utilities.screensaver import MatrixScreensaver
@@ -42,7 +44,7 @@ def get_command_args(argv):
     gpio_enabled = True
 
     try:
-        opts, args = getopt.getopt(argv,"aidasse:gpioenabled",["aidasse=", "gpioenabled"])
+        opts, args = getopt.getopt(argv,"aidasse:gpioenabled",["aidasse=", "disablegpio"])
 
     except getopt.GetoptError:
         print_usage()
@@ -64,7 +66,7 @@ def get_command_args(argv):
     return aida_sse_server, gpio_enabled
 
 
-def start_dashboard(server_messages, display_surface, dash_page_1_painter):
+def start_dashboard(server_messages, display_surface, dash_page_1_painter, gpio_enabled):
 
     # This is a generator loop, it will keep going as long as the AIDA64 stream is open
     # NOTE: (Adam) 2020-11-14 Stream data is sometimes out of sync with the generated loop,
@@ -83,6 +85,17 @@ def start_dashboard(server_messages, display_surface, dash_page_1_painter):
         parsed_data = AIDA64LCDSSE.parse_data(server_message.data)
         assert(0 != len(parsed_data))
 
+        ambient_humidity = 0
+        ambient_temp = 0
+        # Can't read a stuff like the DHT22 with GPIO (ie. not running off a something like an RPi.)
+        if gpio_enabled:
+            humidity, temperature = DHT22.best_effort_read()
+
+        # Add ambient data to the dictionary we got from parsing Aida64 data
+        parsed_data["ambient_humidity"] = ambient_humidity
+        parsed_data["ambient_temp"] = ambient_temp
+
+        # Paint the updated dashboard page and flip the display.
         dash_page_1_painter.paint(parsed_data)
         pygame.display.flip()
 
@@ -160,7 +173,7 @@ def main(argv):
         try:
             # Start connection to the AIDA64 SSE data stream
             server_messages = AIDA64LCDSSE.connect(aida_sse_server)
-            start_dashboard(server_messages, display_surface, dash_page_1_painter)
+            start_dashboard(server_messages, display_surface, dash_page_1_painter, gpio_enabled)
         except Exception:
             if __debug__:
                 print("Exception in neuromancer_dash.py")

@@ -8,6 +8,7 @@
 import pygame, pygame.freetype
 
 import os
+from datetime import datetime
 
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
@@ -87,6 +88,7 @@ class DashPage1:
         self.fps_text_origin = (210, 240)
         self.fps_label_origin = (212, 285)
         self.network_text_origin = (0, 310)
+        self.time_origin = (self.cpu_detail_stack_origin[0], 310)
 
         self.fan1_gauge_origin = (self.cpu_temp_gauge_origin[0], 230)
         self.fan_opt_gauge_origin = (display_width - 40, 230)
@@ -95,7 +97,8 @@ class DashPage1:
 
         self.mobo_temp_origin = (display_width - 52, 268)
 
-        self.disk_activity_origin = (self.cpu_detail_stack_origin[0], 230)
+        #self.disk_activity_origin = (self.cpu_detail_stack_origin[0], 230)
+        self.ambient_humidity_temp_origin = (self.cpu_detail_stack_origin[0], 240)
 
         #####
 
@@ -176,10 +179,10 @@ class DashPage1:
         self.gpu_fan_gauge = FlatArcGauge(gpu_fan_gauge_config)
 
         # Disk activity
-        disk_activity_bar_config = BarGraphConfig(65, 19, DashData.disk_activity)
-        disk_activity_bar_config.foreground_color = Color.windows_dkgrey_1_highlight
-        self.disk_activity_bar = BarGraph(disk_activity_bar_config)
-        self.disk_activity_y_spacing = 21
+        #disk_activity_bar_config = BarGraphConfig(65, 19, DashData.disk_activity)
+        #disk_activity_bar_config.foreground_color = Color.windows_dkgrey_1_highlight
+        #self.disk_activity_bar = BarGraph(disk_activity_bar_config)
+        #self.disk_activity_y_spacing = 21
 
 
 class DashPage1Painter:
@@ -194,6 +197,7 @@ class DashPage1Painter:
         y = last_origin[1] + font.get_sized_height() + padding
         return (x,y)
 
+    # TODO: (Adam) 2020-11-30 These text stacks could be optimized, only update change values and non-static bits, etc.
     def __paint_cpu_text_stack__(self, origin, font_normal, data):
         assert(0 != len(data))
 
@@ -252,6 +256,27 @@ class DashPage1Painter:
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
         text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_ram_used, "0"), DashData.gpu_ram_used.unit.symbol)
         font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+
+    def __paint_ambient_text_stack__(self, origin, font_normal, data):
+        assert(0 != len(data))
+
+        stack_vertical_adjustment = -2
+
+        text_origin = origin
+        text = "Room Temp "
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{:0.1f}".format(DashData.best_attempt_read(data, DashData.ambient_temp, "0")) + u"\u00b0" + "F"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "Humidity"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{:0.1f}".format(DashData.best_attempt_read(data, DashData.ambient_humidity, "0")) + "%"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
     def paint(self, data):
         assert(0 != len(data))
@@ -323,22 +348,25 @@ class DashPage1Painter:
             "{}".format(DashData.best_attempt_read(data, DashData.motherboard_temp, "0")), 
             Color.white)
 
-        # Disk activity
-        disk_count = 4
-        disk_y_offset = 0
-        for index in range(disk_count):
-            try:
-                disk_activity_value = data["disk_{}_activity".format(index)]
-            except:
-                disk_activity_value = "0"
-                if __debug__:
-                    print("Data error: disk_{}_activity".format(index))
-                    #traceback.print_exc()
+        # Ambient Humidity and Temperature
+        self.__paint_ambient_text_stack__(self.page.ambient_humidity_temp_origin, self.page.font_normal, data)
 
-            self.display_surface.blit(
-                self.page.disk_activity_bar.update(disk_activity_value), 
-                (self.page.disk_activity_origin[0], self.page.disk_activity_origin[1] + disk_y_offset))
-            disk_y_offset += self.page.disk_activity_y_spacing
+        # Disk activity
+        #disk_count = 4
+        #disk_y_offset = 0
+        #for index in range(disk_count):
+        #    try:
+        #        disk_activity_value = data["disk_{}_activity".format(index)]
+        #    except:
+        #        disk_activity_value = "0"
+        #        if __debug__:
+        #            print("Data error: disk_{}_activity".format(index))
+        #            #traceback.print_exc()
+
+        #    self.display_surface.blit(
+        #        self.page.disk_activity_bar.update(disk_activity_value), 
+        #        (self.page.disk_activity_origin[0], self.page.disk_activity_origin[1] + disk_y_offset))
+        #    disk_y_offset += self.page.disk_activity_y_spacing
 
         # Network Text
         nic1_down_value = DashData.best_attempt_read(data, DashData.nic1_download_rate, "0")
@@ -354,3 +382,8 @@ class DashPage1Painter:
             self.display_surface, 
             (self.page.network_text_origin[0] + 180, self.page.network_text_origin[1]),
             network_upload_text, Color.white)
+
+        now = datetime.now()
+        time_string = now.strftime("%H:%M:%S")
+        text = "{}".format(time_string)
+        self.page.font_normal.render_to(self.display_surface, self.page.time_origin, text, Color.white)
