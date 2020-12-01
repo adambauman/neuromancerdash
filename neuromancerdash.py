@@ -88,8 +88,8 @@ def start_dashboard(server_messages, display_surface, dash_page_1_painter, gpio_
         ambient_humidity = 0
         ambient_temp = 0
         # Can't read a stuff like the DHT22 with GPIO (ie. not running off a something like an RPi.)
-        if gpio_enabled:
-            ambient_humidity, ambient_temp  = DHT22.best_effort_read()
+        #if gpio_enabled:
+            #ambient_humidity, ambient_temp  = DHT22.best_effort_read()
 
         # Add ambient data to the dictionary we got from parsing Aida64 data
         parsed_data["ambient_humidity"] = ambient_humidity
