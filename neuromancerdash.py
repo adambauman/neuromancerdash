@@ -16,7 +16,7 @@ if __debug__:
 
 
 from data.aida64lcdsse import AIDA64LCDSSE
-#from data.dht22 import DHT22
+from data.dht22 import DHT22
 from elements.styles import FontPaths, Color
 from dashpages import DashPage1Painter
 from utilities.screensaver import MatrixScreensaver
@@ -89,7 +89,7 @@ def start_dashboard(server_messages, display_surface, dash_page_1_painter, gpio_
         ambient_temp = 0
         # Can't read a stuff like the DHT22 with GPIO (ie. not running off a something like an RPi.)
         if gpio_enabled:
-            humidity, temperature = DHT22.best_effort_read()
+            ambient_humidity, ambient_temp  = DHT22.best_effort_read()
 
         # Add ambient data to the dictionary we got from parsing Aida64 data
         parsed_data["ambient_humidity"] = ambient_humidity
