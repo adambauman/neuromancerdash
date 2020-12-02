@@ -47,18 +47,18 @@ class AIDA64LCDSSE:
         # Return key, value
         return split_item_data[0], item_value
 
-    @staticmethod
-    def connect(aida_sse_server_address):
-        assert(0 != len(aida_sse_server_address))
+    #@staticmethod
+    #def connect(aida_sse_server_address):
+    #    assert(0 != len(aida_sse_server_address))
 
-        print("Connecting to SSEClient \'" + aida_sse_server_address + "\'...")
-        messages = SSEClient(aida_sse_server_address, timeout=2.0)
-        print("Connected!")
+    #    print("Connecting to SSEClient \'" + aida_sse_server_address + "\'...")
+    #    messages = SSEClient(aida_sse_server_address, timeout=2.0)
+    #    print("Connected!")
 
-        return messages
+    #    return messages
 
     @classmethod
-    def parse_data(class_object, message_data):
+    def __parse_data__(class_object, message_data):
         assert(0 != len(message_data))
 
         #if __debug__:
@@ -102,6 +102,32 @@ class AIDA64LCDSSE:
             parsed_datas[key] = value
 
         return parsed_datas
+
+    @classmethod
+    def threadable_stream_read(class_object, data_queue, aida64_lcd_sse_address):
+        assert(None != data_queue)
+        assert(None != aida64_lcd_sse_address and 0 != len(aida64_lcd_sse_address))
+
+        server_messages = SSEClient(aida64_lcd_sse_address, timeout=2.0)
+
+        for server_message in server_messages:
+            if None == server_message.data or 0 == len(server_message.data):
+                continue
+
+            if "reload" == server_message.data.lower():
+                if __debug__:
+                    print("Encountered reload message")
+                continue
+
+            #print("Parsing data...")
+            parsed_data = class_object.__parse_data__(server_message.data)
+            #print("Asserting data length: {}".format(len(parsed_data)))
+            assert(0 != len(parsed_data))
+            #print("Finished parsing data")
+
+            data_queue.append(parsed_data)
+
+
 
 
 def print_usage():
