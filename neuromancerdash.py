@@ -11,12 +11,11 @@ import threading
 import random
 import requests
 
-if __debug__:
-    import traceback
-
-
+# TODO: (Adam) 2020-12-1 Conditionally load modules that require GPIO for easier development
+#            and debugging on non-GPIO equipped platforms.
 from data.aida64lcdsse import AIDA64LCDSSE
 from data.dht22 import DHT22
+
 from elements.styles import FontPaths, Color
 from dashpages import DashPage1Painter
 from utilities.screensaver import MatrixScreensaver

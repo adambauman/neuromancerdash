@@ -6,7 +6,9 @@
 #
 
 import Adafruit_DHT
+
 from time import sleep
+
 
 class DHT22:
 
