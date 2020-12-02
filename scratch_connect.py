@@ -82,7 +82,14 @@ def main(argv):
     lcd_thread.start()
     print("LCD stream thread started")
     
+    if __debug__:
+        loop_millis = 0
+        start_millis = 0
+
     while True:
+        if __debug__:
+            start_millis = int(round(time.time() * 1000))
+
         if 2 > len(data):
             # NOTE: (Adam) 2020-12-2 Add a small delay to avoid thrashing resources while waiting for data.
             time.sleep(0.050)
@@ -91,6 +98,9 @@ def main(argv):
         leftmost_data = data.popleft()
         print("Data_in_main_thread: {}".format(leftmost_data))
         #print("Remaining length: {}".format(len(data)))
+
+        if __debug__:
+            print("Data loop time: {}".format((int(round(time.time() * 1000)) - start_millis)))
 
     print("Exited main loop")
     lcd_thread.join()

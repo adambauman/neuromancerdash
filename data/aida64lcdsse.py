@@ -119,11 +119,8 @@ class AIDA64LCDSSE:
                     print("Encountered reload message")
                 continue
 
-            #print("Parsing data...")
             parsed_data = class_object.__parse_data__(server_message.data)
-            #print("Asserting data length: {}".format(len(parsed_data)))
             assert(0 != len(parsed_data))
-            #print("Finished parsing data")
 
             data_queue.append(parsed_data)
 
