@@ -10,8 +10,8 @@ import Adafruit_DHT
 from time import sleep
 
 class DHT22Data:
-    humidity
-    temperature
+    humidity = None
+    temperature = None
 
     def __init__(self, humidity=0.0, temperature=0.0):
         self.humidity = humidity

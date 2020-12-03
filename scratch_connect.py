@@ -5,9 +5,6 @@
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
 
-if __debug__:
-    import time
-
 import os
 import pygame
 import sys, getopt
@@ -19,13 +16,13 @@ import threading
 # Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
 # debug and develop on other platforms.
 g_gpio_available = True
-try:
-    import RPi.GPIO as GPIO
-    print("RPi GPIO Available")
-except:
-    g_gpio_available = False
-    print("RPi GPIO Not Available")
-
+#try:
+#    import RPi.GPIO as GPIO
+#    print("RPi GPIO Available")
+#except:
+#    g_gpio_available = False
+#    print("RPi GPIO Not Available")
+#
 if g_gpio_available:
     from data.dht22 import DHT22, DHT22Data
 
@@ -133,7 +130,8 @@ def main(argv):
             # while we wait to stop system resources from getting thrashed.
             # TODO: (Adam) 2020-12-02 Jump into wait-for-reconnect mode with screen saver if we lost
             #           the data feed for more than a few seconds.
-            time.sleep(0.050)
+            #time.sleep(0.050)
+            pygame.time.wait(50)
             continue
 
         # Paint the updated dashboard page and flip the display. DHT22 data will not be available if
