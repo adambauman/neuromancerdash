@@ -8,11 +8,25 @@
 if __debug__:
     import time
 
+import os
 import pygame
 import sys, getopt
 import threading
 import random
 import requests
+
+# Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
+# debug and develop on other platforms.
+g_gpio_available = True
+try:
+    import RPi.GPIO as GPIO
+    print("RPi GPIO Available")
+except:
+    g_gpio_available = False
+    print("RPi GPIO Not Available")
+
+if g_gpio_available:
+    from data.dht22 import DHT22, DHT22Data
 
 # TODO: (Adam) 2020-12-1 Conditionally load modules that require GPIO for easier development
 #            and debugging on non-GPIO equipped platforms.
@@ -31,35 +45,7 @@ from sseclient import SSEClient
 from data.aida64lcdsse import AIDA64LCDSSE
 
 #from dashboardpainter import Color, FontPaths, DataField, DashData, AssetPath, Units
-
-
         
-#def start_stream_read(data_queue):
-#        server_messages = SSEClient("http://localhost:8080/sse", timeout=2.0)
-
-#        for server_message in server_messages:
-#            if None == server_message.data or 0 == len(server_message.data):
-#                continue
-
-#            if "reload" == server_message.data.lower():
-#                if __debug__:
-#                    print("Encountered reload message")
-#                continue
-
-#            #print("Parsing data...")
-#            parsed_data = AIDA64LCDSSE.parse_data(server_message.data)
-#            #print("Asserting data length: {}".format(len(parsed_data)))
-#            assert(0 != len(parsed_data))
-#            #print("Finished parsing data")
-
-#            data_queue.append(parsed_data)
-
-def test_deque_max(data_queue):
-    for index in range(999999):
-        data_queue.append(index)
-        time.sleep(0.200)
-
-
 def main(argv):
 
     #pygame.init()
@@ -71,36 +57,39 @@ def main(argv):
     #    pygame.hwsurface | pygame.doublebuf
     #)
    
-    
-    data = deque([], maxlen=2)
+    data_queue_maxlen = 1
 
+    # Start the AIDA64 data thread, fastest update interval is usually ~100ms and can be
+    # adjusted in the AIDA64 preferences. 
+    aida64_deque = deque([], maxlen=data_queue_maxlen)
     server_address = "http://localhost:8080/sse"
-    print("Starting LCD stream thread")
-    lcd_thread = threading.Thread(target=AIDA64LCDSSE.threadable_stream_read, args = (data, server_address))
-    #lcd_thread = threading.Thread(target=test_deque_max, args = (data,))
-    lcd_thread.setDaemon(True)
-    lcd_thread.start()
-    print("LCD stream thread started")
-    
-    if __debug__:
-        loop_millis = 0
-        start_millis = 0
+    aida64_data_thread = threading.Thread(target=AIDA64LCDSSE.threadable_stream_read, args=(aida64_deque, server_address))
+    aida64_data_thread.setDaemon(True)
+    aida64_data_thread.start()
 
+    # Start DHT22 thread if GPIO is available. Reading this data can take awhile, don't expect
+    # updates to occur under 3-5 seconds.
+    dht22_deque = deque([], maxlen=data_queue_maxlen)
+    if g_gpio_available:
+        dht22_data_thread = threading.Thread(target=DHT22.threadable_read_retry, args=(dht22_deque,))
+        dht22_data_thread.setDaemon(True)
+        dht22_data_thread.start()
+
+    # Main loop, this will juggle data and painting the dash page(s)
     while True:
-        if __debug__:
-            start_millis = int(round(time.time() * 1000))
-
-        if 2 > len(data):
-            # NOTE: (Adam) 2020-12-2 Add a small delay to avoid thrashing resources while waiting for data.
+        if data_queue_maxlen > len(aida64_deque):
+            # We can't safely popleft data if the data queue isn't deep enough. Add a tiny delay
+            # while we wait to stop system resources from getting thrashed.
+            # TODO: (Adam) 2020-12-02 Jump into wait-for-reconnect mode with screen saver if we lost
+            #           the data feed for more than a few seconds.
             time.sleep(0.050)
             continue
 
-        leftmost_data = data.popleft()
+
+        leftmost_data = aida64_deque.popleft()
         print("Data_in_main_thread: {}".format(leftmost_data))
         #print("Remaining length: {}".format(len(data)))
 
-        if __debug__:
-            print("Data loop time: {}".format((int(round(time.time() * 1000)) - start_millis)))
 
     print("Exited main loop")
     lcd_thread.join()
