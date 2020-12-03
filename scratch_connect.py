@@ -35,30 +35,40 @@ from data.aida64lcdsse import AIDA64LCDSSE
 
 from elements.styles import FontPaths, Color
 from dashpages import DashPage1Painter
-from utilities.screensaver import MatrixScreensaver
+from elements.styles import Color, AssetPath, FontPaths
+
+#from utilities.screensaver import MatrixScreensaver
 
 from collections import deque
 import threading
 
-from sseclient import SSEClient
+#from sseclient import SSEClient
 
-from data.aida64lcdsse import AIDA64LCDSSE
 
-#from dashboardpainter import Color, FontPaths, DataField, DashData, AssetPath, Units
+class Hardware:
+    screen_width = 480
+    screen_height = 320
         
 def main(argv):
 
-    #pygame.init()
-    #pygame.mouse.set_visible(false)
-    #pygame.event.set_allowed([pygame.quit])
-    
-    #display_surface = pygame.display.set_mode(
-    #    (480, 320),
-    #    pygame.hwsurface | pygame.doublebuf
-    #)
-   
-    data_queue_maxlen = 1
+    pygame.init()
+    pygame.mixer.quit()
+    pygame.mouse.set_visible(False)
+    pygame.event.set_allowed([pygame.QUIT])
 
+    display_surface = pygame.display.set_mode(
+        (Hardware.screen_width, Hardware.screen_height),
+        pygame.HWSURFACE | pygame.DOUBLEBUF
+    )
+
+    display_surface.fill(Color.black)
+    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+    font_message.kerning = True
+    font_message.render_to(display_surface, (10, 10), "Building display and connecting...", Color.white)
+    pygame.display.flip()
+
+    data_queue_maxlen = 1
+    
     # Start the AIDA64 data thread, fastest update interval is usually ~100ms and can be
     # adjusted in the AIDA64 preferences. 
     aida64_deque = deque([], maxlen=data_queue_maxlen)
@@ -69,26 +79,45 @@ def main(argv):
 
     # Start DHT22 thread if GPIO is available. Reading this data can take awhile, don't expect
     # updates to occur under 3-5 seconds.
-    dht22_deque = deque([], maxlen=data_queue_maxlen)
+    dht22_deque = None
     if g_gpio_available:
+        dht22_deque = deque([], maxlen=data_queue_maxlen)
         dht22_data_thread = threading.Thread(target=DHT22.threadable_read_retry, args=(dht22_deque,))
         dht22_data_thread.setDaemon(True)
         dht22_data_thread.start()
 
+    dash_page_1_painter = DashPage1Painter(display_surface)
+
     # Main loop, this will juggle data and painting the dash page(s)
     while True:
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                print("User quit")
+                pygame.quit()
+                sys.exit()
+                # TODO: (Adam) 2020-12-02 Properly close out threads and active connections
+        pygame.event.clear()
+
         if data_queue_maxlen > len(aida64_deque):
-            # We can't safely popleft data if the data queue isn't deep enough. Add a tiny delay
+            # We can't safely access data if the data queue isn't deep enough. Add a tiny delay
             # while we wait to stop system resources from getting thrashed.
             # TODO: (Adam) 2020-12-02 Jump into wait-for-reconnect mode with screen saver if we lost
             #           the data feed for more than a few seconds.
             time.sleep(0.050)
             continue
 
+        # Paint the updated dashboard page and flip the display.
+        if None == dht22_deque:
+            dash_page_1_painter.paint(aida64_deque.popleft(), None)
+        else:
+            dash_page_1_painter.paint(aida64_deque.popleft(), dht22_deque.popleft())
 
-        leftmost_data = aida64_deque.popleft()
-        print("Data_in_main_thread: {}".format(leftmost_data))
-        #print("Remaining length: {}".format(len(data)))
+        pygame.display.flip()
+
+        #leftmost_data = aida64_deque.popleft()
+        #print("Data_in_main_thread: {}".format(leftmost_data))
+        ##print("Remaining length: {}".format(len(data)))
 
 
     print("Exited main loop")
