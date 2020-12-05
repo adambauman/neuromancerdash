@@ -45,7 +45,7 @@ class DHT22:
         if False == return_metric:
             temperature = (temperature * 1.8) + 32
 
-        return humidity, temperature
+        return DHT22Data(humidity, temperature)
 
 
     # Will block and retry up to 15 times with 2 seconds between attempts until GPIO timings align to
@@ -58,13 +58,13 @@ class DHT22:
         if False == return_metric:
             temperature = (temperature * 1.8) + 32
 
-        return humidity, temperature
+        return DHT22Data(humidity, temperature)
 
     @classmethod
     def threadable_read_retry(class_object, dht22_data_queue, return_metric = False):
         assert(None != dht22_data_queue)
 
-        dht22_data = DHT22Data(class_object.read_retry(return_metric))
+        dht22_data = class_object.read_retry(return_metric)
         dht22_data_queue.append(dht22_data)
 
 

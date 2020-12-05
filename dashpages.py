@@ -258,7 +258,7 @@ class DashPage1Painter:
         font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
     def __paint_ambient_text_stack__(self, origin, font_normal, data):
-        assert(0 != len(data))
+        assert(None != data)
 
         stack_vertical_adjustment = -2
 
@@ -267,7 +267,7 @@ class DashPage1Painter:
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{:0.1f}".format(DashData.best_attempt_read(data, DashData.ambient_temp, "0")) + u"\u00b0" + "F"
+        text = "{:0.1f}".format(data.temperature) + u"\u00b0" + "F"
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
@@ -275,7 +275,7 @@ class DashPage1Painter:
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{:0.1f}".format(DashData.best_attempt_read(data, DashData.ambient_humidity, "0")) + "%"
+        text = "{:0.1f}".format(data.humidity) + "%"
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
     def paint(self, aida64_data, dht22_data=None):
@@ -350,7 +350,7 @@ class DashPage1Painter:
 
         # Ambient Humidity and Temperature
         if None != dht22_data:
-            self.__paint_ambient_text_stack__(self.page.ambient_humidity_temp_origin, self.page.font_normal, aida64_data)
+            self.__paint_ambient_text_stack__(self.page.ambient_humidity_temp_origin, self.page.font_normal, dht22_data)
 
         # Disk activity
         #disk_count = 4
