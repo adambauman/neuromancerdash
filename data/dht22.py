@@ -5,9 +5,9 @@
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
 
-import Adafruit_DHT
-
 from time import sleep
+
+import Adafruit_DHT
 
 class DHT22Data:
     humidity = None
@@ -64,8 +64,13 @@ class DHT22:
     def threadable_read_retry(class_object, dht22_data_queue, return_metric = False):
         assert(None != dht22_data_queue)
 
-        dht22_data = class_object.read_retry(return_metric)
-        dht22_data_queue.append(dht22_data)
+        while True:
+            dht22_data = class_object.read_retry(return_metric)
+            dht22_data_queue.append(dht22_data)
+
+            # NOTE: (Adam) 2020-12-04 Ambient data is going to change slowly, we can sleep for a bit to free
+            #         resources for other tasks.
+            sleep(120)
 
 
 def main():

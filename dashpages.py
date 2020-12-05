@@ -202,7 +202,7 @@ class DashPage1Painter:
         assert(0 != len(data))
 
         stack_vertical_adjustment = -2
-        
+
         text_origin = origin
         text = "{} {}".format(DashData.best_attempt_read(data, DashData.cpu_power, "0"), DashData.cpu_power.unit.symbol)
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
@@ -257,8 +257,8 @@ class DashPage1Painter:
         text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_ram_used, "0"), DashData.gpu_ram_used.unit.symbol)
         font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
 
-    def __paint_ambient_text_stack__(self, origin, font_normal, data):
-        assert(None != data)
+    def __paint_ambient_text_stack__(self, origin, font_normal, dht22_data):
+        assert(None != dht22_data)
 
         stack_vertical_adjustment = -2
 
@@ -267,7 +267,7 @@ class DashPage1Painter:
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{:0.1f}".format(data.temperature) + u"\u00b0" + "F"
+        text = "{:0.1f}".format(dht22_data.temperature) + u"\u00b0" + "F"
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
@@ -275,7 +275,7 @@ class DashPage1Painter:
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
         text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{:0.1f}".format(data.humidity) + "%"
+        text = "{:0.1f}".format(dht22_data.humidity) + "%"
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
     def paint(self, aida64_data, dht22_data=None):
@@ -291,35 +291,35 @@ class DashPage1Painter:
         self.__paint_gpu_text_stack__(self.page.gpu_detail_stack_origin, self.page.font_normal, aida64_data)
 
         # CPU and GPU Temps
-        self.display_surface.blit(        
+        self.display_surface.blit(
             self.page.cpu_temp_gauge.update(DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")),
             self.page.cpu_temp_gauge_origin)
 
         self.display_surface.blit(
-            self.page.gpu_temp_gauge.update(DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")), 
+            self.page.gpu_temp_gauge.update(DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")),
             self.page.gpu_temp_gauge_origin)
 
         # CPU and GPU Utilization
         self.display_surface.blit(
-            self.page.cpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")), 
+            self.page.cpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")),
             self.page.cpu_graph_origin)
 
         self.display_surface.blit(
-            self.page.gpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")), 
+            self.page.gpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")),
             self.page.gpu_graph_origin)
 
         # CPU Core Visualizer
         self.display_surface.blit(
-            self.page.core_visualizer.update(aida64_data), 
+            self.page.core_visualizer.update(aida64_data),
             self.page.core_visualizer_origin)
 
         # System and GPU memory usage
         self.display_surface.blit(
-            self.page.sys_memory_bar.update(DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")), 
+            self.page.sys_memory_bar.update(DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")),
             self.page.sys_memory_origin)
 
         self.display_surface.blit(
-            self.page.gpu_memory_bar.update(DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")), 
+            self.page.gpu_memory_bar.update(DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")),
             self.page.gpu_memory_origin)
 
         # FPS Graph and Text
@@ -329,23 +329,23 @@ class DashPage1Painter:
         self.page.font_normal.render_to(self.display_surface, self.page.fps_label_origin, "FPS", Color.white)
 
         # Fan gauges
-        self.display_surface.blit(        
+        self.display_surface.blit(
             self.page.fan1_gauge.update(DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")),
             self.page.fan1_gauge_origin)
-        self.display_surface.blit(        
+        self.display_surface.blit(
             self.page.fan_opt_gauge.update(DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")),
             self.page.fan_opt_gauge_origin)
-        self.display_surface.blit(        
+        self.display_surface.blit(
             self.page.cpu_fan_gauge.update(DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")),
             self.page.cpu_fan_gauge_origin)
-        self.display_surface.blit(        
+        self.display_surface.blit(
             self.page.gpu_fan_gauge.update(DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")),
             self.page.gpu_fan_gauge_origin)
 
         # Motherboard temp (nestled between all the fans)
         self.page.font_normal.render_to(
-            self.display_surface, self.page.mobo_temp_origin, 
-            "{}".format(DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")), 
+            self.display_surface, self.page.mobo_temp_origin,
+            "{}".format(DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")),
             Color.white)
 
         # Ambient Humidity and Temperature
@@ -365,7 +365,7 @@ class DashPage1Painter:
         #            #traceback.print_exc()
 
         #    self.display_surface.blit(
-        #        self.page.disk_activity_bar.update(disk_activity_value), 
+        #        self.page.disk_activity_bar.update(disk_activity_value),
         #        (self.page.disk_activity_origin[0], self.page.disk_activity_origin[1] + disk_y_offset))
         #    disk_y_offset += self.page.disk_activity_y_spacing
 
@@ -373,14 +373,14 @@ class DashPage1Painter:
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
         network_download_text = "NIC 1 Down: {} {}".format(nic1_down_value, DashData.nic1_download_rate.unit.symbol)
         self.page.font_normal.render_to(
-            self.display_surface, 
-            self.page.network_text_origin, 
+            self.display_surface,
+            self.page.network_text_origin,
             network_download_text, Color.white)
-        
+
         nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
         network_upload_text = "Up: {} {}".format(nic1_up_value, DashData.nic1_upload_rate.unit.symbol)
         self.page.font_normal.render_to(
-            self.display_surface, 
+            self.display_surface,
             (self.page.network_text_origin[0] + 180, self.page.network_text_origin[1]),
             network_upload_text, Color.white)
 

@@ -69,7 +69,7 @@ def get_command_args(argv):
         sys.exit()
 
     return aida_sse_server
-        
+
 def main(argv):
     aida_sse_server = get_command_args(argv)
     assert(None != aida_sse_server)
@@ -95,9 +95,9 @@ def main(argv):
     pygame.display.flip()
 
     data_queue_maxlen = 1
-    
+
     # Start the AIDA64 data thread, fastest update interval is usually ~100ms and can be
-    # adjusted in the AIDA64 preferences. 
+    # adjusted in the AIDA64 preferences.
     aida64_deque = deque([], maxlen=data_queue_maxlen)
     aida64_data_thread = threading.Thread(target=AIDA64LCDSSE.threadable_stream_read, args=(aida64_deque, aida_sse_server))
     aida64_data_thread.setDaemon(True)
@@ -106,6 +106,7 @@ def main(argv):
     # Start DHT22 thread if GPIO is available. Reading this data can take awhile, don't expect
     # updates to occur under 3-5 seconds.
     dht22_deque = None
+    dht22_last_data = None
     if g_gpio_available:
         dht22_deque = deque([], maxlen=data_queue_maxlen)
         dht22_data_thread = threading.Thread(target=DHT22.threadable_read_retry, args=(dht22_deque,))
@@ -139,7 +140,14 @@ def main(argv):
         if None == dht22_deque:
             dash_page_1_painter.paint(aida64_deque.popleft(), None)
         else:
-            dash_page_1_painter.paint(aida64_deque.popleft(), dht22_deque.popleft())
+            if data_queue_maxlen <= len(dht22_deque):
+                dht22_data = dht22_deque.popleft()
+                dht22_last_data = dht22_data
+                print("New dht22_data. H: {:0.1f} T: {:0.1f}".format(dht22_data.humidity, dht22_data.temperature))
+            else:
+                dht22_data = dht22_last_data
+
+            dash_page_1_painter.paint(aida64_deque.popleft(), dht22_data)
 
         pygame.display.flip()
 
