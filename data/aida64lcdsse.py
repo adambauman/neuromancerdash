@@ -6,6 +6,7 @@
 #
 
 import sys, getopt
+from time import sleep
 
 from sseclient import SSEClient
 
@@ -108,22 +109,40 @@ class AIDA64LCDSSE:
         assert(None != data_queue)
         assert(None != aida64_lcd_sse_address and 0 != len(aida64_lcd_sse_address))
 
-        server_messages = SSEClient(aida64_lcd_sse_address, timeout=2.0)
-
-        for server_message in server_messages:
-            if None == server_message.data or 0 == len(server_message.data):
-                continue
-
-            if "reload" == server_message.data.lower():
+        retry_attempts = 0
+        while True:
+            try:
                 if __debug__:
-                    print("Encountered reload message")
-                continue
+                    print("Making SSE AIDA64 connection...")
 
-            parsed_data = class_object.__parse_data__(server_message.data)
-            assert(0 != len(parsed_data))
+                server_messages = SSEClient(aida64_lcd_sse_address, timeout=1.0)
 
-            data_queue.append(parsed_data)
+                if __debug__:
+                    print("Connection successful!")
 
+                retry_attempts = 0
+                for server_message in server_messages:
+                    if None == server_message.data or 0 == len(server_message.data):
+                        continue
+
+                    if "reload" == server_message.data.lower():
+                        if __debug__:
+                            print("Encountered reload message")
+                        continue
+
+                    parsed_data = class_object.__parse_data__(server_message.data)
+                    assert(0 != len(parsed_data))
+
+                    data_queue.append(parsed_data)
+            except:
+                if __debug__:
+                    print("Stream read excepted, will restart connection in two seconds...")
+
+                # Back off retries after a few quick attempts
+                if 50 < retry_attempts:
+                    sleep(10)
+                else:
+                    sleep(0.1)
 
 
 

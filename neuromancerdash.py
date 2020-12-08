@@ -1,27 +1,30 @@
 #
-# neuromancerdash - main script that starts and controls the dashboard display
+# disk_visualizer_scratch - messing around with a new disk activity visualizer
 # ============================================================================
 #
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
 
+import os
 import pygame
 import sys, getopt
+from collections import deque
 import threading
-import random
-import requests
 
-# TODO: (Adam) 2020-12-1 Conditionally load modules that require GPIO for easier development
-#            and debugging on non-GPIO equipped platforms.
+from utilities.screensaver import MatrixScreensaver
+
+# Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
+# debug and develop on other platforms.
+g_dht22_enabled = True
+if g_dht22_enabled:
+    from data.dht22 import DHT22, DHT22Data
+
 from data.aida64lcdsse import AIDA64LCDSSE
-from data.dht22 import DHT22
 
 from elements.styles import FontPaths, Color
 from dashpages import DashPage1Painter
-from utilities.screensaver import MatrixScreensaver
+from elements.styles import Color, AssetPath, FontPaths
 
-# Global that will be used to signal the reconnect screensaver that it's time to stop.
-g_host_available = False
 
 class Hardware:
     screen_width = 480
@@ -30,20 +33,17 @@ class Hardware:
 def print_usage():
     print("")
     print("Usage: neuromancer_dash.py <options>")
-    print("Example: python3 neuromancer_dash.py --aidasse http://localhost:8080/sse --disablegpio")
+    print("Example: python3 neuromancer_dash.py --aidasse http://localhost:8080/sse")
     print("")
     print("       Required Options:")
     print("           --aidasse <full http address:port to AIDA64 LCD SSE stream>")
-    print("")
-    print("       Optional Options:")
-    print("           --disablegpio (specifying will disable functions that require gpio functionality)")
 
 def get_command_args(argv):
     aida_sse_server = None
     gpio_enabled = True
 
     try:
-        opts, args = getopt.getopt(argv,"aidasse:gpioenabled",["aidasse=", "disablegpio"])
+        opts, args = getopt.getopt(argv,"aidasse:",["aidasse=", ])
 
     except getopt.GetoptError:
         print_usage()
@@ -55,97 +55,20 @@ def get_command_args(argv):
             sys.exit()
         elif opt in ("--aidasse"):
             aida_sse_server = arg
-        elif opt in ("--disablegpio"):
-            gpio_enabled = False
 
     if (None == aida_sse_server):
         print_usage()
         sys.exit()
 
-    return aida_sse_server, gpio_enabled
-
-
-def start_dashboard(server_messages, display_surface, dash_page_1_painter, gpio_enabled):
-
-    # This is a generator loop, it will keep going as long as the AIDA64 stream is open
-    # NOTE: (Adam) 2020-11-14 Stream data is sometimes out of sync with the generated loop,
-    #       just skip and try again on the next go-around
-    for server_message in server_messages:
-        if 0 == len(server_message.data) or None == server_message.data:
-            continue
-
-        # NOTE: (Adam) 2020-11-22 The very first connection to AIDA64's LCD module seems to always
-        #           return this "ReLoad" message. The next message will be the start of the stream.
-        if "reload" == server_message.data.lower():
-            if __debug__:
-                print("Encountered reload message")
-            continue
-
-        parsed_data = AIDA64LCDSSE.parse_data(server_message.data)
-        assert(0 != len(parsed_data))
-
-        ambient_humidity = 0
-        ambient_temp = 0
-        # Can't read a stuff like the DHT22 with GPIO (ie. not running off a something like an RPi.)
-        #if gpio_enabled:
-            #ambient_humidity, ambient_temp  = DHT22.best_effort_read()
-
-        # Add ambient data to the dictionary we got from parsing Aida64 data
-        parsed_data["ambient_humidity"] = ambient_humidity
-        parsed_data["ambient_temp"] = ambient_temp
-
-        # Paint the updated dashboard page and flip the display.
-        dash_page_1_painter.paint(parsed_data)
-        pygame.display.flip()
-
-        # TODO: (Adam) 2020-11-17 Refactor so we can tween gauge contents while waiting for data
-        #           updates. Current model is pretty choppy looking.
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                print("User quit")
-                pygame.quit()
-                sys.exit()
-        pygame.event.clear()
-
-
-# TODO: (Adam) 2020-11-22 Try to move away from using a global to control execution
-def test_server_connection(server_address):
-    assert(0 != len(server_address))
-
-    while True:
-        try:
-            if __debug__:
-                print("Attempting to reach host...")
-
-            response = requests.get("http://192.168.1.202:8080", timeout=1.0)
-
-            if __debug__:
-                print("Received response: {}".format(response.status_code))
-
-            # Request didn't throw, if status is HTTP 200 the host is ready.
-            if 200 == response.status_code:
-                global g_host_available
-                g_host_available = True
-                return
-        except:
-            if __debug__:
-                traceback.print_exc()
-                print("Connect test exception, connection failed")
-
-        if __debug__:
-            print("3 seconds before next attempt...")
-
-        pygame.time.wait(3000)
-
+    return aida_sse_server
 
 def main(argv):
-    aida_sse_server, gpio_enabled = get_command_args(argv)
-    assert(None != aida_sse_server and None != gpio_enabled)
+    aida_sse_server = get_command_args(argv)
+    assert(None != aida_sse_server)
 
     if __debug__:
         print("Passed arguments:")
         print("    aidasse = {}".format(aida_sse_server))
-        print("    gpioenabled = {}".format(gpio_enabled))
 
     pygame.init()
     pygame.mixer.quit()
@@ -160,64 +83,75 @@ def main(argv):
     display_surface.fill(Color.black)
     font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
     font_message.kerning = True
-    font_message.render_to(display_surface, (10, 10), "Building display and connecting...", Color.white)
+    font_message.render_to(display_surface, (10, 10), "Building elements and connecting...", Color.white)
     pygame.display.flip()
+
+    data_queue_maxlen = 1
+
+    # Start the AIDA64 data thread, fastest update interval is usually ~100ms and can be
+    # adjusted in the AIDA64 preferences.
+    aida64_deque = deque([], maxlen=data_queue_maxlen)
+    aida64_data_thread = threading.Thread(target=AIDA64LCDSSE.threadable_stream_read, args=(aida64_deque, aida_sse_server))
+    aida64_data_thread.setDaemon(True)
+    aida64_data_thread.start()
+
+    # Start DHT22 thread if GPIO is available. Reading this data can take awhile, don't expect
+    # updates to occur under 3-5 seconds.
+    dht22_deque = None
+    dht22_last_data = None
+    if g_dht22_enabled:
+        dht22_deque = deque([], maxlen=data_queue_maxlen)
+        dht22_data_thread = threading.Thread(target=DHT22.threadable_read_retry, args=(dht22_deque,))
+        dht22_data_thread.setDaemon(True)
+        dht22_data_thread.start()
 
     dash_page_1_painter = DashPage1Painter(display_surface)
 
-    retry_count = 0
+    # Main loop, this will juggle data and painting the dash page(s)
+    ticks_since_last_data = 0
+    data_retry_delay = 50
+    retry_ticks_before_screensaver = 2000
     while True:
-        # Dashboard will fail if the computer sleeps or is otherwise unavailable, keep
-        # retrying until it starts to respond again.
-        try:
-            # Start connection to the AIDA64 SSE data stream
-            server_messages = AIDA64LCDSSE.connect(aida_sse_server)
-            start_dashboard(server_messages, display_surface, dash_page_1_painter, gpio_enabled)
-        except Exception:
-            if __debug__:
-                print("Exception in neuromancer_dash.py")
-                traceback.print_exc()
-
-        # NOTE: (Adam) 2020-11-24 Attempt a couple quick reconnects in case it's just a packet or two
-        #           falling behind (happens a bit if connecting wirelessly)
-        if __debug__:
-            print("Exception during server_message() or start_dashboard(), retry #{}".format(retry_count))
-
-        if 3 > retry_count:
-            retry_count += 1
-            pygame.time.wait(100)
-            continue
-
-        # Reset retry_count and screensaver aborting global then move to screensaver mode
-        retry_count = 0
-        global g_host_available
-        g_host_available = False
-
-        # NOTE: (Adam) 2020-11-22 Originally had the screensaver running in a new thread while
-        #           the main thread tested the connection. Had to abandon that because the
-        #           underlying bits of pygame on the Pi didn't like sharing display surfaces
-        #           between threads.
-        if __debug__:
-            print("General failure, starting connection test thread and screensaver...")
-
-        connection_test_thread = threading.Thread(target=test_server_connection, args=(aida_sse_server,))
-        connection_test_thread.start()
-        MatrixScreensaver.start(stop_requested = lambda : g_host_available)
-
-        if __debug__:
-            print("Screensaver aborted, joining thread")
-        #screensaver.start() # Will loop internally until the connection test thread signals
-        connection_test_thread.join()
-
-        if __debug__:
-            print("Connection test thread joined, processing events and continuing")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 print("User quit")
                 pygame.quit()
                 sys.exit()
+                # TODO: (Adam) 2020-12-02 Properly close out threads and active connections
         pygame.event.clear()
+
+        # AIDA64 data is critical, if it stops we will display a screensaver until the feed returns
+        if data_queue_maxlen > len(aida64_deque):
+            # We can't safely access data if the data queue isn't deep enough. 
+            ticks_since_last_data += data_retry_delay
+            if ticks_since_last_data > retry_ticks_before_screensaver:
+                if __debug__:
+                    print("Data stream lost, starting screensaver...")
+
+                MatrixScreensaver.start(data_queue_length = lambda : len(aida64_deque))
+
+            # Add a tiny delay while we wait to stop system resources from getting thrashed.
+            pygame.time.wait(data_retry_delay)
+            continue
+        else:
+            ticks_since_last_data = 0
+
+        # Paint the updated dashboard page and flip the display. DHT22 data will not be available if
+        # the system running the script doesn't have RPi.GPIO support.
+        if None == dht22_deque:
+            dash_page_1_painter.paint(aida64_deque.popleft(), None)
+        else:
+            if data_queue_maxlen <= len(dht22_deque):
+                dht22_data = dht22_deque.popleft()
+                dht22_last_data = dht22_data
+                #print("New dht22_data. H: {:0.1f} T: {:0.1f}".format(dht22_data.humidity, dht22_data.temperature))
+            else:
+                dht22_data = dht22_last_data
+
+            dash_page_1_painter.paint(aida64_deque.popleft(), dht22_data)
+
+        pygame.display.flip()
 
 
     pygame.quit()

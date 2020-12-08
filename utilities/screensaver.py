@@ -51,7 +51,7 @@ class MatrixScreensaver:
         cls,
         surface = None, 
         startup_message = "", config = MatrixScreensaverConfig(), 
-        stop_requested = lambda : False):
+        stop_requested = lambda : False, data_queue_length = lambda : 0):
 
         if None == surface:
             surface = pygame.display.get_surface()
@@ -152,7 +152,9 @@ class MatrixScreensaver:
             assert(0 != len(x_heads))
 
             # Immediately bail if the caller requests a stop through the signaling lambda
-            if stop_requested():
+            if stop_requested() or 0 < data_queue_length():
+                if __debug__:
+                    print("Stopping screen saver")
                 return
 
             # Process events to avoid freezing behavior
@@ -226,7 +228,9 @@ class MatrixScreensaver:
         while not_done:
 
             # Immediately bail if the caller requests a stop through the signaling lambda
-            if stop_requested():
+            if stop_requested() or 0 < data_queue_length():
+                if __debug__:
+                    print("Stopping screen saver")
                 return
 
             # Process events to avoid freezing behavior
