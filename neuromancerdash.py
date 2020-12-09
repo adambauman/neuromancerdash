@@ -25,6 +25,15 @@ from elements.styles import FontPaths, Color
 from dashpages import DashPage1Painter
 from elements.styles import Color, AssetPath, FontPaths
 
+if __debug__:
+    class DHT22Data:
+        humidity = None
+        temperature = None
+
+        def __init__(self, humidity=0.0, temperature=0.0):
+            self.humidity = humidity
+            self.temperature = temperature
+
 
 class Hardware:
     screen_width = 480
