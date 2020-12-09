@@ -15,7 +15,7 @@ from utilities.screensaver import MatrixScreensaver
 
 # Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
 # debug and develop on other platforms.
-g_dht22_enabled = True
+g_dht22_enabled = False
 if g_dht22_enabled:
     from data.dht22 import DHT22, DHT22Data
 

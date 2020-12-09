@@ -10,6 +10,9 @@ from time import sleep
 
 from sseclient import SSEClient
 
+if __debug__:
+    import traceback
+
 class AIDA64LCDSSE:
 
     # TODO: (Adam) 2020-11-14 Very simple static class right now, could definitely tighten things up, use
@@ -90,9 +93,10 @@ class AIDA64LCDSSE:
             except:
                 # Skip any fields that failed to parse
                 if __debug__:
-                    traceback.print_exc()
+                    print("Extract single item data failed: {}".format(data))
+                    #traceback.print_exc()
+                    #assert(False)
 
-                assert(False)
                 continue
 
             # Don't add incomplete data
@@ -137,6 +141,7 @@ class AIDA64LCDSSE:
             except:
                 if __debug__:
                     print("Stream read excepted, will restart connection in two seconds...")
+                    traceback.print_exc()
 
                 # Back off retries after a few quick attempts
                 if 50 < retry_attempts:
