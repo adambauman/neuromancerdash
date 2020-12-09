@@ -98,6 +98,7 @@ def main(argv):
     # Start DHT22 thread if GPIO is available. Reading this data can take awhile, don't expect
     # updates to occur under 3-5 seconds.
     dht22_deque = None
+    dht22_data = None
     dht22_last_data = None
     if g_dht22_enabled:
         dht22_deque = deque([], maxlen=data_queue_maxlen)
@@ -139,17 +140,16 @@ def main(argv):
 
         # Paint the updated dashboard page and flip the display. DHT22 data will not be available if
         # the system running the script doesn't have RPi.GPIO support.
-        if None == dht22_deque:
-            dash_page_1_painter.paint(aida64_deque.popleft(), None)
-        else:
+        if None != dht22_deque:
             if data_queue_maxlen <= len(dht22_deque):
                 dht22_data = dht22_deque.popleft()
                 dht22_last_data = dht22_data
-                #print("New dht22_data. H: {:0.1f} T: {:0.1f}".format(dht22_data.humidity, dht22_data.temperature))
             else:
                 dht22_data = dht22_last_data
 
-            dash_page_1_painter.paint(aida64_deque.popleft(), dht22_data)
+        # Data gathered and prepared, paint it.
+        # TODO: Switch pages
+        dash_page_1_painter.paint(aida64_deque.popleft(), dht22_data)
 
         pygame.display.flip()
 
