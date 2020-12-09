@@ -149,6 +149,8 @@ def main(argv):
 
         # Data gathered and prepared, paint it.
         # TODO: Switch pages
+
+        dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
         dash_page_1_painter.paint(aida64_deque.popleft(), dht22_data)
 
         pygame.display.flip()

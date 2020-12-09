@@ -278,6 +278,27 @@ class DashPage1Painter:
         text = "{:0.1f}".format(dht22_data.humidity) + "%"
         font_normal.render_to(self.display_surface, text_origin, text, Color.white)
 
+    def __paint_ambient_text_stack_2__(self, origin, font_normal, dht22_data):
+        assert(None != dht22_data)
+
+        stack_vertical_adjustment = -2
+
+        text_origin = origin
+        text = "Room Temp "
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{:0.1f}".format(dht22_data.temperature) + u"\u00b0" + "F"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "Humidity"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
+        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
+        text = "{:0.1f}".format(dht22_data.humidity) + "%"
+        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+
     def paint(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
         assert(None != self.page)
@@ -350,7 +371,8 @@ class DashPage1Painter:
 
         # Ambient Humidity and Temperature
         if None != dht22_data:
-            self.__paint_ambient_text_stack__(self.page.ambient_humidity_temp_origin, self.page.font_normal, dht22_data)
+            #self.__paint_ambient_text_stack__(self.page.ambient_humidity_temp_origin, self.page.font_normal, dht22_data)
+            self.__paint_ambient_text_stack_2__(self.page.ambient_humidity_temp_origin, self.page.font_normal, dht22_data)
 
         # Disk activity
         #disk_count = 4
