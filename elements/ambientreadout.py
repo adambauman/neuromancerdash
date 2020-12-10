@@ -10,16 +10,26 @@ import pygame
 from .styles import Color, FontPaths, AssetPath
 from .helpers import Helpers
 
-class DynamicItem:
-    previous_value = None
+class DynamicField:
+    def __init__(self, origin, subsurface, text, text_color, font, value=None):
+        # Will be an updatable subsurface of the working surface
+        self.__subsurface = subsurface 
+        self.__text_color = text_color
+        self.__font = font
+        self.__origin = origin
+        self.__text = text
 
-    def __init__(self, origin, rect, color, font, value=None):
-        self.origin = origin # Yes, required even with the rect!
-        self.rect = rect
-        self.color = color
-        self.font = font
-        self.previous_value = value
+        self.value = value
 
+    def update(self, new_value):
+        # TODO: Find a way to preserve alpha all the way down to the display surface
+        #       in case you want a cool background picture or color behind your data
+        #       displays.
+        self.__subsurface.fill(Color.black)
+        render_text = self.__text.format(new_value)
+        self.__font.render_to(self.__subsurface, (0,0), render_text, Color.white)
+        self.value = new_value
+        # No need to return subsurface, it update it's slice of the working surface
 
 class FontCollection:
     def __init__(self):
@@ -34,16 +44,17 @@ class FontCollection:
         self.small = pygame.freetype.Font(FontPaths.fira_code_semibold(), 8)
 
 class TemperatureHumidity:
-    __dynamic_items = {}
-    __first_update = True
+    __temperature_field = None
+    __humidity_field = None
 
     def __init__(self):
         # TODO: Pass a configuration in, could open sizing, font selection, colors, etc. to 
-        #       customization.
+        #       customization. Also take background surface to handle transparency over anything that
+        #       isn't just black fill
 
         # TODO: Figure out that initial surface sizing
-        self.__working_surface = pygame.Surface((100, 100), pygame.SRCALPHA)
-        self.__working_surface.fill((0, 0, 0, 0))
+        self.__working_surface = pygame.Surface((70, 60), pygame.SRCALPHA)
+        self.__working_surface.fill(Color.black)
         self.__fonts = FontCollection()
 
     def __get_next_vertical_stack_origin__(self, last_origin, font, padding = 0):
@@ -61,57 +72,49 @@ class TemperatureHumidity:
         origin = (0, 0)
         self.__fonts.normal.render_to(self.__working_surface, origin, "Room Temp", Color.white)
 
-        # Temperature value
+        # Temperature value and field setup
         origin = self.__get_next_vertical_stack_origin__(origin, self.__fonts.normal, stack_y_offset)
-        text = "{:0.1f}".format(dht22_data.temperature) + u"\u00b0" + "F"
-        rendered_rect = self.__fonts.normal.render_to(self.__working_surface, origin, text, Color.white)
-        # Save temperature dynamic area
-        self.__dynamic_items["temperature"] = DynamicItem(origin, rendered_rect, Color.white, self.__fonts.normal, dht22_data.temperature)
+        subsurface_rect = pygame.Rect(origin[0], origin[1], self.__working_surface.get_width(), self.__fonts.normal.get_sized_height())
+        text = "{:0.1f}\u00b0F" # TODO also take celcius, do the conversion in here instead of DHT22data
+        self.__temperature_field = DynamicField(
+            origin, self.__working_surface.subsurface(subsurface_rect),
+            text, Color.white, self.__fonts.normal)
+        self.__temperature_field.update(dht22_data.temperature)
 
-        # Humidity static label
+        ## Humidity static label
         origin = self.__get_next_vertical_stack_origin__(origin, self.__fonts.normal, stack_y_offset)
-        text = "Humidity"
-        self.__fonts.normal.render_to(self.__working_surface, origin, text, Color.white)
+        self.__fonts.normal.render_to(self.__working_surface, origin, "Humidity", Color.white)
 
-        # Humidity value
+        ## Humidity value and field setup
         origin = self.__get_next_vertical_stack_origin__(origin, self.__fonts.normal, stack_y_offset)
-        text = "{:0.1f}".format(dht22_data.humidity) + "%"
-        rendered_rect = self.__fonts.normal.render_to(self.__working_surface, origin, text, Color.white)
+        subsurface_rect = pygame.Rect(origin[0], origin[1], self.__working_surface.get_width(), self.__fonts.normal.get_sized_height())
+        text = "{:0.1f}%"
         # Save humidity dynamic area
-        self.__dynamic_items["humidity"] = DynamicItem(origin, rendered_rect, Color.white, self.__fonts.normal, dht22_data.humidity)
+        # Stretch width of our rendered rect to us the whole "row"
+        self.__humidity_field = DynamicField(
+            origin, self.__working_surface.subsurface(subsurface_rect),
+            text, Color.white, self.__fonts.normal)
+        self.__humidity_field.update(dht22_data.humidity)
 
 
     def update(self, dht22_data):
         assert(None != dht22_data)
 
         # On the first update we need to draw the static elements and store information for dynamic areas
-        if self.__first_update:
+        if None == self.__temperature_field or None == self.__humidity_field:
             self.__draw_first__(dht22_data)
-            self.__first_update = False
             return self.__working_surface
-       
-        # After the first run we'll only update the dynamic areas
-        assert(0 != len(self.__dynamic_items))
 
         # Temperature
-        dynamic_temp = self.__dynamic_items["temperature"]
-        if dht22_data.temperature != dynamic_temp.previous_value:
+        if dht22_data.temperature != self.__temperature_field.value:
             if __debug__:
                 print("Redrawing ambient temperature...")
+            self.__temperature_field.update(dht22_data.temperature)
 
-            text = "{:0.1f}".format(dht22_data.temperature) + u"\u00b0" + "F"
-            rendered_rect = dynamic_temp.font.render_to(self.__working_surface, dynamic_temp.origin, text, dynamic_temp.color)
-            # Update so we can erase the old text on the next update
-            # TODO: Testing how reference works here, streamline if the debug stuff actually updates
+        if dht22_data.humidity != self.__humidity_field.value:
             if __debug__:
-                print("Old self dynamic rect: {}".format(self.__dynamic_items["temperature"].rect))
-                dynamic_temp.rect = rendered_rect
-                print("New self dynamic rect: {}".format(self.__dynamic_items["temperature"].rect))
-
-            self.__dynamic_items["temperature"].rect = rendered_rect
-            self.__dynamic_items["temperature"].previous_value = dht22_data.temperature
-
-
+                print("Redrawing ambient humidity...")
+            self.__humidity_field.update(dht22_data.humidity)
 
         return self.__working_surface
 
