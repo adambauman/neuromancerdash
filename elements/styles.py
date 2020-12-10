@@ -31,6 +31,7 @@ class AssetPath:
     gauges = "assets/images/gauges"
     graphs = "assets/images/graphs"
     misc = "assets/images/misc"
+    backgrounds = "assets/images/backgrounds"
 
 class FontPaths:
     # TODO: (Adam) 2020-11-15 Use os.path.join instead of string concact

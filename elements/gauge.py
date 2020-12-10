@@ -30,7 +30,11 @@ class GaugeConfig:
         self.unit_text_color = Color.white
         self.value_text_color = Color.white
         self.bg_color = Color.windows_dkgrey_1
-        self.bg_alpha = 200
+
+        # TODO: (Adam) Copy in the background behind the gauge so we can clear and apply it when
+        #           drawing updates. Or do something fancy with subsurfaces. Right now bg_alpha 
+        #           will only appear on the first draw
+        self.bg_alpha = 255
 
         self.counter_sweep = False
         self.show_value = True
@@ -40,25 +44,32 @@ class GaugeConfig:
 
 class FlatArcGauge:
     __config = None
-    __last_value = None
-    __working_surface = None
+
+    # Leave current value exposed so caller can decide to call for updates
+    current_value = None
 
     __static_elements_surface = None # Should not be changed after init
     __needle_surface = None # Should not be changed after init
     __needle_shadow_surface = None  # Should not be changed after init
 
-    def __init__(self, gauge_config):
+    def __init__(self, gauge_config, diameter=90):
         assert(None != gauge_config.data_field)
         assert(0 < gauge_config.radius)
+        assert(0 != diameter)
 
         self.__config = gauge_config
 
         # NOTE: (Adam) 2020-11-19 Bit of a hack, adding small amount of padding so AA edges don't get clipped
 
         base_size = (self.__config.radius * 2, self.__config.radius * 2)
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
-        self.__static_elements_surface = self.__working_surface.copy()
+        #self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface((diameter, diameter))
 
+        if __debug__:
+            font_diag = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            font_diag.render_to(self.__working_surface, (0, 0), "Hello from flatarcgauge init!", Color.white)
+
+        self.__static_elements_surface = pygame.Surface((diameter, diameter))
         self.__prepare_constant_elements()
 
         assert(None != self.__static_elements_surface)
@@ -147,12 +158,13 @@ class FlatArcGauge:
             print("Done generating components!")
         
 
-    def update(self, value):
+    def draw_update(self, value):
         assert(None != self.__working_surface)
 
+        # NOTE: (Adam) 2020-12-10 Changing this so caller can decide, might be able to optimize a bit more
         # Don't draw if the value hasn't changed
-        if self.__last_value == value:
-            return(self.__working_surface)
+        #if self.current_value == value:
+        #    return(self.__working_surface)
 
         self.__working_surface = self.__static_elements_surface.copy()
 
@@ -206,7 +218,7 @@ class FlatArcGauge:
             self.__working_surface.blit(value_surface[0], value_origin)
 
         # Track for the next update
-        self.__last_value = value
+        self.current_value = value
 
         return self.__working_surface
 

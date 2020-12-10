@@ -92,8 +92,8 @@ class AIDA64LCDSSE:
                 key, value = class_object.__extract_single_item_data__(data)
             except:
                 # Skip any fields that failed to parse
-                if __debug__:
-                    print("Extract single item data failed: {}".format(data))
+                #if __debug__:
+                    #print("Extract single item data failed: {}".format(data))
                     #traceback.print_exc()
                     #assert(False)
 

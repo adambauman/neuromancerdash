@@ -22,7 +22,7 @@ if g_dht22_enabled:
 from data.aida64lcdsse import AIDA64LCDSSE
 
 from elements.styles import FontPaths, Color
-from dashpages import DashPage1Painter
+from dashpages import DashPage01
 from elements.styles import Color, AssetPath, FontPaths
 
 if __debug__:
@@ -115,7 +115,8 @@ def main(argv):
         dht22_data_thread.setDaemon(True)
         dht22_data_thread.start()
 
-    dash_page_1_painter = DashPage1Painter(display_surface)
+    # Prepare dash page(s)
+    dash_page_01 = DashPage01(display_surface.get_width(), display_surface.get_height())
 
     # Main loop, this will juggle data and painting the dash page(s)
     ticks_since_last_data = 0
@@ -160,10 +161,10 @@ def main(argv):
         # TODO: Switch pages
 
         dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
-        dash_page_1_painter.paint(aida64_deque.popleft(), dht22_data)
 
+        new_dash_surface = dash_page_01.get_updated_surface(aida64_deque.popleft(), dht22_data)
+        display_surface.blit(new_dash_surface, (0, 0))
         pygame.display.flip()
-
 
     pygame.quit()
 
