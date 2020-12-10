@@ -80,7 +80,7 @@ class GPUDetails:
 
 
 class FPSConfig:
-    def __init__(self, number_font=None, label_font=None, draw_zero=False):
+    def __init__(self, number_font=None, label_font=None, draw_zero=True):
         self.number_font = number_font
         self.label_font = label_font
         self.draw_zero = draw_zero
@@ -119,16 +119,13 @@ class FPSText:
         self.__label_x = 3
         self.__label_y = self.__working_surface.get_height() - self.__config.label_font.get_sized_height()
 
-        
     def draw_update(self, value):
 
         self.__working_surface.blit(self.__background, (0,0))
 
-        #if 0 == value and False == self.__config.draw_zero:
-        #    return self.__working_surface
+        if 0 == int(value) and False == self.__config.draw_zero:
+            return self.__working_surface
 
-        #self.fps_text = (210, 240)
-        #self.fps_label = (212, 285)
         self.__config.number_font.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
         self.__config.label_font.render_to(self.__working_surface, (self.__label_x, self.__label_y), "FPS", Color.white)
 
