@@ -19,7 +19,7 @@ from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
 from elements.ambientreadout import TemperatureHumidity
-from elements.text import FPSText
+from elements.text import FPSText, CPUDetails
 
 from elements.helpers import Helpers
 
@@ -108,8 +108,8 @@ class Page01ElementPositions:
 
         self.core_visualizer = (310, 0)
 
-        self.cpu_detail_stack = (310, 33)
-        self.gpu_detail_stack = (310, 115)
+        self.cpu_details_rect = pygame.Rect(310, 33, 74, 72)
+        self.gpu_detail = (310, 115)
 
         self.cpu_temp_gauge = (width - 90, 7)
         self.gpu_temp_gauge = (width - 90, 117, 90, 90)
@@ -118,7 +118,7 @@ class Page01ElementPositions:
         self.fps_text_rect = pygame.Rect(210, 240, 98, 62)
 
         self.network_text = (0, 310)
-        self.time = (self.cpu_detail_stack[0], 310)
+        self.time = (self.cpu_details_rect[0], 310)
 
         #self.fan1_gauge_origin = (self.cpu_temp_gauge_origin[0], 230)
         #self.fan_opt_gauge_origin = (display_width - 40, 230)
@@ -202,17 +202,18 @@ class DashPage01:
 
         self.__element_positions = Page01ElementPositions(width, height)
         self.__element_configs = Page01ElementConfigurations()
-        
         self.__shared_fonts = SharedFonts()
-
 
         self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar)
         self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar)
         self.__cpu_graph = LineGraphReverse(self.__element_configs.cpu_graph)
         self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph)
+
         self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
+        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect, self.__working_surface)
         self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge)
         self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge)
+
         self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph)
         self.__fps_text = FPSText(self.__element_positions.fps_text_rect, self.__working_surface)
 
@@ -252,6 +253,11 @@ class DashPage01:
             self.__core_visualizer.update(aida64_data),
             self.__element_positions.core_visualizer)
 
+        # CPU and GPU Details
+        self.__working_surface.blit(
+            self.__cpu_details.draw_update(aida64_data),
+            (self.__element_positions.cpu_details_rect[0], self.__element_positions.cpu_details_rect[1]))
+
         # CPU Temperature Gauge
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
         if self.__cpu_temp_gauge.current_value != cpu_temperature:
@@ -274,9 +280,6 @@ class DashPage01:
                 self.__fps_text.draw_update(fps_value),
                 (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
 
-        #self.__working_surface.blit(self.page.fps_graph.update(fps_value), self.page.fps_graph_origin)
-        #self.page.font_large.render_to(self.display_surface, self.page.fps_text_origin, "{}".format(fps_value), Color.white)
-        #self.page.font_normal.render_to(self.display_surface, self.page.fps_label_origin, "FPS", Color.white)
 
         return self.__working_surface
 
