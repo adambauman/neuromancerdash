@@ -10,6 +10,9 @@ import pygame
 from .styles import Color
 from .helpers import Helpers
 
+# Set true to benchmark the update process
+g_benchmark = True
+
 class BarGraphConfig:
     width = 0
     height = 0
@@ -40,6 +43,9 @@ class BarGraph:
 
     def update(self, value):
         
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+        
         # Reuse previous surface if value hasn't changed
         if self.__last_value == value and self.__first_run != True:
             return self.__working_surface
@@ -54,5 +60,8 @@ class BarGraph:
         pygame.draw.rect(self.__working_surface, self.__config.foreground_color, draw_rect)
 
         self.__last_value = value
+
+        if g_benchmark:
+            print("BENCHMARK: BarGraph {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
         return self.__working_surface

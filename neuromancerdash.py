@@ -13,6 +13,9 @@ import threading
 
 from utilities.screensaver import MatrixScreensaver
 
+# Set true to benchmark various parts of the update process
+g_benchmark = False
+
 # Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
 # debug and develop on other platforms.
 if __debug__:
@@ -126,22 +129,13 @@ def main(argv):
     # Prepare dash page(s)
     dash_page_01 = DashPage01(display_surface.get_width(), display_surface.get_height())
 
-    # Set true to benchmark various parts of the update process
-    benchmark = False
-
-    if benchmark:
-        if __debug__:
-            print("BENCHMARK: Enabled, in debug mode")
-        else:
-            print("BENCHMARK: Enabled")
-
     # Main loop, this will juggle data and painting the dash page(s)
     ticks_since_last_data = 0
     data_retry_delay = 50
     retry_ticks_before_screensaver = 2000
     while True:
 
-        if benchmark:
+        if g_benchmark:
             loop_start_ticks = pygame.time.get_ticks()
 
         for event in pygame.event.get():
@@ -180,19 +174,25 @@ def main(argv):
             # Override, probably developing on a machine without GPIO. ;)
             dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
 
-        if benchmark:
+        if g_benchmark:
             draw_start_ticks = pygame.time.get_ticks()
 
         # Data gathered and prepared, paint it.
         # TODO: Switch pages
+        if g_benchmark:
+            display_surface_blit_ticks = pygame.time.get_ticks()
+
         display_surface.blit(dash_page_01.draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
 
-        if benchmark:
+        if g_benchmark:
+            print("BENCHMARK: Display surface blit: {}ms".format(pygame.time.get_ticks() - display_surface_blit_ticks))
+
+        if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
 
         pygame.display.flip()
 
-        if benchmark:
+        if g_benchmark:
             print("BENCHMARK: Loop update: {}ms".format(pygame.time.get_ticks() - loop_start_ticks))
 
     pygame.quit()

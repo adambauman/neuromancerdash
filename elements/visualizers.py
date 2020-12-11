@@ -9,6 +9,9 @@ import pygame
 
 from .styles import Color
 
+# Set true to benchmark the update process
+g_benchmark = True
+
 class CoreVisualizerConfig:
     def __init__(self, core_count):
         self.core_count = core_count
@@ -37,6 +40,10 @@ class SimpleCoreVisualizer:
     __first_run = True
 
     def __init__(self, core_visualizer_config):
+
+        if __debug__:
+            print("Setting up SimpleCoreVisualizer...")
+
         self.__config = core_visualizer_config
         
         # NOTE: (Adam) 2020-11-19 Setting for compatability with new config setup
@@ -71,6 +78,9 @@ class SimpleCoreVisualizer:
         assert(None != self.__last_base_surface and 0 != len(self.__last_core_activity))
         #assert(self.__core_count == len(self.__last_core_activity))
         assert(len(data) >= self.__core_count)
+
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
 
         # Copy in last core surface, we will only update the altered representations
         self.__base_surface = self.__last_base_surface.copy()
@@ -127,6 +137,9 @@ class SimpleCoreVisualizer:
 
         # Save for next update
         self.__last_base_surface = self.__base_surface.copy()
+
+        if g_benchmark:
+            print("BENCHMARK: CoreVisualizer: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
         return self.__base_surface
 

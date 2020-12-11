@@ -11,6 +11,9 @@ import os
 from .styles import Color, AssetPath
 from .helpers import Helpers
 
+# Set true to benchmark the update process
+g_benchmark = True
+
 class LineGraphConfig:
     def __init__(self, height, width, data_field):
         self.height, self.width = height, width
@@ -57,6 +60,9 @@ class LineGraphReverse:
         assert(None != self.__config)
         assert(None != self.__last_plot_surface)
         assert(None != self.__working_surface)
+
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
 
         # Clear working surface
         if None != self.__background:
@@ -123,6 +129,9 @@ class LineGraphReverse:
 
         # Save values for the next update
         self.__last_plot_surface = new_plot_surface.copy()
+
+        if g_benchmark:
+            print("BENCHMARK: LineGraph {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
         # Return completed working surface
         return self.__working_surface

@@ -12,6 +12,9 @@ import os
 from .helpers import Helpers
 from .styles import Color, FontPaths, AssetPath
 
+# Set true to benchmark the update process
+g_benchmark = True
+
 class GaugeConfig:
     def __init__(self, data_field, radius=45, value_font=None, value_font_origin=None):
         self.radius = radius
@@ -156,6 +159,9 @@ class FlatArcGauge:
     def draw_update(self, value):
         assert(None != self.__working_surface)
 
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
         # NOTE: (Adam) 2020-12-10 Changing this so caller can decide, might be able to optimize a bit more
         # Don't draw if the value hasn't changed
         #if self.current_value == value:
@@ -214,6 +220,9 @@ class FlatArcGauge:
 
         # Track for the next update
         self.current_value = value
+
+        if g_benchmark:
+            print("BENCHMARK: ArcGauge {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
         return self.__working_surface
 

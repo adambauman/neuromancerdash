@@ -12,6 +12,9 @@ from data.dataobjects import DataField, DashData
 from .styles import Color, FontPaths, AssetPath
 from .helpers import Helpers
 
+# Set true to benchmark the update process
+g_benchmark = True
+
 class DynamicField:
     def __init__(self, origin, subsurface, text, text_color, font, value=None, clamp_chars=0):
         # Will be an updatable subsurface of the working surface
@@ -73,6 +76,9 @@ class CPUDetails:
     def __setup_surfaces_and_fields__(self, element_rect, target_surface):
         assert(None == self.__working_surface and None == self.__static_background)
 
+        if __debug__:
+            print("Setting up CPUDetails...")
+
         width, height = element_rect[2], element_rect[3]
         assert(0 != height or 0 != width)
 
@@ -127,6 +133,8 @@ class CPUDetails:
         assert(None != self.__working_surface and None != self.__static_background)
         assert(0 != len(data))
 
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
 
         cpu_power_value = DashData.best_attempt_read(data, DashData.cpu_power, "0")
         if self.__cpu_power.current_value != cpu_power_value:
@@ -143,6 +151,9 @@ class CPUDetails:
         ram_used_value = DashData.best_attempt_read(data, DashData.sys_ram_used, "0")
         if self.__ram_used.current_value != ram_used_value:
             self.__ram_used.update(ram_used_value)
+
+        if g_benchmark:
+            print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
         return self.__working_surface
 
@@ -173,6 +184,9 @@ class GPUDetails:
 
     def __setup_surfaces_and_fields__(self, element_rect, target_surface):
         assert(None == self.__working_surface and None == self.__static_background)
+
+        if __debug__:
+            print("Setting up GPUDetails...")
 
         width, height = element_rect[2], element_rect[3]
         assert(0 != height or 0 != width)
@@ -240,6 +254,9 @@ class GPUDetails:
         assert(None != self.__working_surface and None != self.__static_background)
         assert(0 != len(data))
 
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
         perfcap_reason_data = DashData.best_attempt_read(data, DashData.gpu_perfcap_reason, "")
         if self.__perfcap_reason.current_value != perfcap_reason_data:
             self.__perfcap_reason.update(perfcap_reason_data)
@@ -260,6 +277,9 @@ class GPUDetails:
         if self.__ram_used.current_value != ram_used_value:
             self.__ram_used.update(ram_used_value)
 
+        if g_benchmark:
+            print("BENCHMARK: GPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
+
         return self.__working_surface
 
 
@@ -273,6 +293,9 @@ class FPSText:
     current_value = None
 
     def __init__(self, fps_field_rect, target_surface, fps_config=FPSConfig()):
+
+        if __debug__:
+            print("Setting up FPSText...")
         
         width, height = fps_field_rect[2], fps_field_rect[3]
         assert(0 != height or 0 != width)
@@ -306,6 +329,9 @@ class FPSText:
 
     def draw_update(self, value):
 
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
         self.__working_surface.blit(self.__background, (0,0))
 
         if 0 == int(value) and False == self.__config.draw_zero:
@@ -313,6 +339,9 @@ class FPSText:
 
         self.__config.number_font.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
         self.__config.label_font.render_to(self.__working_surface, (self.__label_x, self.__label_y), "FPS", Color.white)
+
+        if g_benchmark:
+            print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
         return self.__working_surface
 
@@ -335,6 +364,9 @@ class TemperatureHumidity:
 
     def __setup_surfaces_and_fields__(self, element_rect, target_surface):
         assert(None == self.__working_surface and None == self.__static_background)
+
+        if __debug__:
+            print("Setting up TemperatureHumidity...")
 
         width, height = element_rect[2], element_rect[3]
         assert(0 != height or 0 != width)
@@ -379,11 +411,17 @@ class TemperatureHumidity:
     def draw_update(self, data):
         assert(None != self.__working_surface and None != self.__static_background)
 
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
         if self.__temperature.current_value != data.temperature:
             self.__temperature.update(data.temperature)
 
         if self.__humidity.current_value != data.humidity:
             self.__humidity.update(data.humidity)
+
+        if g_benchmark:
+            print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
         return self.__working_surface
 
@@ -397,6 +435,9 @@ class MotherboardTemperature:
 
     def __init__(self, element_rect, target_surface):
 
+        if __debug__:
+            print("Setting up MotherboardTemperature...")
+
         self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         width, height = element_rect[2], element_rect[3]
         self.__working_surface = pygame.Surface((width, height))
@@ -404,9 +445,17 @@ class MotherboardTemperature:
         self.__static_background = temp_target_subsurface.copy()
 
     def draw_update(self, value):
+
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
         self.__working_surface.blit(self.__static_background, (0, 0))
         self.__font_normal.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
         self.current_value = value
+
+        if g_benchmark:
+            print("BENCHMARK: MotherboardTemperature: {}ms".format(pygame.time.get_ticks() - start_ticks))
+
         return self.__working_surface
 
 class NetworkInformation:
@@ -420,6 +469,9 @@ class NetworkInformation:
 
     def __init__(self, element_rect, target_surface):
 
+        if __debug__:
+            print("Setting up NetworkInformation...")
+
         self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         width, height = element_rect[2], element_rect[3]
         self.__working_surface = pygame.Surface((width, height))
@@ -430,6 +482,10 @@ class NetworkInformation:
         self.__y_offset = self.__working_surface.get_height() - 12
 
     def draw_update(self, download_value, upload_value):
+
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
         self.__working_surface.blit(self.__static_background, (0, 0))
 
         self.__font_normal.render_to(
@@ -445,6 +501,9 @@ class NetworkInformation:
         self.current_download_value = download_value
         self.current_upload_value = upload_value
 
+        if g_benchmark:
+            print("BENCHMARK: NetworkInformation: {}ms".format(pygame.time.get_ticks() - start_ticks))
+
         return self.__working_surface
 
 class BasicClock:
@@ -454,6 +513,9 @@ class BasicClock:
     __static_background = None
 
     def __init__(self, element_rect, target_surface):
+
+        if __debug__:
+            print("Setting up BasicClock...")
 
         self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         width, height = element_rect[2], element_rect[3]
@@ -465,8 +527,16 @@ class BasicClock:
         self.__y_offset = self.__working_surface.get_height() - 12
 
     def draw_update(self):
+
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
         self.__working_surface.blit(self.__static_background, (0, 0))
         now = datetime.now()
         time_string = now.strftime("%H:%M:%S")
         self.__font_normal.render_to(self.__working_surface, (0, self.__y_offset), time_string, Color.white)
+
+        if g_benchmark:
+            print("BENCHMARK: BasicClock: {}ms".format(pygame.time.get_ticks() - start_ticks))
+            
         return self.__working_surface
