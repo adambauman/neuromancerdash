@@ -12,7 +12,7 @@ from .styles import Color, FontPaths, AssetPath
 from .helpers import Helpers
 
 class DynamicField:
-    def __init__(self, origin, subsurface, text, text_color, font, value=None):
+    def __init__(self, origin, subsurface, text, text_color, font, value=None, clamp_chars=0):
         # Will be an updatable subsurface of the working surface
         self.__subsurface = subsurface 
         self.__static_background = subsurface.copy()
@@ -20,12 +20,16 @@ class DynamicField:
         self.__font = font
         self.__origin = origin
         self.__text = text
+        self.__clamp_chars = clamp_chars
 
         self.current_value = value
 
     def update(self, new_value):
         self.__subsurface.blit(self.__static_background, (0, 0))
-        render_text = self.__text.format(new_value)
+        if 0 < self.__clamp_chars:
+            render_text = self.__text.format(Helpers.clamp_text(new_value, 11, ""))
+        else:
+            render_text = self.__text.format(new_value)
         self.__font.render_to(self.__subsurface, (0,0), render_text, self.__text_color)
         self.current_value = new_value
         # No need to return subsurface, it update it's slice of the working surface
@@ -53,8 +57,6 @@ class CPUDetails:
     __cpu_utilization = None
     __ram_used = None
 
-    # TODO: The two current detail stacks share a lot of init code and objects. Maybe inherit them both from
-    #       a base detail stack class.
     def __init__(self, element_rect, target_surface, details_stack_config=DetailsStackConfig()):
 
         # Config and fonts
@@ -92,12 +94,14 @@ class CPUDetails:
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
             "{} " + DashData.cpu_power.unit.symbol, Color.white, self.__font_normal)
 
+        # CPU Clock
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self.__cpu_clock = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
             "{} " + DashData.cpu_clock.unit.symbol, Color.white, self.__font_normal)
 
+        # CPU Utilization
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self.__cpu_utilization = DynamicField(
             origin, 
@@ -108,6 +112,7 @@ class CPUDetails:
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self.__font_normal.render_to(self.__static_background, origin, "RAM Used", Color.grey_75)
 
+        # RAM Used
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self.__ram_used = DynamicField(
             origin, 
@@ -141,42 +146,120 @@ class CPUDetails:
         return self.__working_surface
 
 
-
-
-
 class GPUDetails:
-    def __paint_gpu_text_stack__(self, origin, font_normal, data):
+     # Surfaces
+    __working_surface = None
+    __static_background = None
+
+    # DynamicFields
+    __perfcap_reason = None
+    __gpu_power = None
+    __gpu_clock = None
+    __gpu_utilization = None
+    __ram_used = None
+
+    def __init__(self, element_rect, target_surface, details_stack_config=DetailsStackConfig()):
+
+        # Config and fonts
+        self.__config = details_stack_config
+        if None == self.__config.font_normal:
+            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            #self.__font_normal.strong = True
+            self.__font_normal.kerning = True
+
+        # Surface setup
+        self.__setup_surfaces_and_fields__(element_rect, target_surface)
+
+    def __setup_surfaces_and_fields__(self, element_rect, target_surface):
+        assert(None == self.__working_surface and None == self.__static_background)
+
+        width, height = element_rect[2], element_rect[3]
+        assert(0 != height or 0 != width)
+
+        # NOTE: (Adam) 2020-12-10 No luck experimenting with 0 alpha fill wipes or pixel clearing,
+        #           for now copying out the pixels from the target surface and saving as base for redraws
+        target_surface_sub = target_surface.subsurface(element_rect)
+        self.__static_background = target_surface_sub.copy()        
+        self.__working_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.__working_surface.blit(self.__static_background, (0, 0))
+
+        static_labels = pygame.Surface((width, height), pygame.SRCALPHA)
+        y_offset = self.__config.stack_y_offset
+        font_height = self.__font_normal.get_sized_height()
+
+        # Start doing a little mock drawing here to workout where the static label(s) are positioned
+        # and where we need to setup subsurfaces for updates
+        origin = (0, 0)
+        # Static Label
+        self.__font_normal.render_to(self.__static_background, origin, "PerfCap", Color.white)
+
+        # PerfCap Reason
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__perfcap_reason = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
+            "{}", Color.yellow, self.__font_normal, clamp_chars=11)
+
+        # GPU Power
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__gpu_power = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.gpu_power.unit.symbol, Color.white, self.__font_normal)
+
+        # GPU Clock
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__gpu_clock = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.gpu_clock.unit.symbol, Color.white, self.__font_normal)
+
+        # GPU Utilization
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__gpu_utilization = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
+            "{}" + DashData.gpu_util.unit.symbol, Color.yellow, self.__font_normal)
+
+        # Static RAM Label
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__font_normal.render_to(self.__static_background, origin, "RAM Used", Color.grey_75)
+
+        # GPU RAM Used
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__ram_used = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
+            "{}" + DashData.gpu_ram_used.unit.symbol, Color.yellow, self.__font_normal)
+
+        # A little hacky, but blit the static background down again to include the static bits
+        self.__working_surface.blit(self.__static_background, (0, 0))
+
+    def draw_update(self, data):
+        assert(None != self.__working_surface and None != self.__static_background)
         assert(0 != len(data))
 
-        stack_vertical_adjustment = -2
+        perfcap_reason_data = DashData.best_attempt_read(data, DashData.gpu_perfcap_reason, "")
+        if self.__perfcap_reason.current_value != perfcap_reason_data:
+            self.__perfcap_reason.update(perfcap_reason_data)
 
-        text_origin = origin
-        text = "PerfCap:"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        gpu_power_value = DashData.best_attempt_read(data, DashData.gpu_power, "0")
+        if self.__gpu_power.current_value != gpu_power_value:
+            self.__gpu_power.update(gpu_power_value)
 
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{}".format(DashData.best_attempt_read(data, DashData.gpu_perfcap_reason, "0"))
-        font_normal.render_to(self.display_surface, text_origin, Helpers.clamp_text(text,11, ""), Color.yellow)
+        gpu_clock_value = DashData.best_attempt_read(data, DashData.gpu_clock, "0")
+        if self.__gpu_clock.current_value != gpu_clock_value:
+            self.__gpu_clock.update(gpu_clock_value)
 
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_power, "0"), DashData.gpu_power.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        gpu_utilization = DashData.best_attempt_read(data, DashData.gpu_util, "0")
+        if self.__gpu_utilization.current_value != gpu_utilization:
+            self.__gpu_utilization.update(gpu_utilization)
 
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_clock, "0"), DashData.gpu_clock.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.white)
+        ram_used_value = DashData.best_attempt_read(data, DashData.gpu_ram_used, "0")
+        if self.__ram_used.current_value != ram_used_value:
+            self.__ram_used.update(ram_used_value)
 
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{}{}".format(DashData.best_attempt_read(data, DashData.gpu_util, "0"), DashData.gpu_util.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "RAM Used"
-        font_normal.render_to(self.display_surface, text_origin, text, Color.grey_75)
-
-        text_origin = self.__get_next_vertical_stack_origin__(text_origin, font_normal, stack_vertical_adjustment)
-        text = "{} {}".format(DashData.best_attempt_read(data, DashData.gpu_ram_used, "0"), DashData.gpu_ram_used.unit.symbol)
-        font_normal.render_to(self.display_surface, text_origin, text, Color.yellow)
+        return self.__working_surface
 
 
 class FPSConfig:

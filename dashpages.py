@@ -19,7 +19,7 @@ from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
 from elements.ambientreadout import TemperatureHumidity
-from elements.text import FPSText, CPUDetails
+from elements.text import FPSText, CPUDetails, GPUDetails
 
 from elements.helpers import Helpers
 
@@ -109,7 +109,7 @@ class Page01ElementPositions:
         self.core_visualizer = (310, 0)
 
         self.cpu_details_rect = pygame.Rect(310, 33, 74, 72)
-        self.gpu_detail = (310, 115)
+        self.gpu_details_rect = pygame.Rect(310, 114, 74, 102)
 
         self.cpu_temp_gauge = (width - 90, 7)
         self.gpu_temp_gauge = (width - 90, 117, 90, 90)
@@ -211,6 +211,7 @@ class DashPage01:
 
         self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
         self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect, self.__working_surface)
+        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect, self.__working_surface)
         self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge)
         self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge)
 
@@ -220,15 +221,6 @@ class DashPage01:
 
     def get_updated_surface(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
-
-        #self.display_surface.fill(Color.black)
-
-        # CPU Data
-        #self.__paint_cpu_text_stack__(self.page.cpu_detail_stack_origin, self.page.font_normal, aida64_data)
-
-        # GPU Data
-        #self.__paint_gpu_text_stack__(self.page.gpu_detail_stack_origin, self.page.font_normal, aida64_data)
-        
 
         # CPU and GPU Utilization
         self.__working_surface.blit(
@@ -257,6 +249,10 @@ class DashPage01:
         self.__working_surface.blit(
             self.__cpu_details.draw_update(aida64_data),
             (self.__element_positions.cpu_details_rect[0], self.__element_positions.cpu_details_rect[1]))
+
+        self.__working_surface.blit(
+            self.__gpu_details.draw_update(aida64_data),
+            (self.__element_positions.gpu_details_rect[0], self.__element_positions.gpu_details_rect[1]))
 
         # CPU Temperature Gauge
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
