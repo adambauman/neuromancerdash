@@ -29,7 +29,7 @@ if g_dht22_enabled:
 from data.aida64lcdsse import AIDA64LCDSSE
 
 from elements.styles import FontPaths, Color
-from dashpages import DashPage01
+from pages.page01 import Page01
 from elements.styles import Color, AssetPath, FontPaths
 
 if __debug__:
@@ -127,7 +127,7 @@ def main(argv):
         dht22_data_thread.start()
 
     # Prepare dash page(s)
-    dash_page_01 = DashPage01(display_surface.get_width(), display_surface.get_height())
+    dash_page_01 = Page01(display_surface.get_width(), display_surface.get_height())
 
     # Main loop, this will juggle data and painting the dash page(s)
     ticks_since_last_data = 0

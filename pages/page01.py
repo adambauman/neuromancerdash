@@ -149,7 +149,7 @@ class Page01ElementPositions:
         self.network_info = pygame.Rect(0, height-18, 290, 18)
         self.clock = pygame.Rect(self.cpu_details_rect[0], height-18, 70, 18)
 
-class DashPage01:
+class Page01:
     __background = None
 
     def __init__(self, width, height):
