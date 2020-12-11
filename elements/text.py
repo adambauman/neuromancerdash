@@ -360,7 +360,7 @@ class TemperatureHumidity:
         self.__temperature = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
-            "{}\u00b0F", Color.white, self.__font_normal)
+            "{:.1f}\u00b0F", Color.white, self.__font_normal)
 
         # Static Label
         origin = (origin[0], (origin[1] + font_height) + y_offset)
@@ -371,7 +371,7 @@ class TemperatureHumidity:
         self.__humidity = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
-            "{}%", Color.white, self.__font_normal)
+            "{:.1f}%", Color.white, self.__font_normal)
 
         # A little hacky, but blit the static background down again to include the static bits
         self.__working_surface.blit(self.__static_background, (0, 0))

@@ -296,7 +296,7 @@ class DashPage01:
 
         # Clock
         self.__working_surface.blit(
-            self.__clock.draw_update(),
-            (self.__element_positions.clock[0], self.__element_positions.clock[1]))
+           self.__clock.draw_update(),
+           (self.__element_positions.clock[0], self.__element_positions.clock[1]))
 
         return self.__working_surface

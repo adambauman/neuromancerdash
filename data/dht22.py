@@ -70,7 +70,7 @@ class DHT22:
 
             # NOTE: (Adam) 2020-12-04 Ambient data is going to change slowly, we can sleep for a bit to free
             #         resources for other tasks.
-            sleep(120)
+            sleep(300)
 
 
 def main():

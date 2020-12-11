@@ -88,10 +88,14 @@ def main(argv):
     pygame.mouse.set_visible(False)
     pygame.event.set_allowed([pygame.QUIT])
 
+    if __debug__:
+        surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
+    else:
+        surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.FULLSCREEN
+
     display_surface = pygame.display.set_mode(
         (Hardware.screen_width, Hardware.screen_height),
-        pygame.HWSURFACE | pygame.DOUBLEBUF
-    )
+        surface_flags)
 
     display_surface.fill(Color.black)
     font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
@@ -123,7 +127,7 @@ def main(argv):
     dash_page_01 = DashPage01(display_surface.get_width(), display_surface.get_height())
 
     # Set true to benchmark various parts of the update process
-    benchmark = True
+    benchmark = False
 
     if benchmark:
         if __debug__:
@@ -176,7 +180,6 @@ def main(argv):
             # Override, probably developing on a machine without GPIO. ;)
             dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
 
-        
         if benchmark:
             draw_start_ticks = pygame.time.get_ticks()
 
