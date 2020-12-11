@@ -13,7 +13,7 @@ from .helpers import Helpers
 from .styles import Color, FontPaths, AssetPath
 
 class GaugeConfig:
-    def __init__(self, data_field, radius = 45, value_font = None, value_font_origin = None):
+    def __init__(self, data_field, radius=45, value_font=None, value_font_origin=None):
         self.radius = radius
         self.data_field = data_field
         self.redline_degrees = 35
@@ -52,24 +52,17 @@ class FlatArcGauge:
     __needle_surface = None # Should not be changed after init
     __needle_shadow_surface = None  # Should not be changed after init
 
-    def __init__(self, gauge_config, diameter=90):
+    def __init__(self, gauge_config):
         assert(None != gauge_config.data_field)
         assert(0 < gauge_config.radius)
-        assert(0 != diameter)
 
         self.__config = gauge_config
 
-        # NOTE: (Adam) 2020-11-19 Bit of a hack, adding small amount of padding so AA edges don't get clipped
+        diameter = self.__config.radius * 2
+        base_size = (diameter, diameter)
+        self.__working_surface = pygame.Surface(base_size)
 
-        base_size = (self.__config.radius * 2, self.__config.radius * 2)
-        #self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
-        self.__working_surface = pygame.Surface((diameter, diameter))
-
-        if __debug__:
-            font_diag = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-            font_diag.render_to(self.__working_surface, (0, 0), "Hello from flatarcgauge init!", Color.white)
-
-        self.__static_elements_surface = pygame.Surface((diameter, diameter))
+        self.__static_elements_surface = pygame.Surface(base_size)
         self.__prepare_constant_elements()
 
         assert(None != self.__static_elements_surface)
@@ -79,6 +72,9 @@ class FlatArcGauge:
         assert(None != self.__static_elements_surface)
         assert(0 < self.__config.aa_multiplier)
         
+        # NOTE: (Adam) 2020-12-11 Careful with source image sizes if running on a weaker
+        #           board like the RPi Zero, generation could take a while if you go overboard. 
+
         if __debug__:
             print("Preparing {} arc gauge components...".format(self.__config.data_field.field_name))
 
@@ -157,7 +153,6 @@ class FlatArcGauge:
         if __debug__:
             print("Done generating components!")
         
-
     def draw_update(self, value):
         assert(None != self.__working_surface)
 

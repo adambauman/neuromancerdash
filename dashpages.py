@@ -18,7 +18,7 @@ from elements.gauge import FlatArcGauge, GaugeConfig
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
-from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity
+from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, MotherboardTemperature, NetworkInformation
 
 from elements.helpers import Helpers
 
@@ -56,22 +56,15 @@ class Tweening:
 
         self.last_absolute_value = new_absolute_value
 
-class SharedFonts:
-    def __init__(self):
-        self.font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        #font_normal.strong = True
-        self.font_normal.kerning = True
-
 class Page01ElementConfigurations:
 
     def __init__(self):
-        ### Fonts
 
+        ### Fonts
         self.__font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
         self.__font_gauge_value.strong = True
         self.__fan_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 10)
         #self.fan_gauge_value.strong = True
-        #self.__shared_fonts = SharedFonts()
 
         ### Configurations
         self.core_visualizer = CoreVisualizerConfig(8)
@@ -95,6 +88,36 @@ class Page01ElementConfigurations:
         self.fps_graph.display_background = True
         self.fps_graph.draw_on_zero = False
 
+        # Fan Base
+        fan_base_gauge = GaugeConfig(DashData.chassis_1_fan, 20, self.__fan_gauge_value, (17, 29))
+        fan_base_gauge.arc_main_color = Color.grey_40
+        fan_base_gauge.needle_color = Color.white
+        fan_base_gauge.bg_color = Color.black
+        fan_base_gauge.counter_sweep = True
+        fan_base_gauge.show_unit_symbol = False
+        fan_base_gauge.show_label_instead_of_value = True
+
+        # FAN1 = Upper intake (lower intake does not report)
+        self.fan1_gauge = fan_base_gauge
+        self.fan1_gauge.data_field = DashData.chassis_1_fan
+        self.fan1_gauge.label = "I"
+
+        # FAN2 = Drive bay intake?
+        # FAN3 = Rear exhaust
+
+        # CPU OPT fan = Forward exhaust
+        self.fan_opt_gauge = fan_base_gauge
+        self.fan_opt_gauge.data_field = DashData.cpu_opt_fan
+        self.fan_opt_gauge.label = "E"
+
+        self.cpu_fan_gauge = fan_base_gauge
+        self.cpu_fan_gauge.data_field = DashData.cpu_fan
+        self.cpu_fan_gauge.label = "C"
+
+        self.gpu_fan_gauge = fan_base_gauge
+        self.gpu_fan_gauge.data_field = DashData.gpu_fan
+        self.gpu_fan_gauge.label = "G"
+
 class Page01ElementPositions:
 
     def __init__(self, width, height):
@@ -110,83 +133,22 @@ class Page01ElementPositions:
         self.cpu_details_rect = pygame.Rect(310, 33, 74, 72)
         self.gpu_details_rect = pygame.Rect(310, 114, 74, 102)
 
-        self.cpu_temp_gauge = (width - 90, 7)
-        self.gpu_temp_gauge = (width - 90, 117, 90, 90)
+        self.cpu_temp_gauge = (width-90, 7)
+        self.gpu_temp_gauge = (width-90, 117, 90, 90)
 
         self.fps_graph = (0, 230)
         self.fps_text_rect = pygame.Rect(210, 240, 98, 62)
 
         self.temperature_humidity_rect = pygame.Rect(self.cpu_details_rect[0], 240, 74, 56)
 
-        self.network_text = (0, 310)
-        self.time = (self.cpu_details_rect[0], 310)
+        self.fan1_gauge = (self.cpu_temp_gauge[0], 230)
+        self.fan_opt_gauge = (width - 40, 230)
+        self.cpu_fan_gauge = (self.cpu_temp_gauge[0], 275)
+        self.gpu_fan_gauge = (self.fan_opt_gauge[0], self.cpu_fan_gauge[1])
+        self.mobo_temp_rect = pygame.Rect(width-52, 268, 18, 16)
 
-        #self.fan1_gauge_origin = (self.cpu_temp_gauge_origin[0], 230)
-        #self.fan_opt_gauge_origin = (display_width - 40, 230)
-        #self.cpu_fan_gauge_origin = (self.cpu_temp_gauge_origin[0], 275)
-        #self.gpu_fan_gauge_origin = (self.fan_opt_gauge_origin[0], self.cpu_fan_gauge_origin[1])
-
-        #self.mobo_temp_origin = (display_width - 52, 268)
-
-        #self.disk_activity_origin = (self.cpu_detail_stack_origin[0], 230)
-
-        ### Element configuration
-
-        
-
-        ## FAN1 = Upper intake (lower intake does not report)
-        #fan1_gauge_config = GaugeConfig(DashData.chassis_1_fan, 20, self.fan_gauge_value, (17, 29))
-        #fan1_gauge_config.arc_main_color = Color.grey_40
-        #fan1_gauge_config.needle_color = Color.white
-        #fan1_gauge_config.bg_alpha = 0
-        #fan1_gauge_config.counter_sweep = True
-        #fan1_gauge_config.show_unit_symbol = False
-        #fan1_gauge_config.show_label_instead_of_value = True
-        #fan1_gauge_config.label = "I"
-        #self.fan1_gauge = FlatArcGauge(fan1_gauge_config)
-
-        # FAN2 = Drive bay intake?
-        # FAN3 = Rear exhaust
-
-        # CPU OPT fan = Forward exhaust
-        #fan_opt_gauge_config = GaugeConfig(DashData.cpu_opt_fan, 20, self.fan_gauge_value, (18, 29))
-        #fan_opt_gauge_config.arc_main_color = Color.grey_40
-        #fan_opt_gauge_config.needle_color = Color.white
-        #fan_opt_gauge_config.bg_alpha = 0
-        #fan_opt_gauge_config.counter_sweep = True
-        #fan_opt_gauge_config.show_label_instead_of_value = True
-        #fan_opt_gauge_config.label = "E"
-        #self.fan_opt_gauge = FlatArcGauge(fan_opt_gauge_config)
-
-        #cpu_fan_gauge_config = GaugeConfig(DashData.cpu_fan, 20, self.fan_gauge_value, (17, 29))
-        #cpu_fan_gauge_config.arc_main_color = Color.grey_40
-        #cpu_fan_gauge_config.needle_color = Color.white
-        #cpu_fan_gauge_config.bg_alpha = 0
-        #cpu_fan_gauge_config.counter_sweep = True
-        #cpu_fan_gauge_config.show_unit_symbol = False
-        #cpu_fan_gauge_config.show_label_instead_of_value = True
-        #cpu_fan_gauge_config.label = "C"
-        #self.cpu_fan_gauge = FlatArcGauge(cpu_fan_gauge_config)
-
-        #gpu_fan_gauge_config = GaugeConfig(DashData.gpu_fan, 20, self.fan_gauge_value, (17, 29))
-        #gpu_fan_gauge_config.arc_main_color = Color.grey_40
-        #gpu_fan_gauge_config.needle_color = Color.white
-        #gpu_fan_gauge_config.bg_alpha = 0
-        #gpu_fan_gauge_config.counter_sweep = True
-        #gpu_fan_gauge_config.show_unit_symbol = False
-        #gpu_fan_gauge_config.show_label_instead_of_value = True
-        #gpu_fan_gauge_config.label = "G"
-        #self.gpu_fan_gauge = FlatArcGauge(gpu_fan_gauge_config)
-
-        ## This will be set on the first update if DHT22 data is available
-        #self.ambient_humidity_temp_display = None
-
-        # Disk activity
-        #disk_activity_bar_config = BarGraphConfig(65, 19, DashData.disk_activity)
-        #disk_activity_bar_config.foreground_color = Color.windows_dkgrey_1_highlight
-        #self.disk_activity_bar = BarGraph(disk_activity_bar_config)
-        #self.disk_activity_y_spacing = 21
-
+        self.network_info = pygame.Rect(0, height-18, 290, 18)
+        self.clock = pygame.Rect(0, height-18, 70, 18)
 
 class DashPage01:
     __background = None
@@ -196,13 +158,19 @@ class DashPage01:
 
         self.__working_surface = pygame.Surface((width, height))
 
+        self.font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        #font_normal.strong = True
+        self.font_normal.kerning = True
+
         if __debug__:
             self.__background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png"))
             self.__working_surface.blit(self.__background, (0,0))
 
+        # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
+        #           font instances. Would cut down on memory usage and make it easier to match font styles.
+
         self.__element_positions = Page01ElementPositions(width, height)
         self.__element_configs = Page01ElementConfigurations()
-        self.__shared_fonts = SharedFonts()
 
         self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar)
         self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar)
@@ -220,6 +188,16 @@ class DashPage01:
 
         self.__temperature_humidity = TemperatureHumidity(
             self.__element_positions.temperature_humidity_rect, self.__working_surface)
+
+        self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge)
+        self.__fan_opt_gauge = FlatArcGauge(self.__element_configs.fan_opt_gauge)
+        self.__cpu_fan_gauge = FlatArcGauge(self.__element_configs.cpu_fan_gauge)
+        self.__gpu_fan_gauge = FlatArcGauge(self.__element_configs.gpu_fan_gauge)
+        self.__mobo_temperature = MotherboardTemperature(
+            self.__element_positions.mobo_temp_rect, self.__working_surface)
+
+        self.__network_info = NetworkInformation(
+            self.__element_positions.network_info, self.__working_surface)
 
 
     def get_updated_surface(self, aida64_data, dht22_data=None):
@@ -284,71 +262,37 @@ class DashPage01:
                 self.__temperature_humidity.draw_update(dht22_data),
                 (self.__element_positions.temperature_humidity_rect[0], self.__element_positions.temperature_humidity_rect[1]))
 
+        # Fan gauges
+        self.__working_surface.blit(
+            self.__fan1_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")),
+            self.__element_positions.fan1_gauge)
+        self.__working_surface.blit(
+            self.__fan_opt_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")),
+            self.__element_positions.fan_opt_gauge)
+        self.__working_surface.blit(
+            self.__cpu_fan_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")),
+            self.__element_positions.cpu_fan_gauge)
+        self.__working_surface.blit(
+            self.__gpu_fan_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")),
+            self.__element_positions.gpu_fan_gauge)
+
+        # Motherboard temp (nestled between all the fans)
+        mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
+        if self.__mobo_temperature.current_value != mobo_temperature_value:
+            self.__working_surface.blit(
+                self.__mobo_temperature.draw_update(mobo_temperature_value),
+                (self.__element_positions.mobo_temp_rect[0], self.__element_positions.mobo_temp_rect[1]))
+
+        # Network Info
+        nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
+        nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
+        if self.__network_info.current_download_value != nic1_down_value and self.__network_info.current_upload_value != nic1_up_value:
+            self.__working_surface.blit(
+                self.__network_info.draw_update(nic1_down_value, nic1_up_value),
+                (self.__element_positions.network_info[0], self.__element_positions.network_info[1]))
+
         return self.__working_surface
 
-
-
-        ## Fan gauges
-        #self.display_surface.blit(
-        #    self.page.fan1_gauge.update(DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")),
-        #    self.page.fan1_gauge_origin)
-        #self.display_surface.blit(
-        #    self.page.fan_opt_gauge.update(DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")),
-        #    self.page.fan_opt_gauge_origin)
-        #self.display_surface.blit(
-        #    self.page.cpu_fan_gauge.update(DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")),
-        #    self.page.cpu_fan_gauge_origin)
-        #self.display_surface.blit(
-        #    self.page.gpu_fan_gauge.update(DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")),
-        #    self.page.gpu_fan_gauge_origin)
-
-        ## Motherboard temp (nestled between all the fans)
-        #self.page.font_normal.render_to(
-        #    self.display_surface, self.page.mobo_temp_origin,
-        #    "{}".format(DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")),
-        #    Color.white)
-
-        # Ambient Humidity and Temperature
-        #if None != dht22_data:
-        #    if None == self.page.ambient_humidity_temp_display:
-        #        self.page.ambient_humidity_temp_display = TemperatureHumidity()
-
-        #    self.display_surface.blit(
-        #        self.page.ambient_humidity_temp_display.update(dht22_data),
-        #        self.page.ambient_humidity_temp_origin)
-        #    #self.__paint_ambient_text_stack__(self.page.ambient_humidity_temp_origin, self.page.font_normal, dht22_data)
-
-        # Disk activity
-        #disk_count = 4
-        #disk_y_offset = 0
-        #for index in range(disk_count):
-        #    try:
-        #        disk_activity_value = data["disk_{}_activity".format(index)]
-        #    except:
-        #        disk_activity_value = "0"
-        #        if __debug__:
-        #            print("Data error: disk_{}_activity".format(index))
-        #            #traceback.print_exc()
-
-        #    self.display_surface.blit(
-        #        self.page.disk_activity_bar.update(disk_activity_value),
-        #        (self.page.disk_activity_origin[0], self.page.disk_activity_origin[1] + disk_y_offset))
-        #    disk_y_offset += self.page.disk_activity_y_spacing
-
-        # Network Text
-        #nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
-        #network_download_text = "NIC 1 Down: {} {}".format(nic1_down_value, DashData.nic1_download_rate.unit.symbol)
-        #self.page.font_normal.render_to(
-        #    self.display_surface,
-        #    self.page.network_text_origin,
-        #    network_download_text, Color.white)
-
-        #nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
-        #network_upload_text = "Up: {} {}".format(nic1_up_value, DashData.nic1_upload_rate.unit.symbol)
-        #self.page.font_normal.render_to(
-        #    self.display_surface,
-        #    (self.page.network_text_origin[0] + 180, self.page.network_text_origin[1]),
-        #    network_upload_text, Color.white)
 
         #now = datetime.now()
         #time_string = now.strftime("%H:%M:%S")

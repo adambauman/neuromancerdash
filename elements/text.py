@@ -385,3 +385,63 @@ class TemperatureHumidity:
             self.__humidity.update(data.humidity)
 
         return self.__working_surface
+
+class MotherboardTemperature:
+    # Basic double-digit (I hope!) display of motherboard temperature
+
+    __working_surface = None
+    __static_background = None
+    
+    current_value = None
+
+    def __init__(self, element_rect, target_surface):
+
+        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        width, height = element_rect[2], element_rect[3]
+        self.__working_surface = pygame.Surface((width, height))
+        temp_target_subsurface = target_surface.subsurface(element_rect)
+        self.__static_background = temp_target_subsurface.copy()
+
+    def draw_update(self, value):
+        self.__working_surface.blit(self.__static_background, (0, 0))
+        self.__font_normal.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
+        self.current_value = value
+        return self.__working_surface
+
+class NetworkInformation:
+    # Basic network down/upstream stat display
+
+    __working_surface = None
+    __static_background = None
+    
+    current_download_value = None
+    current_upload_value = None
+
+    def __init__(self, element_rect, target_surface):
+
+        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        width, height = element_rect[2], element_rect[3]
+        self.__working_surface = pygame.Surface((width, height))
+        temp_target_subsurface = target_surface.subsurface(element_rect)
+        self.__static_background = temp_target_subsurface.copy()
+
+        # Anchor text to bottom of surface, use static value for y because font sized_height is an average
+        self.__y_offset = self.__working_surface.get_height() - 12
+
+    def draw_update(self, download_value, upload_value):
+        self.__working_surface.blit(self.__static_background, (0, 0))
+
+        self.__font_normal.render_to(
+            self.__working_surface, (0, self.__y_offset), 
+            "NIC 1 Down: {} {}".format(download_value, DashData.nic1_download_rate.unit.symbol), 
+            Color.white)
+
+        self.__font_normal.render_to(
+            self.__working_surface, (180, self.__y_offset), 
+            "Up: {} {}".format(upload_value, DashData.nic1_upload_rate.unit.symbol), 
+            Color.white)
+
+        self.current_download_value = download_value
+        self.current_upload_value = upload_value
+
+        return self.__working_surface
