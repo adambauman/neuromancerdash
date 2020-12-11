@@ -6,6 +6,7 @@
 #
 
 import pygame
+from datetime import datetime
 
 from data.dataobjects import DataField, DashData
 from .styles import Color, FontPaths, AssetPath
@@ -444,4 +445,28 @@ class NetworkInformation:
         self.current_download_value = download_value
         self.current_upload_value = upload_value
 
+        return self.__working_surface
+
+class BasicClock:
+    # Basic clock
+
+    __working_surface = None
+    __static_background = None
+
+    def __init__(self, element_rect, target_surface):
+
+        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        width, height = element_rect[2], element_rect[3]
+        self.__working_surface = pygame.Surface((width, height))
+        temp_target_subsurface = target_surface.subsurface(element_rect)
+        self.__static_background = temp_target_subsurface.copy()
+
+        # Anchor text to bottom of surface, use static value for y because font sized_height is an average
+        self.__y_offset = self.__working_surface.get_height() - 12
+
+    def draw_update(self):
+        self.__working_surface.blit(self.__static_background, (0, 0))
+        now = datetime.now()
+        time_string = now.strftime("%H:%M:%S")
+        self.__font_normal.render_to(self.__working_surface, (0, self.__y_offset), time_string, Color.white)
         return self.__working_surface

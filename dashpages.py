@@ -8,7 +8,6 @@
 import pygame, pygame.freetype
 
 import os
-from datetime import datetime
 
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
@@ -18,7 +17,7 @@ from elements.gauge import FlatArcGauge, GaugeConfig
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
-from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, MotherboardTemperature, NetworkInformation
+from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, MotherboardTemperature, NetworkInformation, BasicClock
 
 from elements.helpers import Helpers
 
@@ -148,7 +147,7 @@ class Page01ElementPositions:
         self.mobo_temp_rect = pygame.Rect(width-52, 268, 18, 16)
 
         self.network_info = pygame.Rect(0, height-18, 290, 18)
-        self.clock = pygame.Rect(0, height-18, 70, 18)
+        self.clock = pygame.Rect(self.cpu_details_rect[0], height-18, 70, 18)
 
 class DashPage01:
     __background = None
@@ -198,6 +197,9 @@ class DashPage01:
 
         self.__network_info = NetworkInformation(
             self.__element_positions.network_info, self.__working_surface)
+
+        self.__clock = BasicClock(
+            self.__element_positions.clock, self.__working_surface)
 
 
     def get_updated_surface(self, aida64_data, dht22_data=None):
@@ -291,10 +293,9 @@ class DashPage01:
                 self.__network_info.draw_update(nic1_down_value, nic1_up_value),
                 (self.__element_positions.network_info[0], self.__element_positions.network_info[1]))
 
+        # Clock
+        self.__working_surface.blit(
+            self.__clock.draw_update(),
+            (self.__element_positions.clock[0], self.__element_positions.clock[1]))
+
         return self.__working_surface
-
-
-        #now = datetime.now()
-        #time_string = now.strftime("%H:%M:%S")
-        #text = "{}".format(time_string)
-        #self.page.font_normal.render_to(self.display_surface, self.page.time_origin, text, Color.white)

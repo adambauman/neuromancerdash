@@ -87,8 +87,8 @@ class DiskActivityVisualizer:
             try:
                 activity_values.append(int(data[key]))
             except:
-                if __debug__:
-                    print("Data error: {}".format(key))
+                #if __debug__:
+                #    print("Data error: {}".format(key))
                 activity_values.append(0)
 
         assert(0 != len(activity_values))
