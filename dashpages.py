@@ -18,8 +18,7 @@ from elements.gauge import FlatArcGauge, GaugeConfig
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
-from elements.ambientreadout import TemperatureHumidity
-from elements.text import FPSText, CPUDetails, GPUDetails
+from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity
 
 from elements.helpers import Helpers
 
@@ -117,6 +116,8 @@ class Page01ElementPositions:
         self.fps_graph = (0, 230)
         self.fps_text_rect = pygame.Rect(210, 240, 98, 62)
 
+        self.temperature_humidity_rect = pygame.Rect(self.cpu_details_rect[0], 240, 74, 56)
+
         self.network_text = (0, 310)
         self.time = (self.cpu_details_rect[0], 310)
 
@@ -128,7 +129,6 @@ class Page01ElementPositions:
         #self.mobo_temp_origin = (display_width - 52, 268)
 
         #self.disk_activity_origin = (self.cpu_detail_stack_origin[0], 230)
-        #self.ambient_humidity_temp_origin = (self.cpu_detail_stack_origin[0], 240)
 
         ### Element configuration
 
@@ -218,6 +218,9 @@ class DashPage01:
         self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph)
         self.__fps_text = FPSText(self.__element_positions.fps_text_rect, self.__working_surface)
 
+        self.__temperature_humidity = TemperatureHumidity(
+            self.__element_positions.temperature_humidity_rect, self.__working_surface)
+
 
     def get_updated_surface(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
@@ -276,6 +279,10 @@ class DashPage01:
                 self.__fps_text.draw_update(fps_value),
                 (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
 
+        if None != dht22_data:
+            self.__working_surface.blit(
+                self.__temperature_humidity.draw_update(dht22_data),
+                (self.__element_positions.temperature_humidity_rect[0], self.__element_positions.temperature_humidity_rect[1]))
 
         return self.__working_surface
 

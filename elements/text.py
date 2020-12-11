@@ -314,3 +314,74 @@ class FPSText:
         self.__config.label_font.render_to(self.__working_surface, (self.__label_x, self.__label_y), "FPS", Color.white)
 
         return self.__working_surface
+
+
+class TemperatureHumidity:
+    
+    # DynamicFields
+    __temperature = None
+    __humidity = None
+
+    # Surfaces
+    __working_surface = None
+    __static_background = None
+
+    def __init__(self, element_rect, target_surface):
+        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        #self.__font_normal.strong = True
+        self.__font_normal.kerning = True
+        self.__setup_surfaces_and_fields__(element_rect, target_surface)
+
+    def __setup_surfaces_and_fields__(self, element_rect, target_surface):
+        assert(None == self.__working_surface and None == self.__static_background)
+
+        width, height = element_rect[2], element_rect[3]
+        assert(0 != height or 0 != width)
+
+        target_surface_sub = target_surface.subsurface(element_rect)
+        self.__static_background = target_surface_sub.copy()        
+        self.__working_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.__working_surface.blit(self.__static_background, (0, 0))
+
+        static_labels = pygame.Surface((width, height), pygame.SRCALPHA)
+        y_offset = -2
+        font_height = self.__font_normal.get_sized_height()
+
+        # Start doing a little mock drawing here to workout where the static label(s) are positioned
+        # and where we need to setup subsurfaces for updates
+        
+        # Static Label
+        origin = (0, 0)
+        self.__font_normal.render_to(self.__static_background, origin, "Room Temp", Color.white)
+
+        # Temperature
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__temperature = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
+            "{}\u00b0F", Color.white, self.__font_normal)
+
+        # Static Label
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__font_normal.render_to(self.__static_background, origin, "Humidity", Color.white)
+
+        # Humidity
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self.__humidity = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
+            "{}%", Color.white, self.__font_normal)
+
+        # A little hacky, but blit the static background down again to include the static bits
+        self.__working_surface.blit(self.__static_background, (0, 0))
+
+    def draw_update(self, data):
+        assert(None != self.__working_surface and None != self.__static_background)
+
+        if self.__temperature.current_value != data.temperature:
+            self.__temperature.update(data.temperature)
+
+        if self.__humidity.current_value != data.humidity:
+            self.__humidity.update(data.humidity)
+
+        return self.__working_surface
