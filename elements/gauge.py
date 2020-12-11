@@ -13,7 +13,7 @@ from .helpers import Helpers
 from .styles import Color, FontPaths, AssetPath
 
 # Set true to benchmark the update process
-g_benchmark = True
+g_benchmark = False
 
 class GaugeConfig:
     def __init__(self, data_field, radius=45, value_font=None, value_font_origin=None):

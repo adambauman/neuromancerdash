@@ -12,7 +12,7 @@ from .styles import Color, AssetPath
 from .helpers import Helpers
 
 # Set true to benchmark the update process
-g_benchmark = True
+g_benchmark = False
 
 class LineGraphConfig:
     def __init__(self, height, width, data_field):

@@ -10,7 +10,7 @@ import pygame
 from .styles import Color
 
 # Set true to benchmark the update process
-g_benchmark = True
+g_benchmark = False
 
 class CoreVisualizerConfig:
     def __init__(self, core_count):

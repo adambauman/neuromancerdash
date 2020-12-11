@@ -13,7 +13,7 @@ from .styles import Color, FontPaths, AssetPath
 from .helpers import Helpers
 
 # Set true to benchmark the update process
-g_benchmark = True
+g_benchmark = False
 
 class DynamicField:
     def __init__(self, origin, subsurface, text, text_color, font, value=None, clamp_chars=0):

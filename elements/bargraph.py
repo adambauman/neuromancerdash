@@ -11,7 +11,7 @@ from .styles import Color
 from .helpers import Helpers
 
 # Set true to benchmark the update process
-g_benchmark = True
+g_benchmark = False
 
 class BarGraphConfig:
     width = 0
