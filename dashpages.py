@@ -188,6 +188,7 @@ class DashPage01:
         self.__temperature_humidity = TemperatureHumidity(
             self.__element_positions.temperature_humidity_rect, self.__working_surface)
 
+        # TODO: (Adam) 2020-12-11 Address slight red tinge around diameter when viewed on larger displays
         self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge)
         self.__fan_opt_gauge = FlatArcGauge(self.__element_configs.fan_opt_gauge)
         self.__cpu_fan_gauge = FlatArcGauge(self.__element_configs.cpu_fan_gauge)
@@ -202,7 +203,7 @@ class DashPage01:
             self.__element_positions.clock, self.__working_surface)
 
 
-    def get_updated_surface(self, aida64_data, dht22_data=None):
+    def draw_update(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
 
         # CPU and GPU Utilization

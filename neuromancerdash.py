@@ -15,7 +15,11 @@ from utilities.screensaver import MatrixScreensaver
 
 # Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
 # debug and develop on other platforms.
-g_dht22_enabled = False
+if __debug__:
+    g_dht22_enabled = False
+else:
+    g_dht22_enabled = True
+
 if g_dht22_enabled:
     from data.dht22 import DHT22, DHT22Data
 
@@ -118,11 +122,23 @@ def main(argv):
     # Prepare dash page(s)
     dash_page_01 = DashPage01(display_surface.get_width(), display_surface.get_height())
 
+    # Set true to benchmark various parts of the update process
+    benchmark = True
+
+    if benchmark:
+        if __debug__:
+            print("BENCHMARK: Enabled, in debug mode")
+        else:
+            print("BENCHMARK: Enabled")
+
     # Main loop, this will juggle data and painting the dash page(s)
     ticks_since_last_data = 0
     data_retry_delay = 50
     retry_ticks_before_screensaver = 2000
     while True:
+
+        if benchmark:
+            loop_start_ticks = pygame.time.get_ticks()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -148,8 +164,7 @@ def main(argv):
         else:
             ticks_since_last_data = 0
 
-        # Paint the updated dashboard page and flip the display. DHT22 data will not be available if
-        # the system running the script doesn't have RPi.GPIO support.
+        # Grab DHT22 Data for ambient temperature and humidity readings (if equipped)
         if None != dht22_deque:
             if data_queue_maxlen <= len(dht22_deque):
                 dht22_data = dht22_deque.popleft()
@@ -157,14 +172,25 @@ def main(argv):
             else:
                 dht22_data = dht22_last_data
 
+        if __debug__:
+            # Override, probably developing on a machine without GPIO. ;)
+            dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
+
+        
+        if benchmark:
+            draw_start_ticks = pygame.time.get_ticks()
+
         # Data gathered and prepared, paint it.
         # TODO: Switch pages
+        display_surface.blit(dash_page_01.draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
 
-        dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
+        if benchmark:
+            print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
 
-        new_dash_surface = dash_page_01.get_updated_surface(aida64_deque.popleft(), dht22_data)
-        display_surface.blit(new_dash_surface, (0, 0))
         pygame.display.flip()
+
+        if benchmark:
+            print("BENCHMARK: Loop update: {}ms".format(pygame.time.get_ticks() - loop_start_ticks))
 
     pygame.quit()
 
