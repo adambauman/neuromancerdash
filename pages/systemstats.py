@@ -8,6 +8,7 @@
 import pygame, pygame.freetype
 
 import os
+from copy import copy
 
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
@@ -26,7 +27,7 @@ if __debug__:
 
 class SystemStatsConfigs:
 
-    def __init__(self):
+    def __init__(self, base_font):
 
         ### Fonts
         self.__font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
@@ -42,10 +43,16 @@ class SystemStatsConfigs:
         self.gpu_graph = LineGraphConfig(70, 300, DashData.gpu_util)
         self.gpu_graph.display_background = True
 
-        self.sys_memory_bar = BarGraphConfig(300, 25, DashData.sys_ram_used)
-        self.sys_memory_bar.foreground_color = Color.windows_dkgrey_1_highlight
-        self.gpu_memory_bar = BarGraphConfig(300, 25, DashData.gpu_ram_used)
-        self.gpu_memory_bar.foreground_color = Color.windows_dkgrey_1_highlight
+        #self.sys_memory_bar = BarGraphConfig(300, 25, DashData.sys_ram_used)
+        #self.sys_memory_bar.foreground_color = Color.windows_dkgrey_1_highlight
+        #self.gpu_memory_bar = BarGraphConfig(300, 25, DashData.gpu_ram_used)
+        #self.gpu_memory_bar.foreground_color = Color.windows_dkgrey_1_highlight
+        self.sys_memory_bar = BarGraphConfig((300, 25), (0, 32768), base_font)
+        self.sys_memory_bar.unit_draw = True
+        self.sys_memory_bar.current_value_draw = True
+        self.gpu_memory_bar = BarGraphConfig((300,25), (0, 10240), base_font)
+        self.gpu_memory_bar.unit_draw = True
+        self.gpu_memory_bar.current_value_draw = True
 
         self.cpu_temp_gauge = GaugeConfig(DashData.cpu_temp, 45, self.__font_gauge_value, (35, 70))
         self.cpu_temp_gauge.show_unit_symbol = False
@@ -149,8 +156,8 @@ class SystemStats:
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
 
+        self.__element_configs = SystemStatsConfigs(self.font_normal)
         self.__element_positions = SystemStatsPositions(width, height)
-        self.__element_configs = SystemStatsConfigs()
 
         self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar)
         self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar)

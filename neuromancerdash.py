@@ -129,7 +129,7 @@ def main(argv):
 
     # Prepare dash page(s)
     available_pages = []
-    #available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height()))
+    available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height()))
     available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height()))
 
     # Track selected page and copies of previously displayed pages
