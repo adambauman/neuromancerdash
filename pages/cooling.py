@@ -30,13 +30,18 @@ class CoolingConfigs:
     def __init__(self, base_font=None):
 
         fan_base_rpm_range = (300, 2000)
-        base_fan_bar_config = BarGraphConfig((150, 20), fan_base_rpm_range, base_font, "Fan")
+        base_fan_bar_config = BarGraphConfig((150, 20), fan_base_rpm_range, base_font)
+        base_fan_bar_config.unit_draw = True
+        #base_fan_bar_config.unit_position = (125, 5)
+        #base_fan_bar_config.max_value_position = (85, 5)
+        #base_fan_bar_config.max_value_draw = True
+        base_fan_bar_config.current_value_draw = True
         
         self.rear_exhaust_bar = copy(base_fan_bar_config)
-        self.rear_exhaust_bar.label = "Rear Exhaust"
+        self.rear_exhaust_bar.dash_data = DashData.chassis_1_fan
 
         self.forward_exhaust_bar = copy(base_fan_bar_config)
-        self.forward_exhaust_bar.label = "Forward Exhaust"
+        self.forward_exhaust_bar.dash_data = DashData.chassis_3_fan
 
 class CoolingPositions:
 
@@ -46,8 +51,9 @@ class CoolingPositions:
         # Upper exahust fans centered and spaced from each other
         exhaust_fans_bars_width = cooling_configs.rear_exhaust_bar.size[0]
         exhaust_fans_bars_spacing = 20
-        exhaust_fans_bars_combined_width = (exhaust_fans_bars_width * 2) + exhaust_fans_bars_spacing
-        exhaust_fans_x = (display_size[0] / 2) - (exhaust_fans_bars_combined_width / 2)
+        #exhaust_fans_bars_combined_width = (exhaust_fans_bars_width * 2) + exhaust_fans_bars_spacing
+        #exhaust_fans_x = (display_size[0] / 2) - (exhaust_fans_bars_combined_width / 2)
+        exhaust_fans_x = 20
         exhaust_fans_y = 50
 
         self.rear_exhaust_fan_bar = (exhaust_fans_x, exhaust_fans_y)
@@ -68,6 +74,7 @@ class Cooling:
             self.__background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png"))
             self.__working_surface.blit(self.__background, (0,0))
 
+
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
 
@@ -81,9 +88,10 @@ class Cooling:
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
         assert(0 != len(aida64_data))
 
-        if redraw_all:
-            self.__working_surface = pygame.Surface(
-                self.__working_surface.get_width(), self.__working_surface.get_height(), pygame.SRCALPHA)
+        if None != self.__background:
+            self.__working_surface.blit(self.__background, (0, 0))
+        else:
+            self.__working_surface.fill(Color.black)
 
         # Fan bar graphs
         rear_exhaust_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")

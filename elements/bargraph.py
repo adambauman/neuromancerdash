@@ -14,53 +14,41 @@ from .helpers import Helpers
 g_benchmark = False
 
 class BarGraphConfig:
-    def __init__(self, size, value_range, font=None, label=None):
+    def __init__(self, size, value_range, font=None):
         assert(2 == len(size) and 2 == len(value_range))
 
         self.size = size
         self.value_range = value_range
-        self.data_field = None
+        self.dash_data = None
         self.foreground_color = Color.windows_dkgrey_1_highlight
         self.background_color = Color.windows_dkgrey_1
 
         # Use system default if font isn't passed in
+        self.text_color = Color.white
+        self.text_shadow_draw = True
+        self.text_shadow_color = (0, 0, 0, 80)
         if None == font:
             self.font = pygame.freetype.SysFont(pygame.freetype.get_default_font(), 12)
         else:
             self.font = font
 
-        self.label = label
-        self.label_color = Color.white
-        self.label_dropshadow = True
-        self.label_dropshadow_color = (0, 0, 0, 60) # Supports alpha
-        self.label_position = None
-        # Assume user wants to draw a label if defined
-        self.draw_label = True
-        if None != label:
-            self.draw_label = False
+        self.current_value_draw = False
+        self.current_value_position = None
 
-        self.draw_value_connector = False # draws line connecting end of bar to current value text
-        self.value_connector_color = Color.white
+        self.min_value_draw = False
+        self.min_value_position = None
+        self.max_value_draw = False
+        self.max_value_position = None
 
-        self.draw_current_value = False
-        self.current_value_follows_bar = False # ignores current_value_position and draws value at bar position
-        self.current_value_follows_bar_x_offset = 0 # offsets value from bar, can be negative
-        self.current_value_follows_bar_y_offset = 0 # offsets value from bar, can be negative
-        self.current_value_position = None # if None draws inside end of bar
-
-        self.draw_min_value = False
-        self.min_value_position = None # if None draws before label at start of bar
-        self.draw_max_value = False
-        self.max_value_position = None # if None draws inside of end of bar, after current_value (if enabled)
-
-        self.draw_unit = False
-        self.unit_position = None # if None unit is draw next to current value
+        self.unit_draw = False
+        self.unit_use_full_name = False
+        self.unit_position = None
 
 
 class BarGraph:
     __config = None
     __working_surface = None
-    __label_surface = None
+    __static_overlay_surface = None
     __font = None
 
     current_value = None
@@ -74,72 +62,117 @@ class BarGraph:
     def __setup_bargraph__(self):
         assert(None != self.__config)
 
-        if __debug__:
-            debug_label = "<labelnone>"
-            if None != self.__config.label:
-                debug_label = self.__config.label
-            print("Setting up {} Bargraph...".format(debug_label))
-
         # Use actual data field minmax if it's present in the config
-        if None != self.__config.data_field:
-            self.__config.value_range = (self.__config.data_field.min_value, self.__config.data_field.max_value)
+        if None != self.__config.dash_data:
+            self.__config.value_range = (self.__config.dash_data.min_value, self.__config.dash_data.max_value)
 
-        if None != self.__config.label and 0 != len(self.__config.label):
-            self.__setup_label__()
-
-        self.__setup_working_surface__()
-
-    def __setup_label__(self):
-        assert(None != self.__config.label or 0 != len(self.__config.label))
-        assert(None == self.__label_surface)
-        
-        # Create a throwaway objects we can use to get some sizing information from
-        temp_label = self.__config.font.render(self.__config.label)
-        temp_bar = pygame.Surface(self.__config.size, pygame.SRCALPHA)
-
-        # Draw the final label surface now, we can use it for more calculations as we go
-        label_size = (temp_label[0].get_width(), temp_label[0].get_height())
-        drop_shadow_offset = 2
-        if False != self.__config.label_dropshadow:
-            # Give label surface enough room for drop shadow pixels
-            label_size = (label_size[0] + drop_shadow_offset, label_size[1] + drop_shadow_offset)
-
-        self.__label_surface = pygame.Surface(label_size, pygame.SRCALPHA)
-        if False != self.__config.label_dropshadow:
-            self.__config.font.render_to(
-                self.__label_surface, (drop_shadow_offset, drop_shadow_offset),
-                self.__config.label, self.__config.label_dropshadow_color)
-        self.__config.font.render_to(self.__label_surface, (0, 0), self.__config.label, self.__config.label_color)
-        
-        if None == self.__config.label_position:
-            self.__config.label_position = Helpers.get_centered_origin(temp_bar.get_size(), self.__label_surface.get_size())
-
-    def __setup_working_surface__(self):
+        self.__prepare_static_overlay__()
         self.__working_surface = pygame.Surface(self.__config.size, pygame.SRCALPHA)
 
+    def __prepare_static_overlay__(self):
+        assert(None != self.__config)
+
+        # Sets up static elements like min/max values
+
+        self.__static_overlay_surface = pygame.Surface(self.__config.size, pygame.SRCALPHA)
+        config = self.__config
+        font = config.font
+
+        x_padding = 3
+
+        # This section requires valid dash data, return if we don't have it
+        if None == config.dash_data:
+            return
+
+        # Min value
+        if False != config.min_value_draw:
+            shadow_text = Helpers.get_shadowed_text(
+                font, "{}".format(config.dash_data.min_value), config.text_color, config.text_shadow_color)
+            origin = config.min_value_position
+            if None == origin:
+                # Place y-centered on the left with a small indent
+                origin = (x_padding, (config.size[1] / 2) - (shadow_text.get_height() / 2))
+
+            self.__static_overlay_surface.blit(shadow_text, origin)
+        
+        unit_text = None
+        # Draw unit if position is valid. Otherwise will be draw with max value
+        if False != config.unit_draw:
+            if True == config.unit_use_full_name:
+                unit_text = config.dash_data.unit.name
+            else:
+                unit_text = config.dash_data.unit.symbol
+            
+            if None != config.unit_position:
+                shadow_text = Helpers.get_shadowed_text(font, unit_text, config.text_color, config.text_shadow_color)
+                origin = config.unit_position
+                assert(origin[0] < config.size[0] and origin[1] < config.size[1])
+
+                self.__static_overlay_surface.blit(shadow_text, origin)
+
+        # Max value if position is valid. Otherwise we'll draw this with current value during updates
+        if False != config.max_value_draw and None != config.max_value_position:
+            if None != unit_text:
+                max_value_text = "{} {}".format(config.dash_data.max_value, unit_text)
+            else:
+                max_value_text = "{}".format(config.dash_data.max_value)
+
+            shadow_text = Helpers.get_shadowed_text(
+                font, max_value_text, config.text_color, config.text_shadow_color)
+            origin = config.max_value_position
+            assert(origin[0] < config.size[0] and origin[1] < config.size[1])
+
+            self.__static_overlay_surface.blit(shadow_text, origin)
 
     def draw_update(self, value):
+        assert(None != self.__working_surface)
+        assert(None != self.__static_overlay_surface)
         
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        # Create fresh working surface
         self.__working_surface.fill(self.__config.background_color)
 
-        # Draw the value rect
-        data_field = self.__config.data_field
-        transposed_value = Helpers.transpose_ranges(
-            float(value), self.__config.value_range[1], self.__config.value_range[0], self.__config.size[0], 0)
-        draw_rect = (0, 0, transposed_value, self.__config.size[1])
-        pygame.draw.rect(self.__working_surface, self.__config.foreground_color, draw_rect)
+        config = self.__config
 
-        # Draw label
-        if None != self.__label_surface:
-            self.__working_surface.blit(self.__label_surface, self.__config.label_position)
+        # Draw the value rect
+        data_field = config.dash_data
+        transposed_value = Helpers.transpose_ranges(
+            float(value), config.value_range[1], config.value_range[0], config.size[0], 0)
+        draw_rect = (0, 0, transposed_value, config.size[1])
+        pygame.draw.rect(self.__working_surface, config.foreground_color, draw_rect)
+
+        # Draw value, unit, max value text if configured
+        x_padding = 3
+        value_text = ""
+        if config.current_value_draw:
+            value_text += "{}".format(value)
+
+        if config.max_value_draw:
+            if config.current_value_draw:
+                value_text += "/"
+            value_text += "{}".format(config.dash_data.max_value)
+
+        if config.unit_draw:
+            if config.unit_use_full_name:
+                value_text += " {}".format(config.dash_data.unit.name)
+            else:
+                value_text += " {}".format(config.dash_data.unit.symbol)
+
+        if 0 != len(value_text):
+            shadow_text = Helpers.get_shadowed_text(
+                config.font, value_text, config.text_color, config.text_shadow_color)
+            shadow_text_origin = (
+                config.size[0] - x_padding - shadow_text.get_width(), 
+                (config.size[1] / 2) - (shadow_text.get_height() / 2))
+            self.__working_surface.blit(shadow_text, shadow_text_origin)
+
+        # Draw static overlay with min/max values, etc.
+        self.__working_surface.blit(self.__static_overlay_surface, (0, 0))
 
         self.__last_value = value
 
         if g_benchmark:
-            print("BENCHMARK: BarGraph {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
+            print("BENCHMARK: BarGraph {}: {}ms".format(self.config.dash_data.field_name, pygame.time.get_ticks() - start_ticks))
 
         return self.__working_surface
