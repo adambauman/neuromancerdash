@@ -1,6 +1,6 @@
 #
-# dash_pages - Contains layouts and methods to paint dashboard pages
-# =================================================================
+# page01.py - Contains layout, configurations, and update routines for Page01
+# ===========================================================================
 #
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
@@ -23,37 +23,6 @@ from elements.helpers import Helpers
 
 if __debug__:
     import traceback
-
-class TweenState:
-    unknown = 0
-    idle = 1
-    rising = 2
-    falling = 3
-class TweenAcceleration:
-    unknown = 0
-    stable = 1
-    accelerating = 2
-    decelerating = 3
-class Tweening:
-    tween_state = TweenState.unknown
-    tween_acceleration = TweenAcceleration.unknown
-    last_absolute_value = 0
-    tween_steps = 0
-
-    def calculate_tween_steps(self, new_absolute_value, frames_since_last_calculation):
-        new_tween_state = TweenState.unknown
-        if new_absolute_value == self.last_absolute_value:
-            new_tween_state = TweenState.idle
-        elif new_absolute_value > self.last_absolute_value:
-            new_tween_state = TweenState.rising
-        else:
-            new_tween_state = TweenState.falling
-
-        delta = new_absolute_value - self.last_absolute_value
-        if 0 != frames_since_last_calculation:
-            self.tween_steps = delta / frames_since_last_calculation
-
-        self.last_absolute_value = new_absolute_value
 
 class Page01ElementConfigurations:
 
@@ -87,35 +56,47 @@ class Page01ElementConfigurations:
         self.fps_graph.display_background = True
         self.fps_graph.draw_on_zero = False
 
-        # Fan Base
-        fan_base_gauge = GaugeConfig(DashData.chassis_1_fan, 20, self.__fan_gauge_value, (17, 29))
-        fan_base_gauge.arc_main_color = Color.grey_40
-        fan_base_gauge.needle_color = Color.white
-        fan_base_gauge.bg_color = Color.black
-        fan_base_gauge.counter_sweep = True
-        fan_base_gauge.show_unit_symbol = False
-        fan_base_gauge.show_label_instead_of_value = True
+        # FAN1 = Rear exhaust
+        self.fan1_gauge = GaugeConfig(DashData.chassis_1_fan, 20, self.__fan_gauge_value, (17, 29))
+        self.fan1_gauge.arc_main_color = Color.grey_40
+        self.fan1_gauge.needle_color = Color.white
+        self.fan1_gauge.bg_color = Color.black
+        self.fan1_gauge.counter_sweep = True
+        self.fan1_gauge.show_unit_symbol = False
+        self.fan1_gauge.show_label_instead_of_value = True
+        self.fan1_gauge.label = "E"
 
-        # FAN1 = Upper intake (lower intake does not report)
-        self.fan1_gauge = fan_base_gauge
-        self.fan1_gauge.data_field = DashData.chassis_1_fan
-        self.fan1_gauge.label = "I"
+        # FAN2 = Drive bay intake
+        # FAN3 = Front exhaust
 
-        # FAN2 = Drive bay intake?
-        # FAN3 = Rear exhaust
+        # CPU OPT fan = Front intakes (combined)
+        self.fan_opt_gauge = GaugeConfig(DashData.cpu_opt_fan, 20, self.__fan_gauge_value, (17, 29))
+        self.fan_opt_gauge.arc_main_color = Color.grey_40
+        self.fan_opt_gauge.needle_color = Color.white
+        self.fan_opt_gauge.bg_color = Color.black
+        self.fan_opt_gauge.counter_sweep = True
+        self.fan_opt_gauge.show_unit_symbol = False
+        self.fan_opt_gauge.show_label_instead_of_value = True
+        self.fan_opt_gauge.label = "I"
 
-        # CPU OPT fan = Forward exhaust
-        self.fan_opt_gauge = fan_base_gauge
-        self.fan_opt_gauge.data_field = DashData.cpu_opt_fan
-        self.fan_opt_gauge.label = "E"
-
-        self.cpu_fan_gauge = fan_base_gauge
-        self.cpu_fan_gauge.data_field = DashData.cpu_fan
+        self.cpu_fan_gauge = GaugeConfig(DashData.cpu_fan, 20, self.__fan_gauge_value, (17, 29))
+        self.cpu_fan_gauge.arc_main_color = Color.grey_40
+        self.cpu_fan_gauge.needle_color = Color.white
+        self.cpu_fan_gauge.bg_color = Color.black
+        self.cpu_fan_gauge.counter_sweep = True
+        self.cpu_fan_gauge.show_unit_symbol = False
+        self.cpu_fan_gauge.show_label_instead_of_value = True
         self.cpu_fan_gauge.label = "C"
 
-        self.gpu_fan_gauge = fan_base_gauge
-        self.gpu_fan_gauge.data_field = DashData.gpu_fan
+        self.gpu_fan_gauge = GaugeConfig(DashData.gpu_fan, 20, self.__fan_gauge_value, (17, 29))
+        self.gpu_fan_gauge.arc_main_color = Color.grey_40
+        self.gpu_fan_gauge.needle_color = Color.white
+        self.gpu_fan_gauge.bg_color = Color.black
+        self.gpu_fan_gauge.counter_sweep = True
+        self.gpu_fan_gauge.show_unit_symbol = False
+        self.gpu_fan_gauge.show_label_instead_of_value = True
         self.gpu_fan_gauge.label = "G"
+
 
 class Page01ElementPositions:
 
