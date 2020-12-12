@@ -32,9 +32,6 @@ class CoolingConfigs:
         fan_base_rpm_range = (300, 2000)
         base_fan_bar_config = BarGraphConfig((150, 20), fan_base_rpm_range, base_font)
         base_fan_bar_config.unit_draw = True
-        #base_fan_bar_config.unit_position = (125, 5)
-        #base_fan_bar_config.max_value_position = (85, 5)
-        #base_fan_bar_config.max_value_draw = True
         base_fan_bar_config.current_value_draw = True
         
         self.rear_exhaust_bar = copy(base_fan_bar_config)
@@ -42,6 +39,13 @@ class CoolingConfigs:
 
         self.forward_exhaust_bar = copy(base_fan_bar_config)
         self.forward_exhaust_bar.dash_data = DashData.chassis_3_fan
+
+        self.cpu_fan_bar = copy(base_fan_bar_config)
+        self.cpu_fan_bar.size = ((100, 20))
+        self.cpu_fan_bar.dash_data = DashData.cpu_fan
+
+        self.gpu_fan_bar = copy(base_fan_bar_config)
+        self.gpu_fan_bar.dash_data = DashData.gpu_fan
 
 class CoolingPositions:
 
@@ -58,6 +62,8 @@ class CoolingPositions:
 
         self.rear_exhaust_fan_bar = (exhaust_fans_x, exhaust_fans_y)
         self.forward_exhaust_fan_bar = (exhaust_fans_x + exhaust_fans_bars_width + exhaust_fans_bars_spacing, exhaust_fans_y)
+        self.cpu_fan_bar = (70, 130)
+        self.gpu_fan_bar = (70, 180)
 
 class Cooling:
     __background = None
@@ -83,6 +89,8 @@ class Cooling:
 
         self.__rear_exhaust_fan_bar = BarGraph(self.__element_configs.rear_exhaust_bar)
         self.__forward_exhaust_fan_bar = BarGraph(self.__element_configs.forward_exhaust_bar)
+        self.__cpu_fan_bar = BarGraph(self.__element_configs.cpu_fan_bar)
+        self.__gpu_fan_bar = BarGraph(self.__element_configs.gpu_fan_bar)
 
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
@@ -103,5 +111,15 @@ class Cooling:
         self.__working_surface.blit(
             self.__forward_exhaust_fan_bar.draw_update(forward_exhaust_fan_value), 
             self.__element_positions.forward_exhaust_fan_bar)
+
+        cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
+        self.__working_surface.blit(
+            self.__cpu_fan_bar.draw_update(cpu_fan_value),
+            self.__element_positions.cpu_fan_bar)
+
+        gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
+        self.__working_surface.blit(
+            self.__gpu_fan_bar.draw_update(gpu_fan_value),
+            self.__element_positions.gpu_fan_bar)
 
         return self.__working_surface

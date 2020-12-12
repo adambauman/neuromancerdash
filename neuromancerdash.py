@@ -133,7 +133,7 @@ def main(argv):
     available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height()))
 
     # Track selected page and copies of previously displayed pages
-    current_page = 0
+    current_page = 1
     requested_page = current_page
 
     ########
