@@ -27,6 +27,24 @@ class Helpers:
         trimmed_text = text[0:max_characters]
         return trimmed_text + trailing_text
 
+    def get_centered_origin(this_position, that_position):
+        assert(2 == len(this_position) and 2 == len(that_position))
+
+        if this_position[0] > that_position[0] and this_position[1] > that_position[1]:
+            larger_position = this_position
+            smaller_position = that_position
+        elif that_position[0] > this_position[0] and that_position[1] > this_position[1]:
+            larger_position = that_position
+            smaller_position = this_position
+        else:
+            # 'ya done messed up
+            assert(False)
+
+        center_x = (larger_position[0] / 2) - (smaller_position[0] / 2)
+        center_y = (larger_position[1] / 2) - (smaller_position[1] / 2)
+
+        return (center_x, center_y)
+
     # TODO: (Adam) 2020-11-18 Switch to regex for tighter comparisons
     # TODO: (Adam) 2020-11-18 Maybe move this into the DataField class with a count method
     def is_cpu_core_utilization(key):

@@ -24,6 +24,7 @@ class Color:
     windows_dkgrey_1_highlight = "#b3aeaa"
     windows_dkgrey_1 = "#4c4a48"
     windows_light_grey_1 = "#7b7574"
+    hot_pink = "#f542ce"
 
 class AssetPath:
     # No trailing slashes

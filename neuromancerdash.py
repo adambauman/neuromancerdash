@@ -29,7 +29,8 @@ if g_dht22_enabled:
 from data.aida64lcdsse import AIDA64LCDSSE
 
 from elements.styles import FontPaths, Color
-from pages.page01 import Page01
+from pages.systemstats import SystemStats
+from pages.cooling import Cooling
 from elements.styles import Color, AssetPath, FontPaths
 
 if __debug__:
@@ -127,9 +128,17 @@ def main(argv):
         dht22_data_thread.start()
 
     # Prepare dash page(s)
-    dash_page_01 = Page01(display_surface.get_width(), display_surface.get_height())
+    available_pages = []
+    #available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height()))
+    available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height()))
 
+    # Track selected page and copies of previously displayed pages
+    current_page = 0
+    requested_page = current_page
+
+    ########
     # Main loop, this will juggle data and painting the dash page(s)
+    ########
     ticks_since_last_data = 0
     data_retry_delay = 50
     retry_ticks_before_screensaver = 2000
@@ -138,6 +147,7 @@ def main(argv):
         if g_benchmark:
             loop_start_ticks = pygame.time.get_ticks()
 
+        # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 print("User quit")
@@ -177,15 +187,20 @@ def main(argv):
         if g_benchmark:
             draw_start_ticks = pygame.time.get_ticks()
 
-        # Data gathered and prepared, paint it.
-        # TODO: Switch pages
-        if g_benchmark:
-            display_surface_blit_ticks = pygame.time.get_ticks()
+        # Data is ready, select the page and bring it to the display surface
+        if current_page != requested_page:
+            assert(len(available_pages) >= requested_page)
 
-        display_surface.blit(dash_page_01.draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
+            if __debug__:
+                print("Switching from page index {} to {}".format(current_page, requested_page))
 
-        if g_benchmark:
-            print("BENCHMARK: Display surface blit: {}ms".format(pygame.time.get_ticks() - display_surface_blit_ticks))
+            display_surface.fill(Color.black)
+            display_surface.blit(
+                available_pages[requested_page].draw_update(aida64_deque.popleft(), dht22_data, redraw_all=True), (0, 0))
+            current_page = requested_page
+        else:
+            display_surface.blit(
+                available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
 
         if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
@@ -198,4 +213,10 @@ def main(argv):
     pygame.quit()
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    command_arguments = sys.argv[1:]
+
+    # Saves headaches when debugging in VS2019
+    if __debug__ and 0 == len(command_arguments):
+        command_arguments = ['--aidasse', 'http://localhost:8080/sse']
+
+    main(command_arguments)

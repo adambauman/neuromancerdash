@@ -1,6 +1,6 @@
 #
-# page01.py - Contains layout, configurations, and update routines for Page01
-# ===========================================================================
+# systemstats.py - Contains layout, configurations, and update routines for the SystemStats page
+# ==============================================================================================
 #
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
@@ -24,7 +24,7 @@ from elements.helpers import Helpers
 if __debug__:
     import traceback
 
-class Page01ElementConfigurations:
+class SystemStatsConfigs:
 
     def __init__(self):
 
@@ -98,7 +98,7 @@ class Page01ElementConfigurations:
         self.gpu_fan_gauge.label = "G"
 
 
-class Page01ElementPositions:
+class SystemStatsPositions:
 
     def __init__(self, width, height):
         assert(0 != width and 0 != height)
@@ -130,7 +130,7 @@ class Page01ElementPositions:
         self.network_info = pygame.Rect(0, height-18, 290, 18)
         self.clock = pygame.Rect(self.cpu_details_rect[0], height-18, 70, 18)
 
-class Page01:
+class SystemStats:
     __background = None
 
     def __init__(self, width, height):
@@ -149,8 +149,8 @@ class Page01:
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
 
-        self.__element_positions = Page01ElementPositions(width, height)
-        self.__element_configs = Page01ElementConfigurations()
+        self.__element_positions = SystemStatsPositions(width, height)
+        self.__element_configs = SystemStatsConfigs()
 
         self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar)
         self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar)
@@ -184,8 +184,12 @@ class Page01:
             self.__element_positions.clock, self.__working_surface)
 
 
-    def draw_update(self, aida64_data, dht22_data=None):
+    def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
         assert(0 != len(aida64_data))
+
+        if redraw_all:
+            self.__working_surface = pygame.Surface(
+                self.__working_surface.get_width(), self.__working_surface.get_height(), pygame.SRCALPHA)
 
         # CPU and GPU Utilization
         self.__working_surface.blit(
@@ -198,11 +202,11 @@ class Page01:
 
         # System and GPU memory usage
         self.__working_surface.blit(
-            self.__sys_memory_bar.update(DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")),
+            self.__sys_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")),
             self.__element_positions.sys_memory)
 
         self.__working_surface.blit(
-            self.__gpu_memory_bar.update(DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")),
+            self.__gpu_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")),
             self.__element_positions.gpu_memory)
 
         # CPU Core Visualizer
@@ -221,14 +225,14 @@ class Page01:
 
         # CPU Temperature Gauge
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        if self.__cpu_temp_gauge.current_value != cpu_temperature:
+        if self.__cpu_temp_gauge.current_value != cpu_temperature or redraw_all:
             self.__working_surface.blit(
                 self.__cpu_temp_gauge.draw_update(cpu_temperature),
                 self.__element_positions.cpu_temp_gauge)
 
         # GPU Temperature Gauge
         gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        if self.__gpu_temp_gauge.current_value != gpu_temperature:
+        if self.__gpu_temp_gauge.current_value != gpu_temperature or redraw_all:
             self.__working_surface.blit(
                 self.__gpu_temp_gauge.draw_update(gpu_temperature),
                 self.__element_positions.gpu_temp_gauge)
@@ -236,7 +240,7 @@ class Page01:
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         self.__working_surface.blit(self.__fps_graph.update(fps_value), self.__element_positions.fps_graph)
-        if self.__fps_text.current_value != fps_value:
+        if self.__fps_text.current_value != fps_value or redraw_all:
             self.__working_surface.blit(
                 self.__fps_text.draw_update(fps_value),
                 (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
@@ -262,7 +266,7 @@ class Page01:
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
-        if self.__mobo_temperature.current_value != mobo_temperature_value:
+        if self.__mobo_temperature.current_value != mobo_temperature_value or redraw_all:
             self.__working_surface.blit(
                 self.__mobo_temperature.draw_update(mobo_temperature_value),
                 (self.__element_positions.mobo_temp_rect[0], self.__element_positions.mobo_temp_rect[1]))
@@ -270,7 +274,7 @@ class Page01:
         # Network Info
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
         nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
-        if self.__network_info.current_download_value != nic1_down_value and self.__network_info.current_upload_value != nic1_up_value:
+        if self.__network_info.current_download_value != nic1_down_value or self.__network_info.current_upload_value != nic1_up_value or redraw_all:
             self.__working_surface.blit(
                 self.__network_info.draw_update(nic1_down_value, nic1_up_value),
                 (self.__element_positions.network_info[0], self.__element_positions.network_info[1]))
