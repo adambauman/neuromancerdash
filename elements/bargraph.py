@@ -91,7 +91,7 @@ class BarGraph:
             origin = config.min_value_position
             if None == origin:
                 # Place y-centered on the left with a small indent
-                origin = (x_padding, (config.size[1] / 2) - (shadow_text.get_height() / 2))
+                origin = (x_padding, (config.size[1] / 2) - (shadow_text.get_height() / 2) + 1)
 
             self.__static_overlay_surface.blit(shadow_text, origin)
         
@@ -148,12 +148,12 @@ class BarGraph:
         if config.current_value_draw:
             value_text += "{}".format(value)
 
-        if config.max_value_draw:
+        if config.max_value_draw and None != config.dash_data:
             if config.current_value_draw:
                 value_text += "/"
             value_text += "{}".format(config.dash_data.max_value)
 
-        if config.unit_draw:
+        if config.unit_draw and None != config.dash_data:
             if config.unit_use_full_name:
                 value_text += " {}".format(config.dash_data.unit.name)
             else:
@@ -164,7 +164,7 @@ class BarGraph:
                 config.font, value_text, config.text_color, config.text_shadow_color)
             shadow_text_origin = (
                 config.size[0] - x_padding - shadow_text.get_width(), 
-                (config.size[1] / 2) - (shadow_text.get_height() / 2))
+                (config.size[1] / 2) - (shadow_text.get_height() / 2) + 1)
             self.__working_surface.blit(shadow_text, shadow_text_origin)
 
         # Draw static overlay with min/max values, etc.

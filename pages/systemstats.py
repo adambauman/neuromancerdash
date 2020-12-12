@@ -43,15 +43,16 @@ class SystemStatsConfigs:
         self.gpu_graph = LineGraphConfig(70, 300, DashData.gpu_util)
         self.gpu_graph.display_background = True
 
-        #self.sys_memory_bar = BarGraphConfig(300, 25, DashData.sys_ram_used)
-        #self.sys_memory_bar.foreground_color = Color.windows_dkgrey_1_highlight
-        #self.gpu_memory_bar = BarGraphConfig(300, 25, DashData.gpu_ram_used)
-        #self.gpu_memory_bar.foreground_color = Color.windows_dkgrey_1_highlight
         self.sys_memory_bar = BarGraphConfig((300, 25), (0, 32768), base_font)
+        self.sys_memory_bar.dash_data = DashData.sys_ram_used
         self.sys_memory_bar.unit_draw = True
+        self.sys_memory_bar.max_value_draw = True
         self.sys_memory_bar.current_value_draw = True
+
         self.gpu_memory_bar = BarGraphConfig((300,25), (0, 10240), base_font)
+        self.gpu_memory_bar.dash_data = DashData.gpu_ram_used
         self.gpu_memory_bar.unit_draw = True
+        self.gpu_memory_bar.max_value_draw = True
         self.gpu_memory_bar.current_value_draw = True
 
         self.cpu_temp_gauge = GaugeConfig(DashData.cpu_temp, 45, self.__font_gauge_value, (35, 70))
@@ -63,45 +64,34 @@ class SystemStatsConfigs:
         self.fps_graph.display_background = True
         self.fps_graph.draw_on_zero = False
 
+        # Base for chassis fans
+        case_fan_base = GaugeConfig(DashData.cpu_opt_fan, 20, self.__fan_gauge_value, (17, 29))
+        case_fan_base.arc_main_color = Color.grey_40
+        case_fan_base.needle_color = Color.white
+        case_fan_base.bg_color = Color.black
+        case_fan_base.counter_sweep = True
+        case_fan_base.show_unit_symbol = False
+        case_fan_base.show_label_instead_of_value = True
+
         # FAN1 = Rear exhaust
-        self.fan1_gauge = GaugeConfig(DashData.chassis_1_fan, 20, self.__fan_gauge_value, (17, 29))
-        self.fan1_gauge.arc_main_color = Color.grey_40
-        self.fan1_gauge.needle_color = Color.white
-        self.fan1_gauge.bg_color = Color.black
-        self.fan1_gauge.counter_sweep = True
-        self.fan1_gauge.show_unit_symbol = False
-        self.fan1_gauge.show_label_instead_of_value = True
+        self.fan1_gauge = copy(case_fan_base)
+        self.fan1_gauge.data_field = DashData.chassis_1_fan
         self.fan1_gauge.label = "E"
 
         # FAN2 = Drive bay intake
         # FAN3 = Front exhaust
 
         # CPU OPT fan = Front intakes (combined)
-        self.fan_opt_gauge = GaugeConfig(DashData.cpu_opt_fan, 20, self.__fan_gauge_value, (17, 29))
-        self.fan_opt_gauge.arc_main_color = Color.grey_40
-        self.fan_opt_gauge.needle_color = Color.white
-        self.fan_opt_gauge.bg_color = Color.black
-        self.fan_opt_gauge.counter_sweep = True
-        self.fan_opt_gauge.show_unit_symbol = False
-        self.fan_opt_gauge.show_label_instead_of_value = True
+        self.fan_opt_gauge = copy(case_fan_base)
+        self.fan_opt_gauge.data_field = DashData.cpu_opt_fan
         self.fan_opt_gauge.label = "I"
 
-        self.cpu_fan_gauge = GaugeConfig(DashData.cpu_fan, 20, self.__fan_gauge_value, (17, 29))
-        self.cpu_fan_gauge.arc_main_color = Color.grey_40
-        self.cpu_fan_gauge.needle_color = Color.white
-        self.cpu_fan_gauge.bg_color = Color.black
-        self.cpu_fan_gauge.counter_sweep = True
-        self.cpu_fan_gauge.show_unit_symbol = False
-        self.cpu_fan_gauge.show_label_instead_of_value = True
+        self.cpu_fan_gauge = copy(case_fan_base)
+        self.cpu_fan_gauge.data_field = DashData.cpu_fan
         self.cpu_fan_gauge.label = "C"
 
-        self.gpu_fan_gauge = GaugeConfig(DashData.gpu_fan, 20, self.__fan_gauge_value, (17, 29))
-        self.gpu_fan_gauge.arc_main_color = Color.grey_40
-        self.gpu_fan_gauge.needle_color = Color.white
-        self.gpu_fan_gauge.bg_color = Color.black
-        self.gpu_fan_gauge.counter_sweep = True
-        self.gpu_fan_gauge.show_unit_symbol = False
-        self.gpu_fan_gauge.show_label_instead_of_value = True
+        self.gpu_fan_gauge = copy(case_fan_base)
+        self.gpu_fan_gauge.data_field = DashData.gpu_fan
         self.gpu_fan_gauge.label = "G"
 
 
