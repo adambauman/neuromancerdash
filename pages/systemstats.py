@@ -185,11 +185,13 @@ class SystemStats:
             self.__element_positions.clock, self.__working_surface)
 
 
-    def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
+    def draw_update(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
 
-        if redraw_all:
-            self.__working_surface = pygame.Surface(self.__base_size, pygame.SRCALPHA)
+        if None != self.__background:
+            self.__working_surface.blit(self.__background, (0, 0))
+        else:
+            self.__working_surface.fill(Color.black)
 
         # CPU and GPU Utilization
         self.__working_surface.blit(
@@ -225,25 +227,23 @@ class SystemStats:
 
         # CPU Temperature Gauge
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        if self.__cpu_temp_gauge.current_value != cpu_temperature or redraw_all:
-            self.__working_surface.blit(
-                self.__cpu_temp_gauge.draw_update(cpu_temperature),
-                self.__element_positions.cpu_temp_gauge)
+        #if self.__cpu_temp_gauge.current_value != cpu_temperature or redraw_all:
+        self.__working_surface.blit(
+            self.__cpu_temp_gauge.draw_update(cpu_temperature),
+            self.__element_positions.cpu_temp_gauge)
 
         # GPU Temperature Gauge
         gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        if self.__gpu_temp_gauge.current_value != gpu_temperature or redraw_all:
-            self.__working_surface.blit(
-                self.__gpu_temp_gauge.draw_update(gpu_temperature),
-                self.__element_positions.gpu_temp_gauge)
+        self.__working_surface.blit(
+            self.__gpu_temp_gauge.draw_update(gpu_temperature),
+            self.__element_positions.gpu_temp_gauge)
 
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         self.__working_surface.blit(self.__fps_graph.update(fps_value), self.__element_positions.fps_graph)
-        if self.__fps_text.current_value != fps_value or redraw_all:
-            self.__working_surface.blit(
-                self.__fps_text.draw_update(fps_value),
-                (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
+        self.__working_surface.blit(
+            self.__fps_text.draw_update(fps_value),
+            (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
 
         # Ambient temperature and humidity
         if None != dht22_data:
@@ -267,18 +267,16 @@ class SystemStats:
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
-        if self.__mobo_temperature.current_value != mobo_temperature_value or redraw_all:
-            self.__working_surface.blit(
-                self.__mobo_temperature.draw_update(mobo_temperature_value),
-                (self.__element_positions.mobo_temp_rect[0], self.__element_positions.mobo_temp_rect[1]))
+        self.__working_surface.blit(
+            self.__mobo_temperature.draw_update(mobo_temperature_value),
+            (self.__element_positions.mobo_temp_rect[0], self.__element_positions.mobo_temp_rect[1]))
 
         # Network Info
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
         nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
-        if self.__network_info.current_download_value != nic1_down_value or self.__network_info.current_upload_value != nic1_up_value or redraw_all:
-            self.__working_surface.blit(
-                self.__network_info.draw_update(nic1_down_value, nic1_up_value),
-                (self.__element_positions.network_info[0], self.__element_positions.network_info[1]))
+        self.__working_surface.blit(
+            self.__network_info.draw_update(nic1_down_value, nic1_up_value),
+            (self.__element_positions.network_info[0], self.__element_positions.network_info[1]))
 
         # Clock
         self.__working_surface.blit(

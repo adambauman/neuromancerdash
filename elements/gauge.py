@@ -48,8 +48,8 @@ class GaugeConfig:
 class FlatArcGauge:
     __config = None
 
-    # Leave current value exposed so caller can decide to call for updates
-    current_value = None
+    __working_surface = None
+    __current_value = None
 
     __static_elements_surface = None # Should not be changed after init
     __needle_surface = None # Should not be changed after init
@@ -63,9 +63,9 @@ class FlatArcGauge:
 
         diameter = self.__config.radius * 2
         base_size = (diameter, diameter)
-        self.__working_surface = pygame.Surface(base_size)
+        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
 
-        self.__static_elements_surface = pygame.Surface(base_size)
+        self.__static_elements_surface = pygame.Surface(base_size, pygame.SRCALPHA)
         self.__prepare_constant_elements()
 
         assert(None != self.__static_elements_surface)
@@ -162,10 +162,11 @@ class FlatArcGauge:
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        # NOTE: (Adam) 2020-12-10 Changing this so caller can decide, might be able to optimize a bit more
-        # Don't draw if the value hasn't changed
-        #if self.current_value == value:
-        #    return(self.__working_surface)
+        # Return the previous working surface if the value hasn't changed
+        if self.__current_value == value:
+            return self.__working_surface
+        else:
+            self.__working_surface.fill((0, 0, 0, 0))
 
         self.__working_surface = self.__static_elements_surface.copy()
 
