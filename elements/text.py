@@ -19,7 +19,7 @@ class DynamicField:
     def __init__(self, origin, subsurface, text, text_color, font, value=None, clamp_chars=0):
         # Will be an updatable subsurface of the working surface
         self.__subsurface = subsurface 
-        self.__static_background = subsurface.copy()
+        self.__previous_font_surface = None
         self.__text_color = text_color
         self.__font = font
         self.__origin = origin
@@ -29,14 +29,17 @@ class DynamicField:
         self.current_value = value
 
     def update(self, new_value):
-        self.__subsurface.blit(self.__static_background, (0, 0))
+        if self.current_value == new_value:
+            self.__subsurface.blit(self.__previous_font_surface, (0,0))
+            return
+
         if 0 < self.__clamp_chars:
             render_text = self.__text.format(Helpers.clamp_text(new_value, 11, ""))
         else:
             render_text = self.__text.format(new_value)
         self.__font.render_to(self.__subsurface, (0,0), render_text, self.__text_color)
         self.current_value = new_value
-        # No need to return subsurface, it update it's slice of the working surface
+        self.__previous_font_surface = self.__subsurface.copy()
 
 class StackHelpers:
     def __get_next_y_stack_origin__(self, last_origin, font, padding = 0):
