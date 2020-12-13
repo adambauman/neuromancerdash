@@ -30,12 +30,6 @@ class SystemStatsConfigs:
 
     def __init__(self, base_font):
 
-        ### Fonts
-        self.__font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
-        self.__font_gauge_value.strong = True
-        self.__fan_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 10)
-        #self.fan_gauge_value.strong = True
-
         ### Configurations
         self.core_visualizer = CoreVisualizerConfig(8)
 
@@ -56,9 +50,9 @@ class SystemStatsConfigs:
         self.gpu_memory_bar.max_value_draw = True
         self.gpu_memory_bar.current_value_draw = True
 
-        self.cpu_temp_gauge = GaugeConfig(DashData.cpu_temp, 45, self.__font_gauge_value, (35, 70))
+        self.cpu_temp_gauge = GaugeConfig(DashData.cpu_temp, 45, value_font_size=16, value_font_origin=(35, 70))
         self.cpu_temp_gauge.show_unit_symbol = False
-        self.gpu_temp_gauge = GaugeConfig(DashData.gpu_temp, 45, self.__font_gauge_value, (35, 70))
+        self.gpu_temp_gauge = GaugeConfig(DashData.gpu_temp, 45, value_font_size=16, value_font_origin=(35, 70))
         self.gpu_temp_gauge.show_unit_symbol = False 
 
         self.fps_graph = LineGraphConfig(70, 200, DashData.rtss_fps)
@@ -67,7 +61,7 @@ class SystemStatsConfigs:
 
         # NOTE: (Adam) On Neuromancer AIDA64 has fans a bit mixed up
         # Base for chassis fans
-        case_fan_base = GaugeConfig(DashData.cpu_opt_fan, 20, self.__fan_gauge_value, (17, 29))
+        case_fan_base = GaugeConfig(DashData.cpu_opt_fan, 20, value_font_size=10, value_font_origin=(17, 29))
         case_fan_base.arc_main_color = Color.grey_40
         case_fan_base.needle_color = Color.white
         case_fan_base.bg_color = Color.black
@@ -114,8 +108,6 @@ class SystemStatsPositions:
         self.cpu_details_rect = pygame.Rect(310, 33, 74, 72)
         self.gpu_details_rect = pygame.Rect(310, 114, 74, 102)
 
-        #self.cpu_temp_gauge = (width-90, 7)
-        #self.gpu_temp_gauge = (width-90, 117, 90, 90)
         self.cpu_temp_gauge = pygame.Rect(width-90, 7, 90, 90)
         self.gpu_temp_gauge = pygame.Rect(width-90, 117, 90, 90)
 
@@ -124,10 +116,10 @@ class SystemStatsPositions:
 
         self.temperature_humidity_rect = pygame.Rect(self.cpu_details_rect[0], 240, 74, 56)
 
-        self.fan1_gauge = (self.cpu_temp_gauge[0], 230)
-        self.fan_opt_gauge = (width - 40, 230)
-        self.cpu_fan_gauge = (self.cpu_temp_gauge[0], 275)
-        self.gpu_fan_gauge = (self.fan_opt_gauge[0], self.cpu_fan_gauge[1])
+        self.fan1_gauge = pygame.Rect(self.cpu_temp_gauge[0], 230, 40, 40)
+        self.fan_opt_gauge = pygame.Rect(width - 40, 230, 40, 40)
+        self.cpu_fan_gauge = pygame.Rect(self.cpu_temp_gauge[0], 275, 40, 40)
+        self.gpu_fan_gauge = pygame.Rect(self.fan_opt_gauge[0], self.cpu_fan_gauge[1], 40, 40)
         self.mobo_temp_rect = pygame.Rect(width-52, 268, 14, 14)
 
         self.network_info = pygame.Rect(0, height-12, 300, 18)
@@ -175,11 +167,10 @@ class SystemStats:
 
         self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
 
-        # TODO: (Adam) 2020-12-11 Address slight red tinge around diameter when viewed on larger displays
-        self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge)
-        self.__fan_opt_gauge = FlatArcGauge(self.__element_configs.fan_opt_gauge)
-        self.__cpu_fan_gauge = FlatArcGauge(self.__element_configs.cpu_fan_gauge)
-        self.__gpu_fan_gauge = FlatArcGauge(self.__element_configs.gpu_fan_gauge)
+        self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge, self.__working_surface, self.__element_positions.fan1_gauge)
+        self.__fan_opt_gauge = FlatArcGauge(self.__element_configs.fan_opt_gauge, self.__working_surface, self.__element_positions.fan_opt_gauge)
+        self.__cpu_fan_gauge = FlatArcGauge(self.__element_configs.cpu_fan_gauge, self.__working_surface, self.__element_positions.cpu_fan_gauge)
+        self.__gpu_fan_gauge = FlatArcGauge(self.__element_configs.gpu_fan_gauge, self.__working_surface, self.__element_positions.gpu_fan_gauge)
         self.__mobo_temperature = MotherboardTemperature(
             self.__element_positions.mobo_temp_rect, self.__working_surface)
 
@@ -210,10 +201,34 @@ class SystemStats:
         gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
         draw_threads.append(Thread(target=self.__gpu_temp_gauge.draw_update, args=(gpu_temperature,)))
 
-        
+        fan1_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
+        draw_threads.append(Thread(target=self.__fan1_gauge.draw_update, args=(fan1_value,)))
+
+        fan_opt_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
+        draw_threads.append(Thread(target=self.__fan_opt_gauge.draw_update, args=(fan_opt_value,)))
+
+        cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
+        draw_threads.append(Thread(target=self.__cpu_fan_gauge.draw_update, args=(cpu_fan_value,)))
+
+        gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
+        draw_threads.append(Thread(target=self.__gpu_fan_gauge.draw_update, args=(gpu_fan_value,)))
+
         for draw_thread in draw_threads:
             draw_thread.start()
-
+        
+        ## Fan gauges
+        #self.__working_surface.blit(
+        #    self.__fan1_gauge.draw_update(),
+        #    self.__element_positions.fan1_gauge)
+        #self.__working_surface.blit(
+        #    self.__fan_opt_gauge.draw_update(),
+        #    self.__element_positions.fan_opt_gauge)
+        #self.__working_surface.blit(
+        #    self.__cpu_fan_gauge.draw_update(),
+        #    self.__element_positions.cpu_fan_gauge)
+        #self.__working_surface.blit(
+        #    self.__gpu_fan_gauge.draw_update(),
+        #    self.__element_positions.gpu_fan_gauge)
 
         # System and GPU memory usage
         self.__working_surface.blit(
@@ -238,20 +253,6 @@ class SystemStats:
             self.__gpu_details.draw_update(aida64_data),
             (self.__element_positions.gpu_details_rect[0], self.__element_positions.gpu_details_rect[1]))
 
-        ## CPU Temperature Gauge
-        #cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        ##if self.__cpu_temp_gauge.current_value != cpu_temperature or redraw_all:
-        #self.__working_surface.blit(
-        #    self.__cpu_temp_gauge.draw_update(cpu_temperature),
-        #    self.__element_positions.cpu_temp_gauge)
-
-        ## GPU Temperature Gauge
-        #gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        #self.__working_surface.blit(
-        #    self.__gpu_temp_gauge.draw_update(gpu_temperature),
-        #    self.__element_positions.gpu_temp_gauge)
-
-
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         self.__working_surface.blit(self.__fps_graph.update(fps_value), self.__element_positions.fps_graph)
@@ -265,19 +266,7 @@ class SystemStats:
                 self.__temperature_humidity.draw_update(dht22_data),
                 (self.__element_positions.temperature_humidity_rect[0], self.__element_positions.temperature_humidity_rect[1]))
 
-        # Fan gauges
-        self.__working_surface.blit(
-            self.__fan1_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")),
-            self.__element_positions.fan1_gauge)
-        self.__working_surface.blit(
-            self.__fan_opt_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")),
-            self.__element_positions.fan_opt_gauge)
-        self.__working_surface.blit(
-            self.__cpu_fan_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")),
-            self.__element_positions.cpu_fan_gauge)
-        self.__working_surface.blit(
-            self.__gpu_fan_gauge.draw_update(DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")),
-            self.__element_positions.gpu_fan_gauge)
+
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")

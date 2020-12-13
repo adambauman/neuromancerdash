@@ -16,13 +16,14 @@ from .styles import Color, FontPaths, AssetPath
 g_benchmark = False
 
 class GaugeConfig:
-    def __init__(self, data_field, radius=45, value_font=None, value_font_origin=None):
+    def __init__(self, data_field, radius=45, value_font=None, value_font_size=16, value_font_origin=None):
         self.radius = radius
         self.data_field = data_field
         self.redline_degrees = 35
         self.aa_multiplier = 2
 
-        self.value_font = value_font # Take from caller so you can match their other displays
+        self.value_font = value_font
+        self.value_font_size = value_font_size
         self.value_font_origin = value_font_origin # If None the value will be centered
 
         self.arc_main_color = Color.windows_cyan_1
@@ -64,8 +65,7 @@ class FlatArcGauge:
         assert(0 < gauge_config.radius)
 
         self.__config = gauge_config
-
-        self.__font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+        self.__font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), self.__config.value_font_size)
         self.__font_gauge_value.strong = True
 
         diameter = self.__config.radius * 2
@@ -222,13 +222,12 @@ class FlatArcGauge:
             elif self.__config.counter_sweep and int(value) < self.__config.data_field.warn_value:
                 value_color = Color.windows_red_1 # TODO: configurable warn color?
 
-        if None != self.__config.value_font and False != self.__config.show_value:
+        if False != self.__config.show_value:
 
             value_text = "{}".format(value)
             if self.__config.show_label_instead_of_value:
                 value_text = self.__config.label
 
-            #value_surface = self.__config.value_font.render(value_text, value_color)
             value_surface = self.__font_gauge_value.render(value_text, value_color)
 
             if None != self.__config.value_font_origin:
