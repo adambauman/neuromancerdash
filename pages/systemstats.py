@@ -151,14 +151,16 @@ class SystemStats:
 
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
+        
+        assert(None != self.__working_surface)
 
         self.__element_configs = SystemStatsConfigs(self.font_normal)
         self.__element_positions = SystemStatsPositions(width, height)
 
         self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar)
         self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar)
-        self.__cpu_graph = LineGraphReverse(self.__element_configs.cpu_graph)
-        self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph)
+        self.__cpu_graph = LineGraphReverse(self.__element_configs.cpu_graph, self.__working_surface, self.__element_positions.cpu_graph)
+        self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph, self.__working_surface, self.__element_positions.gpu_graph)
 
         self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
         self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect)
@@ -205,14 +207,14 @@ class SystemStats:
         #cpu_utilization_size = (self.__element_positions.cpu_graph[2], self.__element_positions.cpu_graph[3])
         #cpu_utilization_surface = pygame.Surface(cpu_utilization_size)
         #cpu_utilization_thread = Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value, cpu_utilization_surface))
-        cpu_utilization_thread = Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value, self.__working_surface, self.__element_positions.cpu_graph))
+        cpu_utilization_thread = Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value,))
         cpu_utilization_thread.start()
 
         gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
         #gpu_utilization_size = (self.__element_positions.gpu_graph[2], self.__element_positions.gpu_graph[3])
         #gpu_utilization_surface = pygame.Surface(gpu_utilization_size)
         #gpu_utilization_thread = Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value, gpu_utilization_surface))
-        gpu_utilization_thread = Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value, self.__working_surface, self.__element_positions.gpu_graph))
+        gpu_utilization_thread = Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value,))
         gpu_utilization_thread.start()
 
         # System and GPU memory usage

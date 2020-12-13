@@ -37,11 +37,16 @@ class LineGraphReverse:
     __working_surface = None
     __background = None
 
-    def __init__(self, line_graph_config, surface_flags=0):
+    def __init__(self, line_graph_config, return_surface=None, return_rect=None, surface_flags=0):
         assert(line_graph_config.height != 0 and line_graph_config.width != 0)
         assert(None != line_graph_config.data_field)
         
         self.__config = line_graph_config
+
+        if None != return_surface and None != return_rect:
+            self.__return_surface = return_surface.subsurface(return_rect)
+        else:
+            self.__return_surface = return_surface
 
         self.__working_surface = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
 
@@ -59,7 +64,7 @@ class LineGraphReverse:
         # TODO: Fix bug where grid is not fully visible until the updates reach the left-most edge
 
 
-    def update(self, value, return_surface=None, return_rect=None):
+    def update(self, value):
         assert(None != self.__config)
         assert(None != self.__last_plot_surface)
         assert(None != self.__working_surface)
@@ -139,13 +144,12 @@ class LineGraphReverse:
             print("BENCHMARK: LineGraph {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
         # Return completed working surface
-        if None != return_surface:
+        if None != self.__return_surface:
             # NOTE: (Adam) Copy doesn't work, if the thread fits you must uh... a-blit
             # With a provided rect we can subsurface and blit right to a working surface if passed in
-            if None != return_rect:
-                subsurface = return_surface.subsurface(return_rect)
-                subsurface.blit(self.__working_surface, (0, 0))
-            else:
-                return_surface.blit(self.__working_surface, (0, 0))
+            #if None != return_rect:
+            #    self.__return_surface.blit(self.__working_surface, (0, 0))
+            #else:
+            self.__return_surface.blit(self.__working_surface, (0, 0))
         else:
             return self.__working_surface
