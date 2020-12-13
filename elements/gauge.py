@@ -56,7 +56,7 @@ class FlatArcGauge:
     __needle_surface = None # Should not be changed after init
     __needle_shadow_surface = None  # Should not be changed after init
 
-    def __init__(self, gauge_config):
+    def __init__(self, gauge_config, surface_flags=0):
         assert(None != gauge_config.data_field)
         assert(0 < gauge_config.radius)
 
@@ -64,15 +64,14 @@ class FlatArcGauge:
 
         diameter = self.__config.radius * 2
         base_size = (diameter, diameter)
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface(base_size, surface_flags)
 
-        self.__static_elements_surface = pygame.Surface(base_size, pygame.SRCALPHA)
-        self.__prepare_constant_elements()
-
-
+        self.__static_elements_surface = pygame.Surface(base_size, surface_flags)
+        self.__prepare_constant_elements(surface_flags)
         assert(None != self.__static_elements_surface)
 
-    def __prepare_constant_elements(self):
+
+    def __prepare_constant_elements(self, surface_flags):
         assert(None != self.__static_elements_surface)
         assert(0 < self.__config.aa_multiplier)
         
@@ -90,13 +89,13 @@ class FlatArcGauge:
         assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
         base_scaled_size = (arc_bitmap.get_width(), arc_bitmap.get_width())
 
-        temp_surface = pygame.Surface(base_scaled_size, pygame.SRCALPHA)
+        temp_surface = pygame.Surface(base_scaled_size, surface_flags | pygame.SRCALPHA)
         center = (temp_surface.get_width() / 2, temp_surface.get_height() / 2)
 
         scaled_radius = arc_bitmap.get_width() / 2
 
         # Draw background
-        bg_surface = pygame.Surface((temp_surface.get_height(), temp_surface.get_width()), pygame.SRCALPHA)
+        bg_surface = pygame.Surface((temp_surface.get_height(), temp_surface.get_width()), surface_flags | pygame.SRCALPHA)
         bg_color = pygame.Color(self.__config.bg_color)
         pygame.draw.circle(bg_surface, bg_color, center, scaled_radius)
         bg_surface.set_alpha(self.__config.bg_alpha)
@@ -179,7 +178,6 @@ class FlatArcGauge:
         # Needle
         # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
         rotated_needle = pygame.transform.rotozoom(self.__needle_surface, arc_transposed_value, 1)
-
 
         # Shadow
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
