@@ -50,22 +50,37 @@ class FlatArcGauge:
     __config = None
 
     __working_surface = None
+    __using_direct_surface = False
+
     __current_value = None
 
     __static_elements_surface = None # Should not be changed after init
     __needle_surface = None # Should not be changed after init
     __needle_shadow_surface = None  # Should not be changed after init
 
-    def __init__(self, gauge_config, surface_flags=0):
+
+    def __init__(self, gauge_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(None != gauge_config.data_field)
         assert(0 < gauge_config.radius)
 
         self.__config = gauge_config
 
+        self.__font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+        self.__font_gauge_value.strong = True
+
         diameter = self.__config.radius * 2
         base_size = (diameter, diameter)
-        self.__working_surface = pygame.Surface(base_size, surface_flags)
+        #self.__working_surface = pygame.Surface(base_size, surface_flags)
 
+        if None != direct_surface and None != direct_rect:
+            if __debug__:
+                print("FlatArcGauge received direct surface and rect: surface dim: {},{}  rect: {}".format(direct_surface.get_width(), direct_surface.get_height(), direct_rect))
+            self.__working_surface = direct_surface.subsurface(direct_rect)
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface(base_size, surface_flags)
+            self.__using_direct_surface = False
+        
         self.__static_elements_surface = pygame.Surface(base_size, surface_flags)
         self.__prepare_constant_elements(surface_flags)
         assert(None != self.__static_elements_surface)
@@ -169,7 +184,8 @@ class FlatArcGauge:
         else:
             self.__working_surface.fill((0, 0, 0, 0))
 
-        self.__working_surface = self.__static_elements_surface.copy()
+        #self.__working_surface = self.__static_elements_surface.copy()
+        self.__working_surface.blit(self.__static_elements_surface, (0, 0))
 
         max_value = self.__config.data_field.max_value
         min_value = self.__config.data_field.min_value
@@ -212,7 +228,8 @@ class FlatArcGauge:
             if self.__config.show_label_instead_of_value:
                 value_text = self.__config.label
 
-            value_surface = self.__config.value_font.render(value_text, value_color)
+            #value_surface = self.__config.value_font.render(value_text, value_color)
+            value_surface = self.__font_gauge_value.render(value_text, value_color)
 
             if None != self.__config.value_font_origin:
                 value_origin = self.__config.value_font_origin
@@ -227,5 +244,5 @@ class FlatArcGauge:
         if g_benchmark:
             print("BENCHMARK: ArcGauge {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface
-
+        if False == self.__using_direct_surface:
+            return self.__working_surface

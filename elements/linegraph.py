@@ -46,7 +46,7 @@ class LineGraphReverse:
 
         if None != direct_surface and None != direct_rect:
             if __debug__:
-                print("Linegraph received direct surface and rect: surface dim: {},{}  rect: {}".format(direct_surface.get_width(), direct_surface.get_height(), direct_rect))
+                print("LineGraphReverse received direct surface and rect: surface dim: {},{}  rect: {}".format(direct_surface.get_width(), direct_surface.get_height(), direct_rect))
             self.__working_surface = direct_surface.subsurface(direct_rect)
             self.__using_direct_surface = True
         else:

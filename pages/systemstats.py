@@ -114,8 +114,10 @@ class SystemStatsPositions:
         self.cpu_details_rect = pygame.Rect(310, 33, 74, 72)
         self.gpu_details_rect = pygame.Rect(310, 114, 74, 102)
 
-        self.cpu_temp_gauge = (width-90, 7)
-        self.gpu_temp_gauge = (width-90, 117, 90, 90)
+        #self.cpu_temp_gauge = (width-90, 7)
+        #self.gpu_temp_gauge = (width-90, 117, 90, 90)
+        self.cpu_temp_gauge = pygame.Rect(width-90, 7, 90, 90)
+        self.gpu_temp_gauge = pygame.Rect(width-90, 117, 90, 90)
 
         self.fps_graph = (0, 230)
         self.fps_text_rect = pygame.Rect(210, 240, 98, 62)
@@ -126,7 +128,7 @@ class SystemStatsPositions:
         self.fan_opt_gauge = (width - 40, 230)
         self.cpu_fan_gauge = (self.cpu_temp_gauge[0], 275)
         self.gpu_fan_gauge = (self.fan_opt_gauge[0], self.cpu_fan_gauge[1])
-        self.mobo_temp_rect = pygame.Rect(width-52, 268, 18, 16)
+        self.mobo_temp_rect = pygame.Rect(width-52, 268, 14, 14)
 
         self.network_info = pygame.Rect(0, height-12, 300, 18)
         self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 18)
@@ -165,8 +167,8 @@ class SystemStats:
         self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
         self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect)
         self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect)
-        self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge)
-        self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge)
+        self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge, self.__working_surface, self.__element_positions.cpu_temp_gauge)
+        self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge, self.__working_surface, self.__element_positions.gpu_temp_gauge)
 
         self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph)
         self.__fps_text = FPSText(self.__element_positions.fps_text_rect)
@@ -194,15 +196,6 @@ class SystemStats:
         else:
             self.__working_surface.fill(Color.black)
 
-        # CPU and GPU Utilization
-        #self.__working_surface.blit(
-        #    self.__cpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")),
-        #    self.__element_positions.cpu_graph)
-
-        #self.__working_surface.blit(
-        #    self.__gpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")),
-        #    self.__element_positions.gpu_graph)
-
         draw_threads = []
 
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
@@ -211,8 +204,16 @@ class SystemStats:
         gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
         draw_threads.append(Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value,)))
 
+        cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
+        draw_threads.append(Thread(target=self.__cpu_temp_gauge.draw_update, args=(cpu_temperature,)))
+
+        gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
+        draw_threads.append(Thread(target=self.__gpu_temp_gauge.draw_update, args=(gpu_temperature,)))
+
+        
         for draw_thread in draw_threads:
             draw_thread.start()
+
 
         # System and GPU memory usage
         self.__working_surface.blit(
@@ -237,18 +238,19 @@ class SystemStats:
             self.__gpu_details.draw_update(aida64_data),
             (self.__element_positions.gpu_details_rect[0], self.__element_positions.gpu_details_rect[1]))
 
-        # CPU Temperature Gauge
-        cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        #if self.__cpu_temp_gauge.current_value != cpu_temperature or redraw_all:
-        self.__working_surface.blit(
-            self.__cpu_temp_gauge.draw_update(cpu_temperature),
-            self.__element_positions.cpu_temp_gauge)
+        ## CPU Temperature Gauge
+        #cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
+        ##if self.__cpu_temp_gauge.current_value != cpu_temperature or redraw_all:
+        #self.__working_surface.blit(
+        #    self.__cpu_temp_gauge.draw_update(cpu_temperature),
+        #    self.__element_positions.cpu_temp_gauge)
 
-        # GPU Temperature Gauge
-        gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        self.__working_surface.blit(
-            self.__gpu_temp_gauge.draw_update(gpu_temperature),
-            self.__element_positions.gpu_temp_gauge)
+        ## GPU Temperature Gauge
+        #gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
+        #self.__working_surface.blit(
+        #    self.__gpu_temp_gauge.draw_update(gpu_temperature),
+        #    self.__element_positions.gpu_temp_gauge)
+
 
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
