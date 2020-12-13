@@ -182,10 +182,10 @@ class SystemStats:
     def draw_update(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
 
-        if None != self.__background:
-            self.__working_surface.blit(self.__background, (0, 0))
-        else:
-            self.__working_surface.fill(Color.black)
+        #if None != self.__background:
+        #    self.__working_surface.blit(self.__background, (0, 0))
+        #else:
+        #    self.__working_surface.fill(Color.black)
 
         draw_threads = []
 
@@ -215,20 +215,7 @@ class SystemStats:
 
         for draw_thread in draw_threads:
             draw_thread.start()
-        
-        ## Fan gauges
-        #self.__working_surface.blit(
-        #    self.__fan1_gauge.draw_update(),
-        #    self.__element_positions.fan1_gauge)
-        #self.__working_surface.blit(
-        #    self.__fan_opt_gauge.draw_update(),
-        #    self.__element_positions.fan_opt_gauge)
-        #self.__working_surface.blit(
-        #    self.__cpu_fan_gauge.draw_update(),
-        #    self.__element_positions.cpu_fan_gauge)
-        #self.__working_surface.blit(
-        #    self.__gpu_fan_gauge.draw_update(),
-        #    self.__element_positions.gpu_fan_gauge)
+
 
         # System and GPU memory usage
         self.__working_surface.blit(
@@ -265,7 +252,6 @@ class SystemStats:
             self.__working_surface.blit(
                 self.__temperature_humidity.draw_update(dht22_data),
                 (self.__element_positions.temperature_humidity_rect[0], self.__element_positions.temperature_humidity_rect[1]))
-
 
 
         # Motherboard temp (nestled between all the fans)
