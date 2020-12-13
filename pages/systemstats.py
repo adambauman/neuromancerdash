@@ -133,11 +133,11 @@ class SystemStats:
     __background = None
     __base_size = None
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, surface_flags=0):
         assert(0 != width and 0 != height)
 
         self.__base_size = (width, height)
-        self.__working_surface = pygame.Surface(self.__base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface(self.__base_size, surface_flags)
 
         self.font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         #font_normal.strong = True

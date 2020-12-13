@@ -89,11 +89,13 @@ class CoolingPositions:
 
 class Cooling:
     __background = None
+    __surface_flags = None
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, surface_flags=0):
         assert(0 != width and 0 != height)
 
-        self.__working_surface = pygame.Surface((width, height))
+        self.__surface_flags = surface_flags
+        self.__working_surface = pygame.Surface((width, height), self.__surface_flags)
 
         self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         self.__font_normal.kerning = True
@@ -123,7 +125,7 @@ class Cooling:
         single_intake_bar = self.__front_intake_fan_bar.draw_update(value)
         fan_spacing = 20
         dual_surface_size = ((single_intake_bar.get_width() * 2) + fan_spacing, single_intake_bar.get_height())
-        dual_fan_surface = pygame.Surface(dual_surface_size, pygame.SRCALPHA)
+        dual_fan_surface = pygame.Surface(dual_surface_size, self.__surface_flags)
         dual_fan_surface.blit(single_intake_bar, (0,0))
         dual_fan_surface.blit(single_intake_bar, (single_intake_bar.get_width() + fan_spacing, 0))
         
