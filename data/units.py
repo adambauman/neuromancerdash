@@ -14,11 +14,13 @@ class Unit:
 
 class Units:
     null_unit = Unit()
+    volts = Unit("Volts", "V", "v")
     fahrenheit = Unit("Fahrenheit", "F")
     celsius = Unit("Celsius", "C")
     percent = Unit("Percent", "%")
     megahertz = Unit("Megahertz", "Mhz")
     megabytes = Unit("Megabytes", "MB")
+    gigabytes = Unit("Gigabytes", "GB")
     megabits = Unit("Megabits", "Mb")
     megabytes_per_second = Unit("Megabytes/sec", "MBps", "MB/s")
     megabits_per_second = Unit("Megabits/sec", "Mbps", "Mb/s")

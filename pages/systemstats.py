@@ -65,7 +65,6 @@ class SystemStatsConfigs:
         self.fps_graph.draw_on_zero = False
 
         # NOTE: (Adam) On Neuromancer AIDA64 has fans a bit mixed up
-
         # Base for chassis fans
         case_fan_base = GaugeConfig(DashData.cpu_opt_fan, 20, self.__fan_gauge_value, (17, 29))
         case_fan_base.arc_main_color = Color.grey_40
@@ -159,8 +158,8 @@ class SystemStats:
         self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph)
 
         self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
-        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect, self.__working_surface)
-        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect, self.__working_surface)
+        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect)
+        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect)
         self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge)
         self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge)
 

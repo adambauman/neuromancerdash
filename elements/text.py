@@ -53,48 +53,38 @@ class DetailsStackConfig:
 class CPUDetails:
     # Surfaces
     __working_surface = None
-    __static_background = None
+    __static_elements = None
 
     # DynamicFields
     __cpu_power = None
     __cpu_clock = None
     __cpu_utilization = None
-    __ram_used = None
+    __page_alloc = None
 
-    def __init__(self, element_rect, target_surface, details_stack_config=DetailsStackConfig()):
+    def __init__(self, element_rect, details_stack_config=DetailsStackConfig()):
 
         # Config and fonts
         self.__config = details_stack_config
         if None == self.__config.font_normal:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-            #self.__font_normal.strong = True
             self.__font_normal.kerning = True
 
         # Surface setup
-        self.__setup_surfaces_and_fields__(element_rect, target_surface)
+        self.__setup_surfaces_and_fields__(element_rect)
 
-    def __setup_surfaces_and_fields__(self, element_rect, target_surface):
-        assert(None == self.__working_surface and None == self.__static_background)
+    def __setup_surfaces_and_fields__(self, element_rect):
+        assert(None == self.__working_surface and None == self.__static_elements)
 
-        if __debug__:
-            print("Setting up CPUDetails...")
+        base_size = (element_rect[2], element_rect[3])
+        assert(0 != base_size[0] or 0 != base_size[1])
 
-        width, height = element_rect[2], element_rect[3]
-        assert(0 != height or 0 != width)
+        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__static_elements = self.__working_surface.copy()
 
-        # NOTE: (Adam) 2020-12-10 No luck experimenting with 0 alpha fill wipes or pixel clearing,
-        #           for now copying out the pixels from the target surface and saving as base for redraws
-        target_surface_sub = target_surface.subsurface(element_rect)
-        self.__static_background = target_surface_sub.copy()        
-        self.__working_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        self.__working_surface.blit(self.__static_background, (0, 0))
-
-        static_labels = pygame.Surface((width, height), pygame.SRCALPHA)
         y_offset = self.__config.stack_y_offset
         font_height = self.__font_normal.get_sized_height()
 
-        # Start doing a little mock drawing here to workout where the static label(s) are positioned
-        # and where we need to setup subsurfaces for updates
+        # Start doing a little mock drawing here to workout where the static elements are positioned
         origin = (0, 0)
         self.__cpu_power = DynamicField(
             origin, 
@@ -117,40 +107,37 @@ class CPUDetails:
 
         # Static label, write to the static background
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self.__font_normal.render_to(self.__static_background, origin, "RAM Used", Color.grey_75)
+        self.__font_normal.render_to(self.__static_elements, origin, "Page Alloc", Color.grey_75)
 
-        # RAM Used
+        # Page Alloc
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self.__ram_used = DynamicField(
+        self.__page_alloc = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
-            "{}" + DashData.sys_ram_used.unit.symbol, Color.yellow, self.__font_normal)
+            "{} " + DashData.used_virtual_memory.unit.symbol, Color.yellow, self.__font_normal)
 
-        # A little hacky, but blit the static background down again to include the static bits
-        self.__working_surface.blit(self.__static_background, (0, 0))
 
     def draw_update(self, data):
-        assert(None != self.__working_surface and None != self.__static_background)
+        assert(None != self.__working_surface and None != self.__static_elements)
         assert(0 != len(data))
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
+        self.__working_surface.fill((0,0,0,0))
+        self.__working_surface.blit(self.__static_elements, (0, 0))
+
         cpu_power_value = DashData.best_attempt_read(data, DashData.cpu_power, "0")
-        if self.__cpu_power.current_value != cpu_power_value:
-            self.__cpu_power.update(cpu_power_value)
+        self.__cpu_power.update(cpu_power_value)
 
         cpu_clock_value = DashData.best_attempt_read(data, DashData.cpu_clock, "0")
-        if self.__cpu_clock.current_value != cpu_clock_value:
-            self.__cpu_clock.update(cpu_clock_value)
+        self.__cpu_clock.update(cpu_clock_value)
 
         cpu_utilization_value = DashData.best_attempt_read(data, DashData.cpu_util, "0")
-        if self.__cpu_utilization.current_value != cpu_utilization_value:
-            self.__cpu_utilization.update(cpu_utilization_value)
+        self.__cpu_utilization.update(cpu_utilization_value)
 
-        ram_used_value = DashData.best_attempt_read(data, DashData.sys_ram_used, "0")
-        if self.__ram_used.current_value != ram_used_value:
-            self.__ram_used.update(ram_used_value)
+        page_alloc_value = DashData.best_attempt_read(data, DashData.used_virtual_memory, "0")
+        self.__page_alloc.update(page_alloc_value)
 
         if g_benchmark:
             print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
@@ -161,52 +148,43 @@ class CPUDetails:
 class GPUDetails:
      # Surfaces
     __working_surface = None
-    __static_background = None
+    __static_elements = None
 
     # DynamicFields
     __perfcap_reason = None
     __gpu_power = None
     __gpu_clock = None
     __gpu_utilization = None
-    __ram_used = None
+    __dynamic_ram_used = None
 
-    def __init__(self, element_rect, target_surface, details_stack_config=DetailsStackConfig()):
+    def __init__(self, element_rect, details_stack_config=DetailsStackConfig()):
 
         # Config and fonts
         self.__config = details_stack_config
         if None == self.__config.font_normal:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-            #self.__font_normal.strong = True
             self.__font_normal.kerning = True
 
         # Surface setup
-        self.__setup_surfaces_and_fields__(element_rect, target_surface)
+        self.__setup_surfaces_and_fields__(element_rect)
 
-    def __setup_surfaces_and_fields__(self, element_rect, target_surface):
-        assert(None == self.__working_surface and None == self.__static_background)
+    def __setup_surfaces_and_fields__(self, element_rect):
+        assert(None == self.__working_surface and None == self.__static_elements)
 
-        if __debug__:
-            print("Setting up GPUDetails...")
+        base_size = (element_rect[2], element_rect[3])
+        assert(0 != base_size[0] or 0 != base_size[1])
 
-        width, height = element_rect[2], element_rect[3]
-        assert(0 != height or 0 != width)
+      
+        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__static_elements = self.__working_surface.copy()
 
-        # NOTE: (Adam) 2020-12-10 No luck experimenting with 0 alpha fill wipes or pixel clearing,
-        #           for now copying out the pixels from the target surface and saving as base for redraws
-        target_surface_sub = target_surface.subsurface(element_rect)
-        self.__static_background = target_surface_sub.copy()        
-        self.__working_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        self.__working_surface.blit(self.__static_background, (0, 0))
-
-        static_labels = pygame.Surface((width, height), pygame.SRCALPHA)
         y_offset = self.__config.stack_y_offset
         font_height = self.__font_normal.get_sized_height()
 
         # Start doing a little mock drawing here to workout where the static label(s) are positioned
-        # and where we need to setup subsurfaces for updates
         origin = (0, 0)
         # Static Label
-        self.__font_normal.render_to(self.__static_background, origin, "PerfCap", Color.white)
+        self.__font_normal.render_to(self.__static_elements, origin, "PerfCap", Color.white)
 
         # PerfCap Reason
         origin = (origin[0], (origin[1] + font_height) + y_offset)
@@ -238,44 +216,42 @@ class GPUDetails:
 
         # Static RAM Label
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self.__font_normal.render_to(self.__static_background, origin, "RAM Used", Color.grey_75)
+        self.__font_normal.render_to(self.__static_elements, origin, "Dyn RAM", Color.grey_75)
 
-        # GPU RAM Used
+        # Dynamic RAM Used
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self.__ram_used = DynamicField(
+        self.__dynamic_ram_used = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
-            "{}" + DashData.gpu_ram_used.unit.symbol, Color.yellow, self.__font_normal)
+            "{} " + DashData.gpu_used_dynamic_memory.unit.symbol, Color.yellow, self.__font_normal)
 
         # A little hacky, but blit the static background down again to include the static bits
-        self.__working_surface.blit(self.__static_background, (0, 0))
+        self.__working_surface.blit(self.__static_elements, (0, 0))
 
     def draw_update(self, data):
-        assert(None != self.__working_surface and None != self.__static_background)
+        assert(None != self.__working_surface and None != self.__static_elements)
         assert(0 != len(data))
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
+        self.__working_surface.fill((0,0,0,0))
+        self.__working_surface.blit(self.__static_elements, (0, 0))
+
         perfcap_reason_data = DashData.best_attempt_read(data, DashData.gpu_perfcap_reason, "")
-        if self.__perfcap_reason.current_value != perfcap_reason_data:
-            self.__perfcap_reason.update(perfcap_reason_data)
+        self.__perfcap_reason.update(perfcap_reason_data)
 
         gpu_power_value = DashData.best_attempt_read(data, DashData.gpu_power, "0")
-        if self.__gpu_power.current_value != gpu_power_value:
-            self.__gpu_power.update(gpu_power_value)
+        self.__gpu_power.update(gpu_power_value)
 
         gpu_clock_value = DashData.best_attempt_read(data, DashData.gpu_clock, "0")
-        if self.__gpu_clock.current_value != gpu_clock_value:
-            self.__gpu_clock.update(gpu_clock_value)
+        self.__gpu_clock.update(gpu_clock_value)
 
         gpu_utilization = DashData.best_attempt_read(data, DashData.gpu_util, "0")
-        if self.__gpu_utilization.current_value != gpu_utilization:
-            self.__gpu_utilization.update(gpu_utilization)
+        self.__gpu_utilization.update(gpu_utilization)
 
-        ram_used_value = DashData.best_attempt_read(data, DashData.gpu_ram_used, "0")
-        if self.__ram_used.current_value != ram_used_value:
-            self.__ram_used.update(ram_used_value)
+        dynamic_ram_used_value = DashData.best_attempt_read(data, DashData.gpu_used_dynamic_memory, "0")
+        self.__dynamic_ram_used.update(dynamic_ram_used_value)
 
         if g_benchmark:
             print("BENCHMARK: GPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
