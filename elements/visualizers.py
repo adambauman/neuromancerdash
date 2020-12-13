@@ -39,7 +39,7 @@ class SimpleCoreVisualizer:
 
     __first_run = True
 
-    def __init__(self, core_visualizer_config):
+    def __init__(self, core_visualizer_config, surface_flags=0):
 
         if __debug__:
             print("Setting up SimpleCoreVisualizer...")
@@ -62,7 +62,7 @@ class SimpleCoreVisualizer:
         # Initialize last surface
         base_width = (self.__core_width * self.__cores_per_row) + (self.__config.core_spacing * (self.__cores_per_row -1))
         base_height = (self.__core_height * self.__config.core_rows) + (self.__config.core_spacing * (self.__config.core_rows - 1))
-        self.__last_base_surface = pygame.Surface((base_width, base_height))
+        self.__last_base_surface = pygame.Surface((base_width, base_height), surface_flags)
 
         # Initialize last core activity and do a hack update
         initialize_data = {}
