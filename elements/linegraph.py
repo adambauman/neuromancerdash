@@ -59,7 +59,7 @@ class LineGraphReverse:
         # TODO: Fix bug where grid is not fully visible until the updates reach the left-most edge
 
 
-    def update(self, value, return_surface=None):
+    def update(self, value, return_surface=None, return_rect=None):
         assert(None != self.__config)
         assert(None != self.__last_plot_surface)
         assert(None != self.__working_surface)
@@ -141,6 +141,11 @@ class LineGraphReverse:
         # Return completed working surface
         if None != return_surface:
             # NOTE: (Adam) Copy doesn't work, if the thread fits you must uh... a-blit
-            return_surface.blit(self.__working_surface, (0, 0))
+            # With a provided rect we can subsurface and blit right to a working surface if passed in
+            if None != return_rect:
+                subsurface = return_surface.subsurface(return_rect)
+                subsurface.blit(self.__working_surface, (0, 0))
+            else:
+                return_surface.blit(self.__working_surface, (0, 0))
         else:
             return self.__working_surface

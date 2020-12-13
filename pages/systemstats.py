@@ -202,15 +202,17 @@ class SystemStats:
         #    self.__element_positions.gpu_graph)
 
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        cpu_utilization_size = (self.__element_positions.cpu_graph[2], self.__element_positions.cpu_graph[3])
-        cpu_utilization_surface = pygame.Surface(cpu_utilization_size)
-        cpu_utilization_thread = Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value, cpu_utilization_surface))
+        #cpu_utilization_size = (self.__element_positions.cpu_graph[2], self.__element_positions.cpu_graph[3])
+        #cpu_utilization_surface = pygame.Surface(cpu_utilization_size)
+        #cpu_utilization_thread = Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value, cpu_utilization_surface))
+        cpu_utilization_thread = Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value, self.__working_surface, self.__element_positions.cpu_graph))
         cpu_utilization_thread.start()
 
         gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
-        gpu_utilization_size = (self.__element_positions.gpu_graph[2], self.__element_positions.gpu_graph[3])
-        gpu_utilization_surface = pygame.Surface(gpu_utilization_size)
-        gpu_utilization_thread = Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value, gpu_utilization_surface))
+        #gpu_utilization_size = (self.__element_positions.gpu_graph[2], self.__element_positions.gpu_graph[3])
+        #gpu_utilization_surface = pygame.Surface(gpu_utilization_size)
+        #gpu_utilization_thread = Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value, gpu_utilization_surface))
+        gpu_utilization_thread = Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value, self.__working_surface, self.__element_positions.gpu_graph))
         gpu_utilization_thread.start()
 
         # System and GPU memory usage
@@ -300,12 +302,12 @@ class SystemStats:
         if True == cpu_utilization_thread.is_alive():
             raise Exception("CPU utilization thread did not join")
 
-        self.__working_surface.blit(cpu_utilization_surface, self.__element_positions.cpu_graph)
+        #self.__working_surface.blit(cpu_utilization_surface, self.__element_positions.cpu_graph)
 
         gpu_utilization_thread.join(join_timeout)
         if True == gpu_utilization_thread.is_alive():
             raise Exception("gpu utilization thread did not join")
 
-        self.__working_surface.blit(gpu_utilization_surface, self.__element_positions.gpu_graph)
+        #self.__working_surface.blit(gpu_utilization_surface, self.__element_positions.gpu_graph)
 
         return self.__working_surface
