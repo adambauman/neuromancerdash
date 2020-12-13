@@ -37,17 +37,17 @@ class LineGraphReverse:
     __working_surface = None
     __background = None
 
-    def __init__(self, line_graph_config):
+    def __init__(self, line_graph_config, surface_flags=0):
         assert(line_graph_config.height != 0 and line_graph_config.width != 0)
         assert(None != line_graph_config.data_field)
         
         self.__config = line_graph_config
 
-        self.__working_surface = pygame.Surface((self.__config.width, self.__config.height), pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
 
         plot_width = self.__config.width - (self.__config.plot_padding * 2)
         plot_height = self.__config.height - (self.__config.plot_padding * 2)
-        self.__last_plot_surface = pygame.Surface((self.__config.width, self.__config.height), pygame.SRCALPHA)
+        self.__last_plot_surface = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
         
         steps_per_update = self.__config.steps_per_update
         self.__last_plot_y = self.__last_plot_surface.get_height()
