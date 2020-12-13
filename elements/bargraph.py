@@ -53,28 +53,28 @@ class BarGraph:
 
     current_value = None
 
-    def __init__(self, bar_graph_config):
+    def __init__(self, bar_graph_config, surface_flags=0):
         assert(0 != bar_graph_config.size[0] and 0 != bar_graph_config.size[1])
 
         self.__config = bar_graph_config
-        self.__setup_bargraph__()
+        self.__setup_bargraph__(surface_flags)
 
-    def __setup_bargraph__(self):
+    def __setup_bargraph__(self, surface_flags):
         assert(None != self.__config)
 
         # Use actual data field minmax if it's present in the config
         if None != self.__config.dash_data:
             self.__config.value_range = (self.__config.dash_data.min_value, self.__config.dash_data.max_value)
 
-        self.__prepare_static_overlay__()
-        self.__working_surface = pygame.Surface(self.__config.size, pygame.SRCALPHA)
+        self.__prepare_static_overlay__(surface_flags)
+        self.__working_surface = pygame.Surface(self.__config.size, surface_flags)
 
-    def __prepare_static_overlay__(self):
+    def __prepare_static_overlay__(self, surface_flags):
         assert(None != self.__config)
 
         # Sets up static elements like min/max values
-
-        self.__static_overlay_surface = pygame.Surface(self.__config.size, pygame.SRCALPHA)
+        # Must support alpha
+        self.__static_overlay_surface = pygame.Surface(self.__config.size, surface_flags | pygame.SRCALPHA)
         config = self.__config
         font = config.font
 
