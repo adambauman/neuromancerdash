@@ -128,15 +128,20 @@ class SystemStatsPositions:
 class SystemStats:
     __background = None
     __base_size = None
+    __using_direct_surface = False
 
-    def __init__(self, width, height, surface_flags=0):
+    def __init__(self, width, height, direct_surface=None, surface_flags=0):
         assert(0 != width and 0 != height)
 
         self.__base_size = (width, height)
-        self.__working_surface = pygame.Surface(self.__base_size, surface_flags)
+        if None != direct_surface:
+            self.__working_surface = direct_surface
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface(self.__base_size, surface_flags)
+            self.__using_direct_surface = False
 
         self.font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        #font_normal.strong = True
         self.font_normal.kerning = True
 
         if __debug__:
@@ -279,4 +284,5 @@ class SystemStats:
             if True == draw_thread.is_alive():
                 raise Exception("Draw thread did not join")
 
-        return self.__working_surface
+        if False == self.__using_direct_surface:
+            return self.__working_surface

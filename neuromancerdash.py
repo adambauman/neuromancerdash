@@ -139,8 +139,8 @@ def main(argv):
 
     # Prepare dash page(s)
     available_pages = []
-    available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height(), pygame.HWSURFACE))
-    available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height(), pygame.HWSURFACE))
+    available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height(), direct_surface=display_surface))
+    #available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height(), direct_surface=display_surface))
 
     # Track selected page and copies of previously displayed pages
     current_page = 0
@@ -231,12 +231,14 @@ def main(argv):
                 print("Switching from page index {} to {}".format(current_page, requested_page))
 
             display_surface.fill(Color.black)
-            display_surface.blit(
-                available_pages[requested_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
+            #display_surface.blit(
+            #    available_pages[requested_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
+            available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
             current_page = requested_page
         else:
-            display_surface.blit(
-                available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
+            available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
+            #display_surface.blit(
+            #    available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
 
         if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
