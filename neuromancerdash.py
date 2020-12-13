@@ -14,7 +14,7 @@ import threading
 from utilities.screensaver import MatrixScreensaver
 
 # Set true to benchmark various parts of the update process
-g_benchmark = True
+g_benchmark = False
 
 # Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
 # debug and develop on other platforms.
