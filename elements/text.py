@@ -71,13 +71,13 @@ class CPUDetails:
         # Surface setup
         self.__setup_surfaces_and_fields__(element_rect)
 
-    def __setup_surfaces_and_fields__(self, element_rect):
+    def __setup_surfaces_and_fields__(self, element_rect, surface_flags=0):
         assert(None == self.__working_surface and None == self.__static_elements)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
 
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface(base_size, surface_flags)
         self.__static_elements = self.__working_surface.copy()
 
         y_offset = self.__config.stack_y_offset
@@ -156,7 +156,7 @@ class GPUDetails:
     __gpu_utilization = None
     __dynamic_ram_used = None
 
-    def __init__(self, element_rect, details_stack_config=DetailsStackConfig()):
+    def __init__(self, element_rect, details_stack_config=DetailsStackConfig(), surface_flags=0):
 
         # Config and fonts
         self.__config = details_stack_config
@@ -165,16 +165,16 @@ class GPUDetails:
             self.__font_normal.kerning = True
 
         # Surface setup
-        self.__setup_surfaces_and_fields__(element_rect)
+        self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
-    def __setup_surfaces_and_fields__(self, element_rect):
+    def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
         assert(None == self.__working_surface and None == self.__static_elements)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
 
       
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface(base_size, surface_flags)
         self.__static_elements = self.__working_surface.copy()
 
         y_offset = self.__config.stack_y_offset
@@ -267,7 +267,7 @@ class FPSConfig:
 class FPSText:
     __current_value = None
 
-    def __init__(self, fps_field_rect, fps_config=FPSConfig()):
+    def __init__(self, fps_field_rect, fps_config=FPSConfig(), surface_flags=0):
 
         base_size = (fps_field_rect[2], fps_field_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
@@ -283,7 +283,7 @@ class FPSText:
             self.__config.label_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
             self.__config.label_font.kerning = True
 
-        self.__working_surface = pygame.Surface((base_size), pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface((base_size), surface_flags)
 
         # Setup the last loose bits
         # Could probably be a bit more dynamic based on number font parameters, etc.
@@ -325,7 +325,7 @@ class TemperatureHumidity:
     __working_surface = None
     __static_elements = None
 
-    def __init__(self, element_rect, font=None):
+    def __init__(self, element_rect, font=None, surface_flags=0):
 
         if None == font:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
@@ -333,16 +333,16 @@ class TemperatureHumidity:
         else:
             self.__font_normal = font
 
-        self.__setup_surfaces_and_fields__(element_rect)
+        self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
 
-    def __setup_surfaces_and_fields__(self, element_rect):
+    def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
         assert(None == self.__working_surface and None == self.__static_elements)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
     
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface(base_size, surface_flags)
         self.__static_elements = self.__working_surface.copy()
 
         y_offset = -2
@@ -396,7 +396,7 @@ class MotherboardTemperature:
     __working_surface = None
     __current_value = None
 
-    def __init__(self, element_rect, font=None):
+    def __init__(self, element_rect, font=None, surface_flags=0):
 
         if None != font:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
@@ -404,7 +404,7 @@ class MotherboardTemperature:
             self.__font_normal = font
 
         base_size = (element_rect[2], element_rect[3])
-        self.__working_surface = pygame.Surface(base_size)
+        self.__working_surface = pygame.Surface(base_size, surface_flags)
 
     def draw_update(self, value):
 
@@ -433,22 +433,22 @@ class NetworkInformation:
     __down_speed = None
     __up_speed = None
 
-    def __init__(self, element_rect, font=None):
+    def __init__(self, element_rect, font=None, surface_flags=0):
 
         if None == font:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         else:
             self.__font_normal = font
 
-        self.__setup_surfaces_and_fields__(element_rect)
+        self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
-    def __setup_surfaces_and_fields__(self, element_rect):
+    def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
         assert(None == self.__working_surface and None == self.__static_elements)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
 
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface(base_size, surface_flags)
         self.__static_elements = self.__working_surface.copy()
 
         label_value_x_space = 5
@@ -501,7 +501,7 @@ class BasicClock:
 
     __working_surface = None
 
-    def __init__(self, element_rect, font=None):
+    def __init__(self, element_rect, font=None, surface_flags=0):
 
         if None == font:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
@@ -509,7 +509,7 @@ class BasicClock:
             self.__font_normal = font
 
         base_size = (element_rect[2], element_rect[3])
-        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface(base_size, surface_flags)
 
     def draw_update(self):
 
