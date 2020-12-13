@@ -14,7 +14,7 @@ import threading
 from utilities.screensaver import MatrixScreensaver
 
 # Set true to benchmark various parts of the update process
-g_benchmark = True
+g_benchmark = False
 
 # Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
 # debug and develop on other platforms.
@@ -157,6 +157,8 @@ def main(argv):
         if g_benchmark:
             loop_start_ticks = pygame.time.get_ticks()
 
+        display_surface.fill(Color.black)
+
         # Handle any GPIO inputs
         if g_gpio_button_enabled:
             if GPIO.input(Hardware.gpio_button):
@@ -230,7 +232,6 @@ def main(argv):
             if __debug__:
                 print("Switching from page index {} to {}".format(current_page, requested_page))
 
-            display_surface.fill(Color.black)
             #display_surface.blit(
             #    available_pages[requested_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
             available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
