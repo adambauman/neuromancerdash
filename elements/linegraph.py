@@ -56,6 +56,9 @@ class LineGraphReverse:
             self.__background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_8px_dkcyan.png"))
             self.__working_surface.blit(self.__background, (0, 0))
 
+        # TODO: Fix bug where grid is not fully visible until the updates reach the left-most edge
+
+
     def update(self, value):
         assert(None != self.__config)
         assert(None != self.__last_plot_surface)
