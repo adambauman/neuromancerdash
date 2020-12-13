@@ -9,6 +9,7 @@ import pygame, pygame.freetype
 
 import os
 from copy import copy
+from threading import Thread
 
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
@@ -102,9 +103,10 @@ class SystemStatsPositions:
     def __init__(self, width, height):
         assert(0 != width and 0 != height)
 
-        self.cpu_graph = (0, 0)
+        #self.cpu_graph = (0, 0)
+        self.cpu_graph = pygame.Rect(0, 0, 300, 70)
         self.sys_memory = (0, 75)
-        self.gpu_graph = (0, 110)
+        self.gpu_graph = pygame.Rect(0, 110, 300, 70)
         self.gpu_memory = (0, 185)
 
         self.core_visualizer = (310, 0)
@@ -191,13 +193,25 @@ class SystemStats:
             self.__working_surface.fill(Color.black)
 
         # CPU and GPU Utilization
-        self.__working_surface.blit(
-            self.__cpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")),
-            self.__element_positions.cpu_graph)
+        #self.__working_surface.blit(
+        #    self.__cpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")),
+        #    self.__element_positions.cpu_graph)
 
-        self.__working_surface.blit(
-            self.__gpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")),
-            self.__element_positions.gpu_graph)
+        #self.__working_surface.blit(
+        #    self.__gpu_graph.update(DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")),
+        #    self.__element_positions.gpu_graph)
+
+        cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
+        cpu_utilization_size = (self.__element_positions.cpu_graph[2], self.__element_positions.cpu_graph[3])
+        cpu_utilization_surface = pygame.Surface(cpu_utilization_size)
+        cpu_utilization_thread = Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value, cpu_utilization_surface))
+        cpu_utilization_thread.start()
+
+        gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
+        gpu_utilization_size = (self.__element_positions.gpu_graph[2], self.__element_positions.gpu_graph[3])
+        gpu_utilization_surface = pygame.Surface(gpu_utilization_size)
+        gpu_utilization_thread = Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value, gpu_utilization_surface))
+        gpu_utilization_thread.start()
 
         # System and GPU memory usage
         self.__working_surface.blit(
@@ -279,5 +293,19 @@ class SystemStats:
         self.__working_surface.blit(
            self.__clock.draw_update(),
            (self.__element_positions.clock[0], self.__element_positions.clock[1]))
+
+        join_timeout = 0.2 # should never take longer than a frame of data!
+        # Wait for threads to finish and draw
+        cpu_utilization_thread.join(join_timeout)
+        if True == cpu_utilization_thread.is_alive():
+            raise Exception("CPU utilization thread did not join")
+
+        self.__working_surface.blit(cpu_utilization_surface, self.__element_positions.cpu_graph)
+
+        gpu_utilization_thread.join(join_timeout)
+        if True == gpu_utilization_thread.is_alive():
+            raise Exception("gpu utilization thread did not join")
+
+        self.__working_surface.blit(gpu_utilization_surface, self.__element_positions.gpu_graph)
 
         return self.__working_surface

@@ -59,10 +59,12 @@ class LineGraphReverse:
         # TODO: Fix bug where grid is not fully visible until the updates reach the left-most edge
 
 
-    def update(self, value):
+    def update(self, value, return_surface=None):
         assert(None != self.__config)
         assert(None != self.__last_plot_surface)
         assert(None != self.__working_surface)
+
+        # If provided this function will copy the final element into return_surface instead of returning it
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
@@ -137,4 +139,8 @@ class LineGraphReverse:
             print("BENCHMARK: LineGraph {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
         # Return completed working surface
-        return self.__working_surface
+        if None != return_surface:
+            # NOTE: (Adam) Copy doesn't work, if the thread fits you must uh... a-blit
+            return_surface.blit(self.__working_surface, (0, 0))
+        else:
+            return self.__working_surface
