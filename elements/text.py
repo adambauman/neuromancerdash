@@ -411,7 +411,7 @@ class MotherboardTemperature:
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self.__working_surface.fill(0,0,0,0)
+        self.__working_surface.fill((0,0,0,0))
 
         if self.__current_value == value:
             return self.__working_surface
