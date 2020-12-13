@@ -36,22 +36,22 @@ class LineGraphReverse:
     __config = None
     __working_surface = None
     __background = None
-    __using_return_surface = True
+    __using_direct_surface = True
 
-    def __init__(self, line_graph_config, return_surface=None, return_rect=None, surface_flags=0):
+    def __init__(self, line_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(line_graph_config.height != 0 and line_graph_config.width != 0)
         assert(None != line_graph_config.data_field)
         
         self.__config = line_graph_config
 
-        if None != return_surface and None != return_rect:
+        if None != direct_surface and None != direct_rect:
             if __debug__:
-                print("Linegraph received return surface and rect: surface dim: {},{}  rect: {}".format(return_surface.get_width(), return_surface.get_height(), return_rect))
-            self.__working_surface = return_surface.subsurface(return_rect)
-            self.__using_return_surface = True
+                print("Linegraph received direct surface and rect: surface dim: {},{}  rect: {}".format(direct_surface.get_width(), direct_surface.get_height(), direct_rect))
+            self.__working_surface = direct_surface.subsurface(direct_rect)
+            self.__using_direct_surface = True
         else:
             self.__working_surface = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
-            self.__using_return_surface = False
+            self.__using_direct_surface = False
 
 
         plot_width = self.__config.width - (self.__config.plot_padding * 2)
@@ -147,15 +147,5 @@ class LineGraphReverse:
         if g_benchmark:
             print("BENCHMARK: LineGraph {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        # Return completed working surface
-        #if None != self.__return_surface:
-        #    print("Nothing to do")
-        #    # NOTE: (Adam) Copy doesn't work, if the thread fits you must uh... a-blit
-        #    # With a provided rect we can subsurface and blit right to a working surface if passed in
-        #    #if None != return_rect:
-        #    #    self.__return_surface.blit(self.__working_surface, (0, 0))
-        #    #else:
-        #    #self.__return_surface.blit(self.__working_surface, (0, 0))
-        #else:
-        if False == self.__using_return_surface:
+        if False == self.__using_direct_surface:
             return self.__working_surface
