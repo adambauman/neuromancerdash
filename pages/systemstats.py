@@ -64,6 +64,8 @@ class SystemStatsConfigs:
         self.fps_graph.display_background = True
         self.fps_graph.draw_on_zero = False
 
+        # NOTE: (Adam) On Neuromancer AIDA64 has fans a bit mixed up
+
         # Base for chassis fans
         case_fan_base = GaugeConfig(DashData.cpu_opt_fan, 20, self.__fan_gauge_value, (17, 29))
         case_fan_base.arc_main_color = Color.grey_40
@@ -73,18 +75,18 @@ class SystemStatsConfigs:
         case_fan_base.show_unit_symbol = False
         case_fan_base.show_label_instead_of_value = True
 
-        # FAN1 = Rear exhaust
+        # FAN1 = Front intakes combines
         self.fan1_gauge = copy(case_fan_base)
         self.fan1_gauge.data_field = DashData.chassis_1_fan
-        self.fan1_gauge.label = "E"
+        self.fan1_gauge.label = "I"
 
         # FAN2 = Drive bay intake
-        # FAN3 = Front exhaust
+        # FAN3 = rear exhaust
 
-        # CPU OPT fan = Front intakes (combined)
+        # CPU OPT fan = Forward exhaust
         self.fan_opt_gauge = copy(case_fan_base)
         self.fan_opt_gauge.data_field = DashData.cpu_opt_fan
-        self.fan_opt_gauge.label = "I"
+        self.fan_opt_gauge.label = "E"
 
         self.cpu_fan_gauge = copy(case_fan_base)
         self.cpu_fan_gauge.data_field = DashData.cpu_fan
@@ -242,6 +244,7 @@ class SystemStats:
                 self.__fps_text.draw_update(fps_value),
                 (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
 
+        # Ambient temperature and humidity
         if None != dht22_data:
             self.__working_surface.blit(
                 self.__temperature_humidity.draw_update(dht22_data),
