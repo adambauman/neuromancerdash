@@ -29,9 +29,6 @@ class DynamicField:
         self.current_value = value
 
     def update(self, new_value):
-        if self.current_value == new_value:
-            self.__subsurface.blit(self.__previous_font_surface, (0,0))
-            return
 
         if 0 < self.__clamp_chars:
             render_text = self.__text.format(Helpers.clamp_text(new_value, 11, ""))
@@ -39,7 +36,6 @@ class DynamicField:
             render_text = self.__text.format(new_value)
         self.__font.render_to(self.__subsurface, (0,0), render_text, self.__text_color)
         self.current_value = new_value
-        self.__previous_font_surface = self.__subsurface.copy()
 
 class StackHelpers:
     def __get_next_y_stack_origin__(self, last_origin, font, padding = 0):
@@ -269,58 +265,52 @@ class FPSConfig:
         self.draw_zero = draw_zero
 
 class FPSText:
-    current_value = None
+    __current_value = None
 
-    def __init__(self, fps_field_rect, target_surface, fps_config=FPSConfig()):
+    def __init__(self, fps_field_rect, fps_config=FPSConfig()):
 
-        if __debug__:
-            print("Setting up FPSText...")
-        
-        width, height = fps_field_rect[2], fps_field_rect[3]
-        assert(0 != height or 0 != width)
+        base_size = (fps_field_rect[2], fps_field_rect[3])
+        assert(0 != base_size[0] or 0 != base_size[1])
 
         # Config and fonts
         self.__config = fps_config
+
         if None == self.__config.number_font:
             self.__config.number_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 50)
-            #self.__config.number_font.strong = True
             self.__config.number_font.kerning = True
 
         if None == self.__config.label_font:
             self.__config.label_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-            #self.__config.label_font.strong = True
             self.__config.label_font.kerning = True
 
-        # Surface setup
-        # NOTE: (Adam) 2020-12-10 No luck experimenting with 0 alpha fill wipes or pixel clearing,
-        #           for now copying out the pixels from the target surface and saving as base for redraws
-        target_surface_sub = target_surface.subsurface(fps_field_rect)
-        self.__background = target_surface_sub.copy()
-        # TODO: Could draw label directly on the background since it's static. For now going to try
-        #       keeping the field blank until FPS > 0 for a cleaner look.
-
-        self.__working_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.__working_surface = pygame.Surface((base_size), pygame.SRCALPHA)
 
         # Setup the last loose bits
         # Could probably be a bit more dynamic based on number font parameters, etc.
-        self.__label_x = 3
-        self.__label_y = self.__working_surface.get_height() - self.__config.label_font.get_sized_height()
+        label_x = 3
+        label_y = self.__working_surface.get_height() - self.__config.label_font.get_sized_height()
+        self.__label_position = (label_x, label_y)
 
     def draw_update(self, value):
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self.__working_surface.blit(self.__background, (0,0))
+        if self.__current_value == value:
+            return self.__working_surface
+
+        self.__working_surface.fill((0,0,0,0))
 
         if 0 == int(value) and False == self.__config.draw_zero:
             return self.__working_surface
 
         self.__config.number_font.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
-        self.__config.label_font.render_to(self.__working_surface, (self.__label_x, self.__label_y), "FPS", Color.white)
+        self.__config.label_font.render_to(self.__working_surface, self.__label_position, "FPS", Color.white)
 
         if g_benchmark:
             print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
+
+        self.__current_value = value
 
         return self.__working_surface
 
@@ -333,38 +323,36 @@ class TemperatureHumidity:
 
     # Surfaces
     __working_surface = None
-    __static_background = None
+    __static_elements = None
 
-    def __init__(self, element_rect, target_surface):
-        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        #self.__font_normal.strong = True
-        self.__font_normal.kerning = True
-        self.__setup_surfaces_and_fields__(element_rect, target_surface)
+    def __init__(self, element_rect, font=None):
 
-    def __setup_surfaces_and_fields__(self, element_rect, target_surface):
-        assert(None == self.__working_surface and None == self.__static_background)
+        if None == font:
+            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self.__font_normal.kerning = True
+        else:
+            self.__font_normal = font
 
-        if __debug__:
-            print("Setting up TemperatureHumidity...")
+        self.__setup_surfaces_and_fields__(element_rect)
 
-        width, height = element_rect[2], element_rect[3]
-        assert(0 != height or 0 != width)
 
-        target_surface_sub = target_surface.subsurface(element_rect)
-        self.__static_background = target_surface_sub.copy()        
-        self.__working_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        self.__working_surface.blit(self.__static_background, (0, 0))
+    def __setup_surfaces_and_fields__(self, element_rect):
+        assert(None == self.__working_surface and None == self.__static_elements)
 
-        static_labels = pygame.Surface((width, height), pygame.SRCALPHA)
+        base_size = (element_rect[2], element_rect[3])
+        assert(0 != base_size[0] or 0 != base_size[1])
+    
+        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__static_elements = self.__working_surface.copy()
+
         y_offset = -2
         font_height = self.__font_normal.get_sized_height()
 
         # Start doing a little mock drawing here to workout where the static label(s) are positioned
-        # and where we need to setup subsurfaces for updates
         
         # Static Label
         origin = (0, 0)
-        self.__font_normal.render_to(self.__static_background, origin, "Room Temp", Color.white)
+        self.__font_normal.render_to(self.__static_elements, origin, "Room Temp", Color.white)
 
         # Temperature
         origin = (origin[0], (origin[1] + font_height) + y_offset)
@@ -375,7 +363,7 @@ class TemperatureHumidity:
 
         # Static Label
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self.__font_normal.render_to(self.__static_background, origin, "Humidity", Color.white)
+        self.__font_normal.render_to(self.__static_elements, origin, "Humidity", Color.white)
 
         # Humidity
         origin = (origin[0], (origin[1] + font_height) + y_offset)
@@ -384,101 +372,124 @@ class TemperatureHumidity:
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
             "{:.1f}%", Color.white, self.__font_normal)
 
-        # A little hacky, but blit the static background down again to include the static bits
-        self.__working_surface.blit(self.__static_background, (0, 0))
-
     def draw_update(self, data):
-        assert(None != self.__working_surface and None != self.__static_background)
+        assert(None != self.__working_surface and None != self.__static_elements)
+
+        self.__working_surface.fill((0,0,0,0))
+        self.__working_surface.blit(self.__static_elements, (0, 0))
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        if self.__temperature.current_value != data.temperature:
-            self.__temperature.update(data.temperature)
-
-        if self.__humidity.current_value != data.humidity:
-            self.__humidity.update(data.humidity)
+        self.__temperature.update(data.temperature)
+        self.__humidity.update(data.humidity)
 
         if g_benchmark:
             print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
         return self.__working_surface
 
+
 class MotherboardTemperature:
     # Basic double-digit (I hope!) display of motherboard temperature
 
     __working_surface = None
-    __static_background = None
-    
-    current_value = None
+    __current_value = None
 
-    def __init__(self, element_rect, target_surface):
+    def __init__(self, element_rect, font=None):
 
-        if __debug__:
-            print("Setting up MotherboardTemperature...")
+        if None != font:
+            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        else:
+            self.__font_normal = font
 
-        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        width, height = element_rect[2], element_rect[3]
-        self.__working_surface = pygame.Surface((width, height))
-        temp_target_subsurface = target_surface.subsurface(element_rect)
-        self.__static_background = temp_target_subsurface.copy()
+        base_size = (element_rect[2], element_rect[3])
+        self.__working_surface = pygame.Surface(base_size)
 
     def draw_update(self, value):
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self.__working_surface.blit(self.__static_background, (0, 0))
+        if self.__current_value == value:
+            return self.__working_surface
+
         self.__font_normal.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
-        self.current_value = value
 
         if g_benchmark:
             print("BENCHMARK: MotherboardTemperature: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
+        self.current_value = value
         return self.__working_surface
 
+
 class NetworkInformation:
-    # Basic network down/upstream stat display
 
+    # Surfaces
     __working_surface = None
-    __static_background = None
-    
-    current_download_value = None
-    current_upload_value = None
+    __static_elements = None
 
-    def __init__(self, element_rect, target_surface):
+    # Dynamic Fields
+    __down_speed = None
+    __up_speed = None
 
-        if __debug__:
-            print("Setting up NetworkInformation...")
+    def __init__(self, element_rect, font=None):
 
-        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        width, height = element_rect[2], element_rect[3]
-        self.__working_surface = pygame.Surface((width, height))
-        temp_target_subsurface = target_surface.subsurface(element_rect)
-        self.__static_background = temp_target_subsurface.copy()
+        if None == font:
+            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        else:
+            self.__font_normal = font
 
-        # Anchor text to bottom of surface, use static value for y because font sized_height is an average
-        self.__y_offset = self.__working_surface.get_height() - 12
+        self.__setup_surfaces_and_fields__(element_rect)
+
+    def __setup_surfaces_and_fields__(self, element_rect):
+        assert(None == self.__working_surface and None == self.__static_elements)
+
+        base_size = (element_rect[2], element_rect[3])
+        assert(0 != base_size[0] or 0 != base_size[1])
+
+        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
+        self.__static_elements = self.__working_surface.copy()
+
+        label_value_x_space = 5
+        intervalue_x_space = 100
+        value_width = 80
+        font_height = self.__font_normal.get_sized_height()
+
+        # Start doing a little mock drawing here to workout where the static label(s) are positioned
+        # Static Label
+        origin = (0, 0)
+        rendered_rect = self.__font_normal.render_to(self.__static_elements, origin, "NIC 1 Down:", Color.white)
+
+        # Download Rate
+        origin = (rendered_rect[2] + label_value_x_space, 0)
+        self.__down_speed = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], value_width, font_height)),
+            "{} " + DashData.nic1_download_rate.unit.symbol, Color.white, self.__font_normal)
+
+        # Static Label
+        origin = (origin[0] + intervalue_x_space, 0)
+        rendered_rect = self.__font_normal.render_to(self.__static_elements, origin, "Up:", Color.white)
+
+        # Upload Rate
+        origin = (origin[0] + rendered_rect[2] + label_value_x_space, 0)
+        self.__up_speed = DynamicField(
+            origin, 
+            self.__working_surface.subsurface((origin[0], origin[1], value_width, font_height)),
+            "{} " + DashData.nic1_upload_rate.unit.symbol, Color.white, self.__font_normal)
+
 
     def draw_update(self, download_value, upload_value):
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self.__working_surface.blit(self.__static_background, (0, 0))
+        self.__working_surface.fill((0,0,0,0))
+        self.__working_surface.blit(self.__static_elements, (0, 0))
 
-        self.__font_normal.render_to(
-            self.__working_surface, (0, self.__y_offset), 
-            "NIC 1 Down: {} {}".format(download_value, DashData.nic1_download_rate.unit.symbol), 
-            Color.white)
-
-        self.__font_normal.render_to(
-            self.__working_surface, (180, self.__y_offset), 
-            "Up: {} {}".format(upload_value, DashData.nic1_upload_rate.unit.symbol), 
-            Color.white)
-
-        self.current_download_value = download_value
-        self.current_upload_value = upload_value
+        self.__down_speed.update(download_value)
+        self.__up_speed.update(upload_value)
 
         if g_benchmark:
             print("BENCHMARK: NetworkInformation: {}ms".format(pygame.time.get_ticks() - start_ticks))
@@ -489,31 +500,27 @@ class BasicClock:
     # Basic clock
 
     __working_surface = None
-    __static_background = None
 
-    def __init__(self, element_rect, target_surface):
+    def __init__(self, element_rect, font=None):
 
-        if __debug__:
-            print("Setting up BasicClock...")
+        if None == font:
+            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        else:
+            self.__font_normal = font
 
-        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        width, height = element_rect[2], element_rect[3]
-        self.__working_surface = pygame.Surface((width, height))
-        temp_target_subsurface = target_surface.subsurface(element_rect)
-        self.__static_background = temp_target_subsurface.copy()
-
-        # Anchor text to bottom of surface, use static value for y because font sized_height is an average
-        self.__y_offset = self.__working_surface.get_height() - 12
+        base_size = (element_rect[2], element_rect[3])
+        self.__working_surface = pygame.Surface(base_size, pygame.SRCALPHA)
 
     def draw_update(self):
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self.__working_surface.blit(self.__static_background, (0, 0))
+        self.__working_surface.fill((0,0,0,0))
+
         now = datetime.now()
         time_string = now.strftime("%H:%M:%S")
-        self.__font_normal.render_to(self.__working_surface, (0, self.__y_offset), time_string, Color.white)
+        self.__font_normal.render_to(self.__working_surface, (0, 0), time_string, Color.white)
 
         if g_benchmark:
             print("BENCHMARK: BasicClock: {}ms".format(pygame.time.get_ticks() - start_ticks))

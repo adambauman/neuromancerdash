@@ -126,8 +126,8 @@ class SystemStatsPositions:
         self.gpu_fan_gauge = (self.fan_opt_gauge[0], self.cpu_fan_gauge[1])
         self.mobo_temp_rect = pygame.Rect(width-52, 268, 18, 16)
 
-        self.network_info = pygame.Rect(0, height-18, 290, 18)
-        self.clock = pygame.Rect(self.cpu_details_rect[0], height-18, 70, 18)
+        self.network_info = pygame.Rect(0, height-12, 300, 18)
+        self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 18)
 
 class SystemStats:
     __background = None
@@ -165,10 +165,9 @@ class SystemStats:
         self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge)
 
         self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph)
-        self.__fps_text = FPSText(self.__element_positions.fps_text_rect, self.__working_surface)
+        self.__fps_text = FPSText(self.__element_positions.fps_text_rect)
 
-        self.__temperature_humidity = TemperatureHumidity(
-            self.__element_positions.temperature_humidity_rect, self.__working_surface)
+        self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
 
         # TODO: (Adam) 2020-12-11 Address slight red tinge around diameter when viewed on larger displays
         self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge)
@@ -178,11 +177,9 @@ class SystemStats:
         self.__mobo_temperature = MotherboardTemperature(
             self.__element_positions.mobo_temp_rect, self.__working_surface)
 
-        self.__network_info = NetworkInformation(
-            self.__element_positions.network_info, self.__working_surface)
+        self.__network_info = NetworkInformation(self.__element_positions.network_info)
 
-        self.__clock = BasicClock(
-            self.__element_positions.clock, self.__working_surface)
+        self.__clock = BasicClock(self.__element_positions.clock)
 
 
     def draw_update(self, aida64_data, dht22_data=None):

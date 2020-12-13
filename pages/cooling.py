@@ -116,8 +116,7 @@ class Cooling:
         self.__front_intake_fan_bar = BarGraph(self.__element_configs.front_intake_fan_bar)
         self.__rear_intake_fan_bar = BarGraph(self.__element_configs.rear_intake_fan_bar)
 
-        self.__temperature_humidity = TemperatureHumidity(
-            self.__element_positions.temperature_humidity_rect, self.__working_surface)
+        self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
     
     def __draw_intake_fans__(self, value):
         # Draw two bars matching the exhaust style, flip 90 CCW
