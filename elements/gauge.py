@@ -30,6 +30,7 @@ class GaugeConfig:
         self.needle_color = Color.windows_light_grey_1
         self.shadow_color = Color.black
         self.shadow_alpha = 50
+        self.draw_shadow = True
         self.unit_text_color = Color.white
         self.value_text_color = Color.white
         self.bg_color = Color.windows_dkgrey_1
@@ -68,8 +69,8 @@ class FlatArcGauge:
         self.__static_elements_surface = pygame.Surface(base_size, pygame.SRCALPHA)
         self.__prepare_constant_elements()
 
+
         assert(None != self.__static_elements_surface)
-        assert(None != self.__needle_surface and None != self.__needle_shadow_surface)
 
     def __prepare_constant_elements(self):
         assert(None != self.__static_elements_surface)
@@ -148,10 +149,11 @@ class FlatArcGauge:
         self.__needle_surface = needle_scaled_surface.copy()
 
         # Needle shadow
-        self.__needle_shadow_surface = self.__needle_surface.copy()
-        shadow_color = pygame.Color(self.__config.shadow_color)
-        shadow_color.a = self.__config.shadow_alpha
-        self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
+        if self.__config.draw_shadow:
+            self.__needle_shadow_surface = self.__needle_surface.copy()
+            shadow_color = pygame.Color(self.__config.shadow_color)
+            shadow_color.a = self.__config.shadow_alpha
+            self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
 
         if __debug__:
             print("Done generating components!")
@@ -178,20 +180,22 @@ class FlatArcGauge:
         # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
         rotated_needle = pygame.transform.rotozoom(self.__needle_surface, arc_transposed_value, 1)
 
+
         # Shadow
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
-        abs_change_from_zero = abs(arc_transposed_value)
-        shadow_distance = 4 + ((abs(arc_transposed_value) / 135) * 10)
+        if self.__config.draw_shadow:
+            abs_change_from_zero = abs(arc_transposed_value)
+            shadow_distance = 4 + ((abs(arc_transposed_value) / 135) * 10)
 
-        shadow_rotation = arc_transposed_value
-        if arc_transposed_value > 0: #counter-clockwise
-            shadow_rotation += shadow_distance
-        else: #clockwise
-            shadow_rotation += -shadow_distance
-        rotated_shadow = pygame.transform.rotozoom(self.__needle_shadow_surface, shadow_rotation, 0.93)
-        #needle_shadow.set_alpha(20)
-        shadow_center = Helpers.calculate_center_align(self.__working_surface, rotated_shadow)
-        self.__working_surface.blit(rotated_shadow, shadow_center)
+            shadow_rotation = arc_transposed_value
+            if arc_transposed_value > 0: #counter-clockwise
+                shadow_rotation += shadow_distance
+            else: #clockwise
+                shadow_rotation += -shadow_distance
+            rotated_shadow = pygame.transform.rotozoom(self.__needle_shadow_surface, shadow_rotation, 0.93)
+            #needle_shadow.set_alpha(20)
+            shadow_center = Helpers.calculate_center_align(self.__working_surface, rotated_shadow)
+            self.__working_surface.blit(rotated_shadow, shadow_center)
 
         needle_center = Helpers.calculate_center_align(self.__working_surface, rotated_needle)
         self.__working_surface.blit(rotated_needle, needle_center)

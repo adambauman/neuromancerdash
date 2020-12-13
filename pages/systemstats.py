@@ -73,6 +73,7 @@ class SystemStatsConfigs:
         case_fan_base.counter_sweep = True
         case_fan_base.show_unit_symbol = False
         case_fan_base.show_label_instead_of_value = True
+        case_fan_base.draw_shadow = False
 
         # FAN1 = Front intakes combines
         self.fan1_gauge = copy(case_fan_base)
