@@ -20,11 +20,16 @@ g_benchmark = False
 # debug and develop on other platforms.
 if __debug__:
     g_dht22_enabled = False
+    g_gpio_button_enabled = False
 else:
     g_dht22_enabled = True
+    g_gpio_button_enabled = False
 
 if g_dht22_enabled:
     from data.dht22 import DHT22, DHT22Data
+
+if g_gpio_button_enabled:
+    import RPi.GPIO as GPIO
 
 from data.aida64lcdsse import AIDA64LCDSSE
 
@@ -46,6 +51,7 @@ if __debug__:
 class Hardware:
     screen_width = 480
     screen_height = 320
+    gpio_button = 23
 
 def print_usage():
     print("")
@@ -87,10 +93,14 @@ def main(argv):
         print("Passed arguments:")
         print("    aidasse = {}".format(aida_sse_server))
 
+    if g_gpio_button_enabled:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(Hardware.gpio_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
     pygame.init()
     pygame.mixer.quit()
     pygame.mouse.set_visible(False)
-    pygame.event.set_allowed([pygame.QUIT])
+    #pygame.event.set_allowed([pygame.QUIT])
 
     if __debug__:
         surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
@@ -133,7 +143,7 @@ def main(argv):
     available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height()))
 
     # Track selected page and copies of previously displayed pages
-    current_page = 1
+    current_page = 0
     requested_page = current_page
 
     ########
@@ -147,8 +157,34 @@ def main(argv):
         if g_benchmark:
             loop_start_ticks = pygame.time.get_ticks()
 
+        # Handle any GPIO inputs
+        if g_gpio_button_enabled:
+            if GPIO.input(Hardware.gpio_button):
+                if __debug__:
+                    print("Page selected button depressed")
+
+                # Bump up a page, wrap around if it would overrun page list
+                if len(available_pages) != current_page + 1:
+                    requested_page = current_page + 1
+                else:
+                    requested_page = 0
+
+                if __debug__:
+                    print("Requested page now {}".format(requested_page))
+
         # Handle events
         for event in pygame.event.get():
+            # TODO: Swap for GPIO read of hardware key
+            if __debug__:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        # Bump up a page, wrap around if it would overrun page list
+                        if len(available_pages) != current_page + 1:
+                            requested_page = current_page + 1
+                        else:
+                            requested_page = 0
+                        print("Requested page now {}".format(requested_page))
+
             if event.type == pygame.QUIT:
                 print("User quit")
                 pygame.quit()
