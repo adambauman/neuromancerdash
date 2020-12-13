@@ -60,7 +60,7 @@ class CPUDetails:
     __cpu_utilization = None
     __page_alloc = None
 
-    def __init__(self, element_rect, details_stack_config=DetailsStackConfig()):
+    def __init__(self, element_rect, details_stack_config=DetailsStackConfig(), surface_flags=0):
 
         # Config and fonts
         self.__config = details_stack_config
@@ -69,9 +69,9 @@ class CPUDetails:
             self.__font_normal.kerning = True
 
         # Surface setup
-        self.__setup_surfaces_and_fields__(element_rect)
+        self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
-    def __setup_surfaces_and_fields__(self, element_rect, surface_flags=0):
+    def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
         assert(None == self.__working_surface and None == self.__static_elements)
 
         base_size = (element_rect[2], element_rect[3])

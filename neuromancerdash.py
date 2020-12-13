@@ -139,8 +139,8 @@ def main(argv):
 
     # Prepare dash page(s)
     available_pages = []
-    available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height()))
-    available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height()))
+    available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height(), pygame.HWSURFACE))
+    available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height(), pygame.HWSURFACE))
 
     # Track selected page and copies of previously displayed pages
     current_page = 0

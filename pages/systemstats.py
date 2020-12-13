@@ -153,33 +153,33 @@ class SystemStats:
         self.__element_configs = SystemStatsConfigs(self.font_normal)
         self.__element_positions = SystemStatsPositions(width, height)
 
-        self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar)
-        self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar)
-        self.__cpu_graph = LineGraphReverse(self.__element_configs.cpu_graph)
-        self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph)
+        self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar, surface_flags=pygame.HWSURFACE)
+        self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar, surface_flags=pygame.HWSURFACE)
+        self.__cpu_graph = LineGraphReverse(self.__element_configs.cpu_graph, surface_flags=pygame.HWSURFACE)
+        self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph, surface_flags=pygame.HWSURFACE)
 
-        self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
-        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect)
-        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect)
-        self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge)
-        self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge)
+        self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer, surface_flags=pygame.HWSURFACE)
+        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect, surface_flags=pygame.HWSURFACE)
+        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect, surface_flags=pygame.HWSURFACE)
+        self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge, surface_flags=pygame.HWSURFACE)
+        self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge, surface_flags=pygame.HWSURFACE)
 
-        self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph)
-        self.__fps_text = FPSText(self.__element_positions.fps_text_rect)
+        self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph, surface_flags=pygame.HWSURFACE)
+        self.__fps_text = FPSText(self.__element_positions.fps_text_rect, surface_flags=pygame.HWSURFACE)
 
-        self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
+        self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect, surface_flags=pygame.HWSURFACE)
 
         # TODO: (Adam) 2020-12-11 Address slight red tinge around diameter when viewed on larger displays
-        self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge)
-        self.__fan_opt_gauge = FlatArcGauge(self.__element_configs.fan_opt_gauge)
-        self.__cpu_fan_gauge = FlatArcGauge(self.__element_configs.cpu_fan_gauge)
-        self.__gpu_fan_gauge = FlatArcGauge(self.__element_configs.gpu_fan_gauge)
+        self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge, surface_flags=pygame.HWSURFACE)
+        self.__fan_opt_gauge = FlatArcGauge(self.__element_configs.fan_opt_gauge, surface_flags=pygame.HWSURFACE)
+        self.__cpu_fan_gauge = FlatArcGauge(self.__element_configs.cpu_fan_gauge, surface_flags=pygame.HWSURFACE)
+        self.__gpu_fan_gauge = FlatArcGauge(self.__element_configs.gpu_fan_gauge, surface_flags=pygame.HWSURFACE)
         self.__mobo_temperature = MotherboardTemperature(
-            self.__element_positions.mobo_temp_rect, self.__working_surface)
+            self.__element_positions.mobo_temp_rect, self.__working_surface, surface_flags=pygame.HWSURFACE)
 
-        self.__network_info = NetworkInformation(self.__element_positions.network_info)
+        self.__network_info = NetworkInformation(self.__element_positions.network_info, self.font_normal, surface_flags=pygame.HWSURFACE)
 
-        self.__clock = BasicClock(self.__element_positions.clock)
+        self.__clock = BasicClock(self.__element_positions.clock, self.font_normal, surface_flags=pygame.HWSURFACE)
 
 
     def draw_update(self, aida64_data, dht22_data=None):
