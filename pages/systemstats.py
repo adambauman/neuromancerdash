@@ -218,8 +218,10 @@ class SystemStats:
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
         draw_threads.append(Thread(target=self.__gpu_fan_gauge.draw_update, args=(gpu_fan_value,)))
 
-        draw_threads.append(Thread(target=self.__cpu_details.draw_update, args=(aida64_data,)))
-        draw_threads.append(Thread(target=self.__gpu_details.draw_update, args=(aida64_data,)))
+        #draw_threads.append(Thread(target=self.__cpu_details.draw_update, args=(aida64_data,)))
+        self.__cpu_details.draw_update(aida64_data)
+        self.__gpu_details.draw_update(aida64_data)
+        #draw_threads.append(Thread(target=self.__gpu_details.draw_update, args=(aida64_data,)))
 
         for draw_thread in draw_threads:
             draw_thread.start()

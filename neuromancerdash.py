@@ -51,7 +51,7 @@ if __debug__:
 class Hardware:
     screen_width = 480
     screen_height = 320
-    gpio_button = 23
+    gpio_button = 15
 
 def print_usage():
     print("")
