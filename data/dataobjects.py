@@ -42,7 +42,7 @@ class DashData:
     chassis_1_fan = DataField("chassis_1_fan", "Chassis 1 Fan Speed", Units.rpm, warn_value=300, min_value=600, max_value=1700)
     chassis_2_fan = DataField("chassis_2_fan", "Chassis 2 Fan Speed", Units.rpm, warn_value=300,min_value=400, max_value=1200)
     chassis_3_fan = DataField("chassis_3_fan", "Chassis 3 Fan Speed", Units.rpm, warn_value=300, min_value=900, max_value=2000)
-    gpu_fan = DataField("gpu_fan", "GPU Fan Speed", Units.rpm, warn_value=300, min_value=800, max_value=1800)
+    gpu_fan = DataField("gpu_fan", "GPU Fan Speed", Units.rpm, min_value=0, max_value=1800)
     gpu_2_fan = DataField("gpu_2_fan", "GPU Fan Speed?", Units.rpm, min_value=0, max_value=2000)
     desktop_resolution = DataField("desktop_resolution", "Desktop Display Resolution")
     desktop_refresh_rate = DataField("vertical_refresh_rate", "Display Vertical Refresh Rate")
