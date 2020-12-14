@@ -53,6 +53,7 @@ class CPUDetails:
     # Surfaces
     __working_surface = None
     __static_elements = None
+    __use_direct_surface = False
 
     # DynamicFields
     __cpu_power = None
@@ -60,25 +61,33 @@ class CPUDetails:
     __cpu_utilization = None
     __page_alloc = None
 
-    def __init__(self, element_rect, details_stack_config=DetailsStackConfig(), surface_flags=0):
+    def __init__(self, element_rect, details_stack_config=DetailsStackConfig(), direct_surface=None, surface_flags=0):
 
         # Config and fonts
         self.__config = details_stack_config
-        if None == self.__config.font_normal:
-            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-            self.__font_normal.kerning = True
+        #if None == self.__config.font_normal:
+        self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        self.__font_normal.kerning = True
+
+        base_size = (element_rect[2], element_rect[3])
+
+        if None != direct_surface:
+            self.__working_surface = direct_surface.subsurface(element_rect)
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface(base_size, surface_flags)
+            self.__using_direct_surface = False
 
         # Surface setup
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
     def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
-        assert(None == self.__working_surface and None == self.__static_elements)
+        assert(None == self.__static_elements)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
 
-        self.__working_surface = pygame.Surface(base_size, surface_flags)
-        self.__static_elements = self.__working_surface.copy()
+        self.__static_elements = pygame.Surface(base_size, surface_flags)
 
         y_offset = self.__config.stack_y_offset
         font_height = self.__font_normal.get_sized_height()
@@ -117,7 +126,8 @@ class CPUDetails:
 
 
     def draw_update(self, data):
-        assert(None != self.__working_surface and None != self.__static_elements)
+        assert(None != self.__working_surface)
+        assert(None != self.__static_elements)
         assert(0 != len(data))
 
         if g_benchmark:
@@ -141,13 +151,15 @@ class CPUDetails:
         if g_benchmark:
             print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface
+        if False == self.__use_direct_surface:
+            return self.__working_surface
 
 
 class GPUDetails:
      # Surfaces
     __working_surface = None
     __static_elements = None
+    __use_direct_surface = False
 
     # DynamicFields
     __perfcap_reason = None
@@ -156,7 +168,7 @@ class GPUDetails:
     __gpu_utilization = None
     __dynamic_ram_used = None
 
-    def __init__(self, element_rect, details_stack_config=DetailsStackConfig(), surface_flags=0):
+    def __init__(self, element_rect, details_stack_config=DetailsStackConfig(), direct_surface=None, surface_flags=0):
 
         # Config and fonts
         self.__config = details_stack_config
@@ -164,18 +176,23 @@ class GPUDetails:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
             self.__font_normal.kerning = True
 
+        if None != direct_surface:
+            self.__working_surface = direct_surface.subsurface(element_rect)
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface(base_size, surface_flags)
+            self.__using_direct_surface = False
+
         # Surface setup
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
     def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
-        assert(None == self.__working_surface and None == self.__static_elements)
+        assert(None == self.__static_elements)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
 
-      
-        self.__working_surface = pygame.Surface(base_size, surface_flags)
-        self.__static_elements = self.__working_surface.copy()
+        self.__static_elements = pygame.Surface(base_size)
 
         y_offset = self.__config.stack_y_offset
         font_height = self.__font_normal.get_sized_height()
@@ -224,11 +241,10 @@ class GPUDetails:
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
             "{} " + DashData.gpu_used_dynamic_memory.unit.symbol, Color.yellow, self.__font_normal)
 
-        # A little hacky, but blit the static background down again to include the static bits
-        self.__working_surface.blit(self.__static_elements, (0, 0))
 
     def draw_update(self, data):
-        assert(None != self.__working_surface and None != self.__static_elements)
+        assert(None != self.__working_surface)
+        assert(None != self.__static_elements)
         assert(0 != len(data))
 
         if g_benchmark:
@@ -255,7 +271,8 @@ class GPUDetails:
         if g_benchmark:
             print("BENCHMARK: GPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface
+        if False == self.__use_direct_surface:
+            return self.__working_surface
 
 
 class FPSConfig:

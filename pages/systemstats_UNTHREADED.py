@@ -162,8 +162,8 @@ class SystemStats:
         self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph, self.__working_surface, self.__element_positions.gpu_graph)
 
         self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
-        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect, direct_surface=self.__working_surface)
-        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect, direct_surface=self.__working_surface)
+        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect)
+        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect)
         self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge, self.__working_surface, self.__element_positions.cpu_temp_gauge)
         self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge, self.__working_surface, self.__element_positions.gpu_temp_gauge)
 
@@ -192,37 +192,42 @@ class SystemStats:
         #else:
         #    self.__working_surface.fill(Color.black)
 
-        draw_threads = []
+        #draw_threads = []
 
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        draw_threads.append(Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value,)))
+        self.__cpu_graph.update(cpu_utilization_value)
+        #draw_threads.append(Thread(target=self.__cpu_graph.update, args=(cpu_utilization_value,)))
 
         gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
-        draw_threads.append(Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value,)))
+        self.__gpu_graph.update(gpu_utilization_value)
+        #draw_threads.append(Thread(target=self.__gpu_graph.update, args=(gpu_utilization_value,)))
 
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        draw_threads.append(Thread(target=self.__cpu_temp_gauge.draw_update, args=(cpu_temperature,)))
+        self.__cpu_temp_gauge.draw_update(cpu_temperature)
+        #draw_threads.append(Thread(target=self.__cpu_temp_gauge.draw_update, args=(cpu_temperature,)))
 
         gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        draw_threads.append(Thread(target=self.__gpu_temp_gauge.draw_update, args=(gpu_temperature,)))
+        self.__gpu_temp_gauge.draw_update(gpu_temperature)
+        #draw_threads.append(Thread(target=self.__gpu_temp_gauge.draw_update, args=(gpu_temperature,)))
 
         fan1_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
-        draw_threads.append(Thread(target=self.__fan1_gauge.draw_update, args=(fan1_value,)))
+        self.__fan1_gauge.draw_update(fan1_value)
+        #draw_threads.append(Thread(target=self.__fan1_gauge.draw_update, args=(fan1_value,)))
 
         fan_opt_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
-        draw_threads.append(Thread(target=self.__fan_opt_gauge.draw_update, args=(fan_opt_value,)))
+        self.__fan_opt_gauge.draw_update(fan_opt_value)
+        #draw_threads.append(Thread(target=self.__fan_opt_gauge.draw_update, args=(fan_opt_value,)))
 
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
-        draw_threads.append(Thread(target=self.__cpu_fan_gauge.draw_update, args=(cpu_fan_value,)))
+        self.__cpu_fan_gauge.draw_update(cpu_fan_value)
+        #draw_threads.append(Thread(target=self.__cpu_fan_gauge.draw_update, args=(cpu_fan_value,)))
 
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
-        draw_threads.append(Thread(target=self.__gpu_fan_gauge.draw_update, args=(gpu_fan_value,)))
+        self.__gpu_fan_gauge.draw_update(gpu_fan_value)
+        #draw_threads.append(Thread(target=self.__gpu_fan_gauge.draw_update, args=(gpu_fan_value,)))
 
-        draw_threads.append(Thread(target=self.__cpu_details.draw_update, args=(aida64_data,)))
-        draw_threads.append(Thread(target=self.__gpu_details.draw_update, args=(aida64_data,)))
-
-        for draw_thread in draw_threads:
-            draw_thread.start()
+        #for draw_thread in draw_threads:
+        #    draw_thread.start()
 
 
         # System and GPU memory usage
@@ -238,6 +243,15 @@ class SystemStats:
         self.__working_surface.blit(
             self.__core_visualizer.update(aida64_data),
             self.__element_positions.core_visualizer)
+
+        # CPU and GPU Details
+        self.__working_surface.blit(
+            self.__cpu_details.draw_update(aida64_data),
+            (self.__element_positions.cpu_details_rect[0], self.__element_positions.cpu_details_rect[1]))
+
+        self.__working_surface.blit(
+            self.__gpu_details.draw_update(aida64_data),
+            (self.__element_positions.gpu_details_rect[0], self.__element_positions.gpu_details_rect[1]))
 
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
@@ -271,12 +285,12 @@ class SystemStats:
            self.__clock.draw_update(),
            (self.__element_positions.clock[0], self.__element_positions.clock[1]))
 
-        # Join drawing threads
-        join_timeout = 0.2 # should never take longer than a frame of data!
-        for draw_thread in draw_threads:
-            draw_thread.join(join_timeout)
-            if True == draw_thread.is_alive():
-                raise Exception("Draw thread did not join")
+        ## Join drawing threads
+        #join_timeout = 0.2 # should never take longer than a frame of data!
+        #for draw_thread in draw_threads:
+        #    draw_thread.join(join_timeout)
+        #    if True == draw_thread.is_alive():
+        #        raise Exception("Draw thread did not join")
 
         if False == self.__using_direct_surface:
             return self.__working_surface
