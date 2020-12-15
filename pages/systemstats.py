@@ -127,6 +127,7 @@ class SystemStatsPositions:
         self.network_info = pygame.Rect(0, height-12, 300, 12)
         self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 12)
 
+
 class SystemStats:
     __background = None
     __base_size = None
@@ -194,7 +195,8 @@ class SystemStats:
             self.__working_surface, self.__element_positions.fps_graph)
         self.__fps_text = FPSText(self.__element_positions.fps_text_rect, direct_surface=self.__working_surface)
 
-        self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
+        self.__temperature_humidity = TemperatureHumidity(
+            self.__element_positions.temperature_humidity_rect, direct_surface=self.__working_surface)
 
         self.__fan1_gauge = FlatArcGauge(
             self.__element_configs.fan1_gauge, 
@@ -259,10 +261,8 @@ class SystemStats:
         self.__fps_text.draw_update(fps_value)
 
         # Ambient temperature and humidity
-        if None != dht22_data:
-            self.__working_surface.blit(
-                self.__temperature_humidity.draw_update(dht22_data),
-                (self.__element_positions.temperature_humidity_rect[0], self.__element_positions.temperature_humidity_rect[1]))
+        if dht22_data is not None:
+            self.__temperature_humidity.draw_update(dht22_data)
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")

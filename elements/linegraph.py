@@ -35,8 +35,8 @@ class LineGraphReverse:
     __last_plot_surface = None
     __config = None
     __working_surface = None
-    __background = None
-    __using_direct_surface = True
+    __cropped_background = None
+    __using_direct_surface = False
 
     def __init__(self, line_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(line_graph_config.height != 0 and line_graph_config.width != 0)
@@ -51,7 +51,6 @@ class LineGraphReverse:
             self.__working_surface = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
             self.__using_direct_surface = False
 
-
         plot_width = self.__config.width - (self.__config.plot_padding * 2)
         plot_height = self.__config.height - (self.__config.plot_padding * 2)
         self.__last_plot_surface = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
@@ -60,12 +59,15 @@ class LineGraphReverse:
         self.__last_plot_y = self.__last_plot_surface.get_height()
 
         if self.__config.display_background:
-            self.__background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_8px_dkcyan.png")).convert_alpha()
-            self.__working_surface.blit(self.__background, (0, 0))
+            # Only store what we need for grid
+            # TODO: Could probably just tile a slice of the grid BG
+            full_background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_8px_dkcyan.png")).convert_alpha()
+            self.__cropped_background = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
+            self.__cropped_background.blit(full_background, (0, 0))
 
         # TODO: Fix bug where grid is not fully visible until the updates reach the left-most edge
 
-
+    # TODO: Go through LineGraphReverse and give it a good scrubbing
     def update(self, value):
         assert(None != self.__config)
         assert(None != self.__last_plot_surface)
@@ -77,10 +79,10 @@ class LineGraphReverse:
             start_ticks = pygame.time.get_ticks()
 
         # Clear working surface
-        if None != self.__background:
-            self.__working_surface.blit(self.__background, (0, 0))
+        if self.__cropped_background is not None:
+            self.__working_surface.blit(self.__cropped_background, (0, 0))
         else:
-            self.__working_surface.fill(Color.black)
+            self.__working_surface.fill((0,0,0,0))
 
         # Transform self.__previous_plot_surface left by self.__steps_per_update
         steps_per_update = self.__config.steps_per_update

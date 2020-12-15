@@ -343,53 +343,60 @@ class TemperatureHumidity:
     # Surfaces
     __working_surface = None
     __static_elements = None
+    __using_direct_surface = False
 
-    def __init__(self, element_rect, font=None, surface_flags=0):
+    def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0):
 
         if None == font:
-            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-            self.__font_normal.kerning = True
+            self.__font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self.__font.kerning = True
         else:
-            self.__font_normal = font
+            self.__font = font
+
+        base_size = (element_rect[2], element_rect[3])
+        if direct_surface is not None:
+            self.__working_surface = direct_surface.subsurface(element_rect)
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface(base_size, surface_flags)
+            self.__using_direct_surface = False
 
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
 
     def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
-        assert(None == self.__working_surface and None == self.__static_elements)
+        assert(self.__static_elements is None)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
     
-        self.__working_surface = pygame.Surface(base_size, surface_flags)
-        self.__static_elements = self.__working_surface.copy()
+        self.__static_elements = pygame.Surface(base_size, surface_flags)
 
         y_offset = -2
-        font_height = self.__font_normal.get_sized_height()
+        font_height = self.__font.get_sized_height()
 
         # Start doing a little mock drawing here to workout where the static label(s) are positioned
-        
         # Static Label
         origin = (0, 0)
-        self.__font_normal.render_to(self.__static_elements, origin, "Room Temp", Color.white)
+        self.__font.render_to(self.__static_elements, origin, "Room Temp", Color.white)
 
         # Temperature
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self.__temperature = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
-            "{:.1f}\u00b0F", Color.white, self.__font_normal)
+            "{:.1f}\u00b0F", Color.white, self.__font)
 
         # Static Label
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self.__font_normal.render_to(self.__static_elements, origin, "Humidity", Color.white)
+        self.__font.render_to(self.__static_elements, origin, "Humidity", Color.white)
 
         # Humidity
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self.__humidity = DynamicField(
-            origin, 
+            origin,
             self.__working_surface.subsurface((origin[0], origin[1], self.__working_surface.get_width(), font_height + y_offset)),
-            "{:.1f}%", Color.white, self.__font_normal)
+            "{:.1f}%", Color.white, self.__font)
 
     def draw_update(self, data):
         assert(None != self.__working_surface and None != self.__static_elements)
