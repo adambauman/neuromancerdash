@@ -96,8 +96,8 @@ class FlatArcGauge:
 
         # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
         # PNG shapes to build up the gauge then scaling down to final size.
-        arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_base_1.png"))
-        redline_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_redline_1.png"))
+        arc_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_base_1.png")).convert_alpha()
+        redline_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_redline_1.png")).convert_alpha()
 
         assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
         base_scaled_size = (arc_bitmap.get_width(), arc_bitmap.get_width())
@@ -148,7 +148,7 @@ class FlatArcGauge:
         self.__static_elements_surface = scaled_surface.copy()
      
         # Setup needle elements, these will be rotated when blitted but the memeber surfaces will remain static
-        needle_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_needle_1.png"))
+        needle_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_needle_1.png")).convert_alpha()
         
         # Apply color to needle, scale, then blit out to the needle surface
         needle_color = pygame.Color(self.__config.needle_color)
