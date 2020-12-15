@@ -18,7 +18,6 @@ class DynamicField:
     def __init__(self, origin, subsurface, text, text_color, font, value=None, clamp_chars=0):
         # Will be an updatable subsurface of the working surface
         self.__subsurface = subsurface 
-        self.__previous_font_surface = None
         self.__text_color = text_color
         self.__font = font
         self.__origin = origin
@@ -455,17 +454,28 @@ class NetworkInformation:
     # Surfaces
     __working_surface = None
     __static_elements = None
+    __using_direct_surface = False
 
     # Dynamic Fields
     __down_speed = None
     __up_speed = None
 
-    def __init__(self, element_rect, font=None, surface_flags=0):
+    def __init__(self, element_rect, font=None, value_color=Color.white, label_color=Color.white, direct_surface=None, surface_flags=0):
+
+        self.__text_color = value_color
+        self.__label_color = label_color
 
         if None == font:
             self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         else:
             self.__font_normal = font
+
+        base_size = (element_rect[0], element_rect[1])
+        if direct_surface is not None:
+            self.__working_surface = direct_surface.subsurface(element_rect)
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface(base_size, surface_flags)
 
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
@@ -475,8 +485,7 @@ class NetworkInformation:
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
 
-        self.__working_surface = pygame.Surface(base_size, surface_flags)
-        self.__static_elements = self.__working_surface.copy()
+        self.__static_elements = pygame.Surface(base_size)
 
         label_value_x_space = 5
         intervalue_x_space = 100
@@ -486,25 +495,25 @@ class NetworkInformation:
         # Start doing a little mock drawing here to workout where the static label(s) are positioned
         # Static Label
         origin = (0, 0)
-        rendered_rect = self.__font_normal.render_to(self.__static_elements, origin, "NIC 1 Down:", Color.white)
+        rendered_rect = self.__font_normal.render_to(self.__static_elements, origin, "NIC 1 Down:", self.__label_color)
 
         # Download Rate
         origin = (rendered_rect[2] + label_value_x_space, 0)
         self.__down_speed = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], value_width, font_height)),
-            "{} " + DashData.nic1_download_rate.unit.symbol, Color.white, self.__font_normal)
+            "{} " + DashData.nic1_download_rate.unit.symbol, self.__value_color, self.__font_normal)
 
         # Static Label
         origin = (origin[0] + intervalue_x_space, 0)
-        rendered_rect = self.__font_normal.render_to(self.__static_elements, origin, "Up:", Color.white)
+        rendered_rect = self.__font_normal.render_to(self.__static_elements, origin, "Up:", self.__label_color)
 
         # Upload Rate
         origin = (origin[0] + rendered_rect[2] + label_value_x_space, 0)
         self.__up_speed = DynamicField(
             origin, 
             self.__working_surface.subsurface((origin[0], origin[1], value_width, font_height)),
-            "{} " + DashData.nic1_upload_rate.unit.symbol, Color.white, self.__font_normal)
+            "{} " + DashData.nic1_upload_rate.unit.symbol, self.__value_color, self.__font_normal)
 
 
     def draw_update(self, download_value, upload_value):

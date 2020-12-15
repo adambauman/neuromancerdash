@@ -213,7 +213,7 @@ class SystemStats:
         self.__mobo_temperature = SimpleText(
             self.__element_positions.mobo_temp_rect, direct_surface=self.__working_surface)
 
-        self.__network_info = NetworkInformation(self.__element_positions.network_info, self.font_normal)
+        self.__network_info = NetworkInformation(self.__element_positions.network_info, direct_surface=self.__working_surface)
         self.__clock = SimpleText(self.__element_positions.clock, direct_surface=self.__working_surface)
 
 
@@ -272,9 +272,7 @@ class SystemStats:
         # Network Info
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
         nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
-        self.__working_surface.blit(
-            self.__network_info.draw_update(nic1_down_value, nic1_up_value),
-            (self.__element_positions.network_info[0], self.__element_positions.network_info[1]))
+        self.__network_info.draw_update(nic1_down_value, nic1_up_value)
 
         # Clock
         now = datetime.now()
