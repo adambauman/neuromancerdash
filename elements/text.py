@@ -411,39 +411,44 @@ class TemperatureHumidity:
         return self.__working_surface
 
 
-class MotherboardTemperature:
-    # Basic double-digit (I hope!) display of motherboard temperature
+class SimpleText:
+    _working_surface = None
+    _using_direct_surface = False
+    _current_value = None
 
-    __working_surface = None
-    __current_value = None
+    def __init__(self, element_rect, text_template="{}", font=None, text_color=Color.white, direct_surface=None, surface_flags=0):
+        assert(0 != element_rect[2] and 0 != element_rect[3])
+        assert(0 != len(text_template))
+        assert(-1 != text_template.find("{}"))
 
-    def __init__(self, element_rect, font=None, surface_flags=0):
+        self._text_color = text_color
+        self._text_template = text_template
 
-        if None != font:
-            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        if font is None:
+            self._font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         else:
-            self.__font_normal = font
+            self._font = font
 
         base_size = (element_rect[2], element_rect[3])
-        self.__working_surface = pygame.Surface(base_size, surface_flags)
+        if direct_surface is not None:
+            self._working_surface = direct_surface.subsurface(element_rect)
+            self._using_direct_surface = True
+        else:
+            self._working_surface = pygame.Surface(base_size, surface_flags)
 
-    def draw_update(self, value):
+    def draw_update(self, value, force_draw=False):
+        assert(self._working_surface is not None)
 
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
+        if self._current_value != value or force_draw:
+            self._working_surface.fill((0,0,0,0))
+            self._font.render_to(self._working_surface, (0, 0), self._text_template.format(value), self._text_color)
 
-        self.__working_surface.fill((0,0,0,0))
+        self._current_value = value
 
-        if self.__current_value == value:
-            return self.__working_surface
-
-        self.__font_normal.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
-
-        if g_benchmark:
-            print("BENCHMARK: MotherboardTemperature: {}ms".format(pygame.time.get_ticks() - start_ticks))
-
-        self.current_value = value
-        return self.__working_surface
+        if self._using_direct_surface:
+            pass
+        else:
+            return self._working_surface
 
 
 class NetworkInformation:

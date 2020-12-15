@@ -19,7 +19,7 @@ from elements.gauge import FlatArcGauge, GaugeConfig
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
-from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, MotherboardTemperature, NetworkInformation, BasicClock
+from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, NetworkInformation, BasicClock, SimpleText
 
 from elements.helpers import Helpers
 
@@ -75,7 +75,7 @@ class SystemStatsConfigs:
         self.fan1_gauge.data_field = DashData.chassis_1_fan
         self.fan1_gauge.label = "I"
 
-        # FAN2 = Drive bay intake
+        # FAN2 = Bottom intake
         # FAN3 = rear exhaust
 
         # CPU OPT fan = Forward exhaust
@@ -208,8 +208,8 @@ class SystemStats:
             self.__element_configs.gpu_fan_gauge,
             self.__working_surface, self.__element_positions.gpu_fan_gauge)
 
-        self.__mobo_temperature = MotherboardTemperature(
-            self.__element_positions.mobo_temp_rect, self.__working_surface)
+        self.__mobo_temperature = SimpleText(
+            self.__element_positions.mobo_temp_rect, direct_surface=self.__working_surface)
 
         self.__network_info = NetworkInformation(self.__element_positions.network_info, self.font_normal)
         self.__clock = BasicClock(self.__element_positions.clock, self.font_normal)
@@ -253,7 +253,6 @@ class SystemStats:
        
         self.__core_visualizer.update(aida64_data)
 
-        # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         self.__fps_graph.update(fps_value)
         self.__fps_text.draw_update(fps_value)
@@ -266,9 +265,7 @@ class SystemStats:
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
-        self.__working_surface.blit(
-            self.__mobo_temperature.draw_update(mobo_temperature_value),
-            (self.__element_positions.mobo_temp_rect[0], self.__element_positions.mobo_temp_rect[1]))
+        self.__mobo_temperature.draw_update(mobo_temperature_value, force_draw=True)
 
         # Network Info
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")

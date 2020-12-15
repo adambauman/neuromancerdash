@@ -18,7 +18,7 @@ from elements.gauge import FlatArcGauge, GaugeConfig
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
-from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, MotherboardTemperature, NetworkInformation, BasicClock
+from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, SimpleText, NetworkInformation, BasicClock
 
 from elements.helpers import Helpers
 
