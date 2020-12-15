@@ -52,6 +52,7 @@ class BarGraph:
     __font = None
 
     __use_direct_draw = False
+    __direct_rect = None
 
     current_value = None
 
@@ -63,6 +64,7 @@ class BarGraph:
         if None != direct_surface and None != direct_rect:
             self.__working_surface = direct_surface.subsurface(direct_rect)
             self.__using_direct_surface = True
+            self.__direct_rect = direct_rect
         else:
             self.__working_surface = pygame.Surface(base_size, surface_flags)
             self.__using_direct_surface = False
@@ -184,5 +186,4 @@ class BarGraph:
         if g_benchmark:
             print("BENCHMARK: BarGraph {}: {}ms".format(self.config.dash_data.field_name, pygame.time.get_ticks() - start_ticks))
 
-        if False == self.__use_direct_draw:
-            return self.__working_surface
+        return self.__working_surface, self.__direct_rect

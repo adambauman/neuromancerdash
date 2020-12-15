@@ -241,5 +241,4 @@ class FlatArcGauge:
         if g_benchmark:
             print("BENCHMARK: ArcGauge {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        if False == self.__using_direct_surface:
-            return self.__working_surface
+        return self.__working_surface, None

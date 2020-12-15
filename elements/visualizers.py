@@ -29,6 +29,7 @@ class SimpleCoreVisualizer:
 
     __working_surface = None
     __using_direct_surface = False
+    __direct_rect = None
 
     # Tracking outside config in case we need to adjust on the fly
     __core_height = 0
@@ -77,6 +78,7 @@ class SimpleCoreVisualizer:
 
             self.__using_direct_surface = True
             self.__working_surface = direct_surface.subsurface(direct_rect)
+            self.__direct_rect = direct_rect
         else:
             self.__using_direct_surface = False
             self.__working_surface = pygame.Surface((base_width, base_height), surface_flags)
@@ -155,7 +157,6 @@ class SimpleCoreVisualizer:
         if g_benchmark:
             print("BENCHMARK: CoreVisualizer: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        if False == self.__using_direct_surface:
-            return self.__working_surface
+        return self.__working_surface, self.__direct_rect
 
 

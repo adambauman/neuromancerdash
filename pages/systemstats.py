@@ -221,65 +221,64 @@ class SystemStats:
     def draw_update(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
 
-        # Each element is now taking care of clearing its rect.
-        #if None != self.__background:
-        #    self.__working_surface.blit(self.__background, (0, 0))
-        #else:
-        #    self.__working_surface.fill(Color.black)
+        # Track the rects that were updated so we can tell the display surface where to redraw.
+        # Elements that don't require updates will append a None value.
+        update_rects = []
 
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        self.__cpu_graph.update(cpu_utilization_value)
+        update_rects.append(self.__cpu_graph.update(cpu_utilization_value)[1])
+
         gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
-        self.__gpu_graph.update(gpu_utilization_value)
+        update_rects.append(self.__gpu_graph.update(gpu_utilization_value)[1])
 
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        self.__cpu_temp_gauge.draw_update(cpu_temperature)
+        update_rects.append(self.__cpu_temp_gauge.draw_update(cpu_temperature)[1])
         gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        self.__gpu_temp_gauge.draw_update(gpu_temperature)
+        update_rects.append(self.__gpu_temp_gauge.draw_update(gpu_temperature)[1])
 
         fan1_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
-        self.__fan1_gauge.draw_update(fan1_value)
+        update_rects.append(self.__fan1_gauge.draw_update(fan1_value)[1])
         fan_opt_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
-        self.__fan_opt_gauge.draw_update(fan_opt_value)
+        update_rects.append(self.__fan_opt_gauge.draw_update(fan_opt_value)[1])
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
-        self.__cpu_fan_gauge.draw_update(cpu_fan_value)
+        update_rects.append(self.__cpu_fan_gauge.draw_update(cpu_fan_value)[1])
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
-        self.__gpu_fan_gauge.draw_update(gpu_fan_value)
+        update_rects.append(self.__gpu_fan_gauge.draw_update(gpu_fan_value)[1])
 
-        self.__cpu_details.draw_update(aida64_data)
-        self.__gpu_details.draw_update(aida64_data)
+        update_rects.append(self.__cpu_details.draw_update(aida64_data)[1])
+        update_rects.append(self.__gpu_details.draw_update(aida64_data)[1])
 
         sys_memory_value = DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")
-        self.__sys_memory_bar.draw_update(sys_memory_value)
+        update_rects.append(self.__sys_memory_bar.draw_update(sys_memory_value)[1])
         gpu_memory_value = DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")
-        self.__gpu_memory_bar.draw_update(gpu_memory_value)
+        update_rects.append(self.__gpu_memory_bar.draw_update(gpu_memory_value)[1])
        
-        self.__core_visualizer.update(aida64_data)
+        update_rects.append(self.__core_visualizer.update(aida64_data)[1])
 
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
-        self.__fps_graph.update(fps_value)
-        self.__fps_text.draw_update(fps_value)
+        update_rects.append(self.__fps_graph.update(fps_value)[1])
+        update_rects.append(self.__fps_text.draw_update(fps_value)[1])
 
         # Ambient temperature and humidity
         if dht22_data is not None:
-            self.__temperature_humidity.draw_update(dht22_data)
+            update_rects.append(self.__temperature_humidity.draw_update(dht22_data)[1])
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
-        self.__mobo_temperature.draw_update(mobo_temperature_value, force_draw=True)
+        update_rects.append(self.__mobo_temperature.draw_update(mobo_temperature_value, force_draw=True)[1])
 
         # Network Info
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
         nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
-        self.__network_info.draw_update(nic1_down_value, nic1_up_value)
+        update_rects.append(self.__network_info.draw_update(nic1_down_value, nic1_up_value)[1])
 
         # Clock
         now = datetime.now()
         time_string = now.strftime("%H:%M:%S")
-        self.__clock.draw_update(time_string, force_draw=True)
+        update_rects.append(self.__clock.draw_update(time_string, force_draw=True)[1])
 
-
-        if self.__using_direct_surface:
-            pass
-        else:
-            return self.__working_surface
+        return update_rects
+        #if self.__using_direct_surface:
+        #    pass
+        #else:
+        #    return self.__working_surface

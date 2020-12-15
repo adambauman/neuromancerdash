@@ -37,6 +37,7 @@ class LineGraphReverse:
     __working_surface = None
     __cropped_background = None
     __using_direct_surface = False
+    __direct_rect = None
 
     def __init__(self, line_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(line_graph_config.height != 0 and line_graph_config.width != 0)
@@ -46,6 +47,7 @@ class LineGraphReverse:
 
         if None != direct_surface and None != direct_rect:
             self.__working_surface = direct_surface.subsurface(direct_rect)
+            self.__direct_rect = direct_rect
             self.__using_direct_surface = True
         else:
             self.__working_surface = pygame.Surface((self.__config.width, self.__config.height), surface_flags)
@@ -147,5 +149,4 @@ class LineGraphReverse:
         if g_benchmark:
             print("BENCHMARK: LineGraph {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        if False == self.__using_direct_surface:
-            return self.__working_surface
+        return self.__working_surface, self.__direct_rect

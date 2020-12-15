@@ -107,9 +107,12 @@ def main(argv):
     else:
         surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.FULLSCREEN
 
-    display_surface = pygame.display.set_mode(
-        (Hardware.screen_width, Hardware.screen_height),
-        surface_flags)
+    display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height), surface_flags)
+
+    if __debug__:
+        display_info = pygame.display.Info()
+        print(
+            "pygame started display started. driver: {}, display_info: \n{}".format(pygame.display.get_driver(), display_info))
 
     display_surface.fill(Color.black)
     font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
@@ -234,17 +237,19 @@ def main(argv):
 
             #display_surface.blit(
             #    available_pages[requested_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
-            available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
+            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
             current_page = requested_page
         else:
-            available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
+            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
             #display_surface.blit(
             #    available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
 
         if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
-
-        pygame.display.flip()
+        
+        assert(0 != len(update_rects))
+        pygame.display.update(update_rects[0])
+        #pygame.display.flip()
 
         if g_benchmark:
             print("BENCHMARK: Loop update: {}ms".format(pygame.time.get_ticks() - loop_start_ticks))

@@ -52,6 +52,7 @@ class CPUDetails:
     __working_surface = None
     __static_elements = None
     __use_direct_surface = False
+    __direct_rect = None
 
     # DynamicFields
     __cpu_power = None
@@ -72,6 +73,7 @@ class CPUDetails:
         if None != direct_surface:
             self.__working_surface = direct_surface.subsurface(element_rect)
             self.__using_direct_surface = True
+            self.__direct_rect = element_rect
         else:
             self.__working_surface = pygame.Surface(base_size, surface_flags)
             self.__using_direct_surface = False
@@ -149,8 +151,7 @@ class CPUDetails:
         if g_benchmark:
             print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        if False == self.__use_direct_surface:
-            return self.__working_surface
+        return self.__working_surface, self.__direct_rect
 
 
 class GPUDetails:
@@ -158,6 +159,7 @@ class GPUDetails:
     __working_surface = None
     __static_elements = None
     __use_direct_surface = False
+    __direct_rect = None
 
     # DynamicFields
     __perfcap_reason = None
@@ -177,6 +179,7 @@ class GPUDetails:
         if None != direct_surface:
             self.__working_surface = direct_surface.subsurface(element_rect)
             self.__using_direct_surface = True
+            self.__direct_rect = element_rect
         else:
             self.__working_surface = pygame.Surface(base_size, surface_flags)
             self.__using_direct_surface = False
@@ -269,8 +272,7 @@ class GPUDetails:
         if g_benchmark:
             print("BENCHMARK: GPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        if False == self.__use_direct_surface:
-            return self.__working_surface
+        return self.__working_surface, self.__direct_rect
 
 
 class FPSConfig:
@@ -282,6 +284,7 @@ class FPSConfig:
 class FPSText:
     __current_value = None
     __using_direct_surface = False
+    __direct_rect = None
 
     def __init__(self, fps_field_rect, fps_config=FPSConfig(), direct_surface=None, surface_flags=0):
 
@@ -294,6 +297,7 @@ class FPSText:
         if None == self.__config.number_font:
             self.__config.number_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 50)
             self.__config.number_font.kerning = True
+            self.__direct_rect = fps_field_rect
 
         if None == self.__config.label_font:
             self.__config.label_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
@@ -330,8 +334,7 @@ class FPSText:
         if g_benchmark:
             print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
         
-        if False == self.__using_direct_surface:
-            return self.__working_surface
+        return self.__working_surface, self.__direct_rect
 
 
 class TemperatureHumidity:
@@ -344,6 +347,7 @@ class TemperatureHumidity:
     __working_surface = None
     __static_elements = None
     __using_direct_surface = False
+    __direct_rect = None
 
     def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0):
 
@@ -357,6 +361,7 @@ class TemperatureHumidity:
         if direct_surface is not None:
             self.__working_surface = direct_surface.subsurface(element_rect)
             self.__using_direct_surface = True
+            self.__direct_rect = element_rect
         else:
             self.__working_surface = pygame.Surface(base_size, surface_flags)
             self.__using_direct_surface = False
@@ -413,13 +418,14 @@ class TemperatureHumidity:
         if g_benchmark:
             print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface
+        return self.__working_surface, self.__direct_rect
 
 
 class SimpleText:
     _working_surface = None
     _using_direct_surface = False
     _current_value = None
+    _direct_rect = None
 
     def __init__(self, element_rect, text_template="{}", font=None, text_color=Color.white, direct_surface=None, surface_flags=0):
         assert(0 != element_rect[2] and 0 != element_rect[3])
@@ -438,6 +444,7 @@ class SimpleText:
         if direct_surface is not None:
             self._working_surface = direct_surface.subsurface(element_rect)
             self._using_direct_surface = True
+            self._direct_rect = element_rect
         else:
             self._working_surface = pygame.Surface(base_size, surface_flags)
 
@@ -450,10 +457,7 @@ class SimpleText:
 
         self._current_value = value
 
-        if self._using_direct_surface:
-            pass
-        else:
-            return self._working_surface
+        return self._working_surface, self._direct_rect
 
 
 class NetworkInformation:
@@ -462,6 +466,7 @@ class NetworkInformation:
     __working_surface = None
     __static_elements = None
     __using_direct_surface = False
+    __direct_rect = None
 
     # Dynamic Fields
     __down_speed = None
@@ -481,6 +486,7 @@ class NetworkInformation:
         if direct_surface is not None:
             self.__working_surface = direct_surface.subsurface(element_rect)
             self.__using_direct_surface = True
+            self.__direct_rect = element_rect
         else:
             self.__working_surface = pygame.Surface(base_size, surface_flags)
 
@@ -537,4 +543,4 @@ class NetworkInformation:
         if g_benchmark:
             print("BENCHMARK: NetworkInformation: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface
+        return self.__working_surface, self.__direct_rect
