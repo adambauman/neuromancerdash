@@ -112,7 +112,7 @@ class SystemStatsPositions:
         self.cpu_temp_gauge = pygame.Rect(width-90, 7, 90, 90)
         self.gpu_temp_gauge = pygame.Rect(width-90, 117, 90, 90)
 
-        self.fps_graph = (0, 230)
+        self.fps_graph = pygame.Rect(0, 230, 200, 70)
         self.fps_text_rect = pygame.Rect(210, 240, 98, 62)
 
         self.temperature_humidity_rect = pygame.Rect(self.cpu_details_rect[0], 240, 74, 56)
@@ -190,7 +190,7 @@ class SystemStats:
 
         self.__fps_graph = LineGraphReverse(
             self.__element_configs.fps_graph,
-            self.__working_surface, self.__elem__element_positions)
+            self.__working_surface, self.__element_positions.fps_graph)
         self.__fps_text = FPSText(self.__element_positions.fps_text_rect, direct_surface=self.__working_surface)
 
         self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
@@ -256,9 +256,7 @@ class SystemStats:
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         self.__fps_graph.update(fps_value)
-        #self.__working_surface.blit(
-        #    self.__fps_text.draw_update(fps_value),
-        #    (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
+        self.__fps_text.draw_update(fps_value)
 
         # Ambient temperature and humidity
         if None != dht22_data:

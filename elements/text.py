@@ -302,6 +302,9 @@ class FPSText:
             self.__config.label_font.kerning = True
 
         if None != direct_surface:
+            if __debug__:
+                print("FPSText using direct surface, rect: {}".format(fps_field_rect))
+
             self.__working_surface = direct_surface.subsurface(fps_field_rect)
             self.__using_direct_surface = True
         else:
@@ -319,21 +322,15 @@ class FPSText:
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        if self.__current_value == value:
-            return self.__working_surface
-
         self.__working_surface.fill((0,0,0,0))
-
-        if 0 == int(value) and False == self.__config.draw_zero:
-            return self.__working_surface
-
-        self.__config.number_font.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
         self.__config.label_font.render_to(self.__working_surface, self.__label_position, "FPS", Color.white)
+        if 0 == int(value) and False == self.__config.draw_zero:
+            pass
+        else:
+            self.__config.number_font.render_to(self.__working_surface, (0, 0), "{}".format(value), Color.white)
 
         if g_benchmark:
             print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
-
-        self.__current_value = value
         
         if False == self.__using_direct_surface:
             return self.__working_surface
