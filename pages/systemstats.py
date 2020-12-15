@@ -9,7 +9,8 @@ import pygame, pygame.freetype
 
 import os
 from copy import copy
-from threading import Thread
+#from threading import Thread
+from datetime import datetime
 
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
@@ -19,7 +20,7 @@ from elements.gauge import FlatArcGauge, GaugeConfig
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
 from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
-from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, NetworkInformation, BasicClock, SimpleText
+from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, NetworkInformation, SimpleText
 
 from elements.helpers import Helpers
 
@@ -124,7 +125,8 @@ class SystemStatsPositions:
         self.mobo_temp_rect = pygame.Rect(width-52, 268, 14, 14)
 
         self.network_info = pygame.Rect(0, height-12, 300, 18)
-        self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 18)
+        #self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 18)
+        self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 12)
 
 class SystemStats:
     __background = None
@@ -212,7 +214,7 @@ class SystemStats:
             self.__element_positions.mobo_temp_rect, direct_surface=self.__working_surface)
 
         self.__network_info = NetworkInformation(self.__element_positions.network_info, self.font_normal)
-        self.__clock = BasicClock(self.__element_positions.clock, self.font_normal)
+        self.__clock = SimpleText(self.__element_positions.clock, direct_surface=self.__working_surface)
 
 
     def draw_update(self, aida64_data, dht22_data=None):
@@ -275,10 +277,12 @@ class SystemStats:
             (self.__element_positions.network_info[0], self.__element_positions.network_info[1]))
 
         # Clock
-        self.__working_surface.blit(
-           self.__clock.draw_update(),
-           (self.__element_positions.clock[0], self.__element_positions.clock[1]))
+        now = datetime.now()
+        time_string = now.strftime("%H:%M:%S")
+        self.__clock.draw_update(time_string, force_draw=True)
 
 
-        if False == self.__using_direct_surface:
+        if self.__using_direct_surface:
+            pass
+        else:
             return self.__working_surface

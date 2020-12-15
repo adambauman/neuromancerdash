@@ -6,7 +6,6 @@
 #
 
 import pygame
-from datetime import datetime
 
 from data.dataobjects import DataField, DashData
 from .styles import Color, FontPaths, AssetPath
@@ -522,35 +521,4 @@ class NetworkInformation:
         if g_benchmark:
             print("BENCHMARK: NetworkInformation: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface
-
-class BasicClock:
-    # Basic clock
-
-    __working_surface = None
-
-    def __init__(self, element_rect, font=None, surface_flags=0):
-
-        if None == font:
-            self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
-        else:
-            self.__font_normal = font
-
-        base_size = (element_rect[2], element_rect[3])
-        self.__working_surface = pygame.Surface(base_size, surface_flags)
-
-    def draw_update(self):
-
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
-
-        self.__working_surface.fill((0,0,0,0))
-
-        now = datetime.now()
-        time_string = now.strftime("%H:%M:%S")
-        self.__font_normal.render_to(self.__working_surface, (0, 0), time_string, Color.white)
-
-        if g_benchmark:
-            print("BENCHMARK: BasicClock: {}ms".format(pygame.time.get_ticks() - start_ticks))
-            
         return self.__working_surface
