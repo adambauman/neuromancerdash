@@ -283,8 +283,9 @@ class FPSConfig:
 
 class FPSText:
     __current_value = None
+    __using_direct_surface = False
 
-    def __init__(self, fps_field_rect, fps_config=FPSConfig(), surface_flags=0):
+    def __init__(self, fps_field_rect, fps_config=FPSConfig(), direct_surface=None, surface_flags=0):
 
         base_size = (fps_field_rect[2], fps_field_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
@@ -300,7 +301,12 @@ class FPSText:
             self.__config.label_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
             self.__config.label_font.kerning = True
 
-        self.__working_surface = pygame.Surface((base_size), surface_flags)
+        if None != direct_surface:
+            self.__working_surface = direct_surface.subsurface(fps_field_rect)
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface((base_size), surface_flags)
+            self.__using_direct_surface = False
 
         # Setup the last loose bits
         # Could probably be a bit more dynamic based on number font parameters, etc.
@@ -328,8 +334,9 @@ class FPSText:
             print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
         self.__current_value = value
-
-        return self.__working_surface
+        
+        if False == self.__using_direct_surface:
+            return self.__working_surface
 
 
 class TemperatureHumidity:

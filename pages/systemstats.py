@@ -188,8 +188,10 @@ class SystemStats:
             self.__element_configs.gpu_temp_gauge,
             self.__working_surface, self.__element_positions.gpu_temp_gauge)
 
-        self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph)
-        self.__fps_text = FPSText(self.__element_positions.fps_text_rect)
+        self.__fps_graph = LineGraphReverse(
+            self.__element_configs.fps_graph,
+            self.__working_surface, self.__elem__element_positions)
+        self.__fps_text = FPSText(self.__element_positions.fps_text_rect, direct_surface=self.__working_surface)
 
         self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
 
@@ -250,17 +252,13 @@ class SystemStats:
         self.__gpu_memory_bar.draw_update(gpu_memory_value)
        
         self.__core_visualizer.update(aida64_data)
-        ## CPU Core Visualizer
-        #self.__working_surface.blit(
-        #    self.__core_visualizer.update(aida64_data),
-        #    self.__element_positions.core_visualizer)
 
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
-        self.__working_surface.blit(self.__fps_graph.update(fps_value), self.__element_positions.fps_graph)
-        self.__working_surface.blit(
-            self.__fps_text.draw_update(fps_value),
-            (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
+        self.__fps_graph.update(fps_value)
+        #self.__working_surface.blit(
+        #    self.__fps_text.draw_update(fps_value),
+        #    (self.__element_positions.fps_text_rect[0], self.__element_positions.fps_text_rect[1]))
 
         # Ambient temperature and humidity
         if None != dht22_data:
