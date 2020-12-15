@@ -99,9 +99,9 @@ class SystemStatsPositions:
 
         #self.cpu_graph = (0, 0)
         self.cpu_graph = pygame.Rect(0, 0, 300, 70)
-        self.sys_memory = (0, 75)
+        self.sys_memory = pygame.Rect(0, 75, 300, 25)
         self.gpu_graph = pygame.Rect(0, 110, 300, 70)
-        self.gpu_memory = (0, 185)
+        self.gpu_memory = pygame.Rect(0, 185, 300, 25)
 
         self.core_visualizer = (310, 0)
 
@@ -156,37 +156,64 @@ class SystemStats:
         self.__element_configs = SystemStatsConfigs(self.font_normal)
         self.__element_positions = SystemStatsPositions(width, height)
 
-        self.__sys_memory_bar = BarGraph(self.__element_configs.sys_memory_bar)
-        self.__gpu_memory_bar = BarGraph(self.__element_configs.gpu_memory_bar)
-        self.__cpu_graph = LineGraphReverse(self.__element_configs.cpu_graph, self.__working_surface, self.__element_positions.cpu_graph)
-        self.__gpu_graph = LineGraphReverse(self.__element_configs.gpu_graph, self.__working_surface, self.__element_positions.gpu_graph)
+        self.__sys_memory_bar = BarGraph(
+            self.__element_configs.sys_memory_bar,
+            self.__working_surface, self.__element_positions.sys_memory)
+        self.__gpu_memory_bar = BarGraph(
+            self.__element_configs.gpu_memory_bar,
+            self.__working_surface, self.__element_positions.gpu_memory)
+
+        self.__cpu_graph = LineGraphReverse(
+            self.__element_configs.cpu_graph,
+            self.__working_surface, self.__element_positions.cpu_graph)
+        self.__gpu_graph = LineGraphReverse(
+            self.__element_configs.gpu_graph,
+            self.__working_surface, self.__element_positions.gpu_graph)
 
         self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
-        self.__cpu_details = CPUDetails(self.__element_positions.cpu_details_rect, direct_surface=self.__working_surface)
-        self.__gpu_details = GPUDetails(self.__element_positions.gpu_details_rect, direct_surface=self.__working_surface)
-        self.__cpu_temp_gauge = FlatArcGauge(self.__element_configs.cpu_temp_gauge, self.__working_surface, self.__element_positions.cpu_temp_gauge)
-        self.__gpu_temp_gauge = FlatArcGauge(self.__element_configs.gpu_temp_gauge, self.__working_surface, self.__element_positions.gpu_temp_gauge)
+
+        # NOTE: Rect and working surface are reversed from other elements
+        self.__cpu_details = CPUDetails(
+            self.__element_positions.cpu_details_rect, direct_surface=self.__working_surface)
+        self.__gpu_details = GPUDetails(
+            self.__element_positions.gpu_details_rect, direct_surface=self.__working_surface)
+
+        self.__cpu_temp_gauge = FlatArcGauge(
+            self.__element_configs.cpu_temp_gauge,
+            self.__working_surface, self.__element_positions.cpu_temp_gauge)
+        self.__gpu_temp_gauge = FlatArcGauge(
+            self.__element_configs.gpu_temp_gauge,
+            self.__working_surface, self.__element_positions.gpu_temp_gauge)
 
         self.__fps_graph = LineGraphReverse(self.__element_configs.fps_graph)
         self.__fps_text = FPSText(self.__element_positions.fps_text_rect)
 
         self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
 
-        self.__fan1_gauge = FlatArcGauge(self.__element_configs.fan1_gauge, self.__working_surface, self.__element_positions.fan1_gauge)
-        self.__fan_opt_gauge = FlatArcGauge(self.__element_configs.fan_opt_gauge, self.__working_surface, self.__element_positions.fan_opt_gauge)
-        self.__cpu_fan_gauge = FlatArcGauge(self.__element_configs.cpu_fan_gauge, self.__working_surface, self.__element_positions.cpu_fan_gauge)
-        self.__gpu_fan_gauge = FlatArcGauge(self.__element_configs.gpu_fan_gauge, self.__working_surface, self.__element_positions.gpu_fan_gauge)
+        self.__fan1_gauge = FlatArcGauge(
+            self.__element_configs.fan1_gauge, 
+            self.__working_surface, self.__element_positions.fan1_gauge)
+        self.__fan_opt_gauge = FlatArcGauge(
+            self.__element_configs.fan_opt_gauge,
+            self.__working_surface, self.__element_positions.fan_opt_gauge)
+        self.__cpu_fan_gauge = FlatArcGauge(
+            self.__element_configs.cpu_fan_gauge,
+            self.__working_surface, self.__element_positions.cpu_fan_gauge)
+        self.__gpu_fan_gauge = FlatArcGauge(
+            self.__element_configs.gpu_fan_gauge,
+            self.__working_surface, self.__element_positions.gpu_fan_gauge)
+
         self.__mobo_temperature = MotherboardTemperature(
             self.__element_positions.mobo_temp_rect, self.__working_surface)
 
         self.__network_info = NetworkInformation(self.__element_positions.network_info, self.font_normal)
-
         self.__clock = BasicClock(self.__element_positions.clock, self.font_normal)
 
 
     def draw_update(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
 
+        # Each element is now taking care of clearing its rect.
         #if None != self.__background:
         #    self.__working_surface.blit(self.__background, (0, 0))
         #else:
@@ -194,39 +221,39 @@ class SystemStats:
 
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
         self.__cpu_graph.update(cpu_utilization_value)
-
         gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
         self.__gpu_graph.update(gpu_utilization_value)
 
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
         self.__cpu_temp_gauge.draw_update(cpu_temperature)
-
         gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
         self.__gpu_temp_gauge.draw_update(gpu_temperature)
 
         fan1_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
         self.__fan1_gauge.draw_update(fan1_value)
-
         fan_opt_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
         self.__fan_opt_gauge.draw_update(fan_opt_value)
-
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
         self.__cpu_fan_gauge.draw_update(cpu_fan_value)
-
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
         self.__gpu_fan_gauge.draw_update(gpu_fan_value)
 
         self.__cpu_details.draw_update(aida64_data)
         self.__gpu_details.draw_update(aida64_data)
 
-        # System and GPU memory usage
-        self.__working_surface.blit(
-            self.__sys_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")),
-            self.__element_positions.sys_memory)
+        sys_memory_value = DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")
+        self.__sys_memory_bar.draw_update(sys_memory_value)
+        gpu_memory_value = DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")
+        self.__gpu_memory_bar.draw_update(gpu_memory_value)
+       
+        ## System and GPU memory usage
+        #self.__working_surface.blit(ssss
+        #    self.__sys_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")),
+        #    self.__element_positions.sys_memory)
 
-        self.__working_surface.blit(
-            self.__gpu_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")),
-            self.__element_positions.gpu_memory)
+        #self.__working_surface.blit(
+        #    self.__gpu_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")),
+        #    self.__element_positions.gpu_memory)
 
         # CPU Core Visualizer
         self.__working_surface.blit(

@@ -51,12 +51,22 @@ class BarGraph:
     __static_overlay_surface = None
     __font = None
 
+    __use_direct_draw = False
+
     current_value = None
 
-    def __init__(self, bar_graph_config, surface_flags=0):
+    def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(0 != bar_graph_config.size[0] and 0 != bar_graph_config.size[1])
 
         self.__config = bar_graph_config
+
+        if None != direct_surface and None != direct_surface:
+            self.__working_surface = direct_surface.subsurface(direct_rect)
+            self.__using_direct_surface = True
+        else:
+            self.__working_surface = pygame.Surface(base_size, surface_flags)
+            self.__using_direct_surface = False
+
         self.__setup_bargraph__(surface_flags)
 
     def __setup_bargraph__(self, surface_flags):
@@ -67,7 +77,6 @@ class BarGraph:
             self.__config.value_range = (self.__config.dash_data.min_value, self.__config.dash_data.max_value)
 
         self.__prepare_static_overlay__(surface_flags)
-        self.__working_surface = pygame.Surface(self.__config.size, surface_flags)
 
     def __prepare_static_overlay__(self, surface_flags):
         assert(None != self.__config)
@@ -175,4 +184,5 @@ class BarGraph:
         if g_benchmark:
             print("BENCHMARK: BarGraph {}: {}ms".format(self.config.dash_data.field_name, pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface
+        if False == self.__use_direct_draw:
+            return self.__working_surface
