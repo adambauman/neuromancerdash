@@ -462,7 +462,7 @@ class NetworkInformation:
 
     def __init__(self, element_rect, font=None, value_color=Color.white, label_color=Color.white, direct_surface=None, surface_flags=0):
 
-        self.__text_color = value_color
+        self.__value_color = value_color
         self.__label_color = label_color
 
         if None == font:
@@ -480,7 +480,7 @@ class NetworkInformation:
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
     def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
-        assert(None == self.__working_surface and None == self.__static_elements)
+        assert(self.__static_elements is None)
 
         base_size = (element_rect[2], element_rect[3])
         assert(0 != base_size[0] or 0 != base_size[1])
@@ -501,7 +501,7 @@ class NetworkInformation:
         origin = (rendered_rect[2] + label_value_x_space, 0)
         self.__down_speed = DynamicField(
             origin, 
-            self.__working_surface.subsurface((origin[0], origin[1], value_width, font_height)),
+            self.__working_surface.subsurface((origin[0], origin[1], value_width, base_size[1])),
             "{} " + DashData.nic1_download_rate.unit.symbol, self.__value_color, self.__font_normal)
 
         # Static Label
@@ -512,7 +512,7 @@ class NetworkInformation:
         origin = (origin[0] + rendered_rect[2] + label_value_x_space, 0)
         self.__up_speed = DynamicField(
             origin, 
-            self.__working_surface.subsurface((origin[0], origin[1], value_width, font_height)),
+            self.__working_surface.subsurface((origin[0], origin[1], value_width, base_size[1])),
             "{} " + DashData.nic1_upload_rate.unit.symbol, self.__value_color, self.__font_normal)
 
 
