@@ -97,13 +97,14 @@ class SystemStatsPositions:
     def __init__(self, width, height):
         assert(0 != width and 0 != height)
 
-        #self.cpu_graph = (0, 0)
         self.cpu_graph = pygame.Rect(0, 0, 300, 70)
         self.sys_memory = pygame.Rect(0, 75, 300, 25)
         self.gpu_graph = pygame.Rect(0, 110, 300, 70)
         self.gpu_memory = pygame.Rect(0, 185, 300, 25)
 
-        self.core_visualizer = (310, 0)
+        # Core visualizer is dynamic based on config and number of cores, you will have to
+        # fiddle with the rect dimensions if modifying those values.
+        self.core_visualizer = pygame.Rect(310, 0, 58, 28)
 
         self.cpu_details_rect = pygame.Rect(310, 33, 74, 72)
         self.gpu_details_rect = pygame.Rect(310, 114, 74, 102)
@@ -170,7 +171,9 @@ class SystemStats:
             self.__element_configs.gpu_graph,
             self.__working_surface, self.__element_positions.gpu_graph)
 
-        self.__core_visualizer = SimpleCoreVisualizer(self.__element_configs.core_visualizer)
+        self.__core_visualizer = SimpleCoreVisualizer(
+            self.__element_configs.core_visualizer,
+            self.__working_surface, self.__element_positions.core_visualizer)
 
         # NOTE: Rect and working surface are reversed from other elements
         self.__cpu_details = CPUDetails(
@@ -246,19 +249,11 @@ class SystemStats:
         gpu_memory_value = DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")
         self.__gpu_memory_bar.draw_update(gpu_memory_value)
        
-        ## System and GPU memory usage
-        #self.__working_surface.blit(ssss
-        #    self.__sys_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")),
-        #    self.__element_positions.sys_memory)
-
+        self.__core_visualizer.update(aida64_data)
+        ## CPU Core Visualizer
         #self.__working_surface.blit(
-        #    self.__gpu_memory_bar.draw_update(DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")),
-        #    self.__element_positions.gpu_memory)
-
-        # CPU Core Visualizer
-        self.__working_surface.blit(
-            self.__core_visualizer.update(aida64_data),
-            self.__element_positions.core_visualizer)
+        #    self.__core_visualizer.update(aida64_data),
+        #    self.__element_positions.core_visualizer)
 
         # FPS Graph and Text
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")

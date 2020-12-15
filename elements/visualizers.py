@@ -26,20 +26,21 @@ class CoreVisualizerConfig:
 
 class SimpleCoreVisualizer:
     __config = CoreVisualizerConfig
-    __core_count = 0
-    __base_surface = None
-    __cores_per_row = 0
+
+    __working_surface = None
+    __using_direct_surface = False
 
     # Tracking outside config in case we need to adjust on the fly
     __core_height = 0
     __core_width = 0
     
+    __core_count = 0
+    __cores_per_row = 0
     __last_core_activity = []
-    __last_base_surface = None
 
     __first_run = True
 
-    def __init__(self, core_visualizer_config, surface_flags=0):
+    def __init__(self, core_visualizer_config, direct_surface=None, direct_rect=None, surface_flags=0):
 
         if __debug__:
             print("Setting up SimpleCoreVisualizer...")
@@ -57,12 +58,28 @@ class SimpleCoreVisualizer:
         assert(0 != self.__core_height)
 
         # Rounds up if reminder exists
-        self.__cores_per_row = int(self.__core_count / self.__config.core_rows) + (self.__core_count % self.__config.core_rows > 0)
+        self.__cores_per_row =\
+            int(self.__core_count / self.__config.core_rows) + (self.__core_count % self.__config.core_rows > 0)
 
-        # Initialize last surface
-        base_width = (self.__core_width * self.__cores_per_row) + (self.__config.core_spacing * (self.__cores_per_row -1))
-        base_height = (self.__core_height * self.__config.core_rows) + (self.__config.core_spacing * (self.__config.core_rows - 1))
-        self.__last_base_surface = pygame.Surface((base_width, base_height), surface_flags)
+        # Initialize working surface
+        base_width =\
+            (self.__core_width * self.__cores_per_row) + (self.__config.core_spacing * (self.__cores_per_row -1))
+        base_height =\
+            (self.__core_height * self.__config.core_rows) + (self.__config.core_spacing * (self.__config.core_rows - 1))
+        
+        if __debug__:
+            print("Setting up core visualizer, calculated base_width: {}, base_height: {}...".format(base_width, base_height))
+
+        if None != direct_surface and None != direct_rect:
+            assert(base_width <= direct_rect[2] and base_height <= direct_rect[3])
+            if __debug__:
+                print("CoreVisualizer using direct surface write")
+
+            self.__using_direct_surface = True
+            self.__working_surface = direct_surface.subsurface(direct_rect)
+        else:
+            self.__using_direct_surface = False
+            self.__working_surface = pygame.Surface((base_width, base_height), surface_flags)
 
         # Initialize last core activity and do a hack update
         initialize_data = {}
@@ -75,15 +92,14 @@ class SimpleCoreVisualizer:
         self.__first_run = False
 
     def update(self, data):
-        assert(None != self.__last_base_surface and 0 != len(self.__last_core_activity))
-        #assert(self.__core_count == len(self.__last_core_activity))
+        assert(None != self.__working_surface and 0 != len(self.__last_core_activity))
         assert(len(data) >= self.__core_count)
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
         # Copy in last core surface, we will only update the altered representations
-        self.__base_surface = self.__last_base_surface.copy()
+        #self.__base_surface.blit(self.__last_base_surface, (0, 0))
 
         core_origin_x = 0
         core_origin_y = 0
@@ -117,7 +133,7 @@ class SimpleCoreVisualizer:
                 core_color = self.__config.active_color
 
             pygame.draw.rect(
-                self.__base_surface, 
+                self.__working_surface, 
                 core_color, 
                 (core_origin_x, core_origin_y, self.__core_width, self.__core_width)
             )
@@ -135,12 +151,11 @@ class SimpleCoreVisualizer:
         #assert(len(self.__last_core_activity) == len(core_activity_tracking))
         self.__last_core_activity = core_activity_tracking
 
-        # Save for next update
-        self.__last_base_surface = self.__base_surface.copy()
 
         if g_benchmark:
             print("BENCHMARK: CoreVisualizer: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self.__base_surface
+        if False == self.__using_direct_surface:
+            return self.__working_surface
 
 

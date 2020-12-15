@@ -60,7 +60,7 @@ class BarGraph:
 
         self.__config = bar_graph_config
 
-        if None != direct_surface and None != direct_surface:
+        if None != direct_surface and None != direct_rect:
             self.__working_surface = direct_surface.subsurface(direct_rect)
             self.__using_direct_surface = True
         else:
