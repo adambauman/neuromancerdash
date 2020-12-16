@@ -95,7 +95,7 @@ def main(argv):
 
     if g_gpio_button_enabled:
             GPIO.setmode(GPIO.BCM)
-            GPIO.setup(Hardware.gpio_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            GPIO.setup(Hardware.gpio_button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     pygame.init()
     pygame.mixer.quit()
