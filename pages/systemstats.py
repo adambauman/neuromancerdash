@@ -129,16 +129,17 @@ class SystemStatsPositions:
 
 
 class SystemStats:
+    __working_surface = None
     __background = None
     __base_size = None
     __using_direct_surface = False
 
-    def __init__(self, width, height, direct_surface=None, surface_flags=0):
-        assert(0 != width and 0 != height)
+    def __init__(self, base_size, direct_surface=None, direct_rect=None, surface_flags=0):
+        assert(0 != base_size[0] and 0 != base_size[1])
 
-        self.__base_size = (width, height)
-        if None != direct_surface:
-            self.__working_surface = direct_surface
+        self.__base_size = base_size
+        if direct_surface and direct_rect is not None: 
+            self.__working_surface = direct_surface.subsurface(direct_rect)
             self.__using_direct_surface = True
         else:
             self.__working_surface = pygame.Surface(self.__base_size, surface_flags)
@@ -148,16 +149,16 @@ class SystemStats:
         self.font_normal.kerning = True
 
         if __debug__:
-            self.__background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png"))
+            self.__background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png")).convert_alpha()
             self.__working_surface.blit(self.__background, (0,0))
 
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
         
-        assert(None != self.__working_surface)
+        assert(self.__working_surface is not None)
 
         self.__element_configs = SystemStatsConfigs(self.font_normal)
-        self.__element_positions = SystemStatsPositions(width, height)
+        self.__element_positions = SystemStatsPositions(base_size[0], base_size[1])
 
         self.__sys_memory_bar = BarGraph(
             self.__element_configs.sys_memory_bar,
@@ -277,8 +278,4 @@ class SystemStats:
         time_string = now.strftime("%H:%M:%S")
         update_rects.append(self.__clock.draw_update(time_string, force_draw=True)[1])
 
-        return update_rects
-        #if self.__using_direct_surface:
-        #    pass
-        #else:
-        #    return self.__working_surface
+        return self.__working_surface, update_rects

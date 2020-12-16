@@ -14,11 +14,8 @@ from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
 
 from elements.styles import Color, AssetPath, FontPaths
-from elements.gauge import FlatArcGauge, GaugeConfig 
 from elements.bargraph import BarGraph, BarGraphConfig
-from elements.linegraph import LineGraphReverse, LineGraphConfig
-from elements.visualizers import SimpleCoreVisualizer, CoreVisualizerConfig
-from elements.text import FPSText, CPUDetails, GPUDetails, TemperatureHumidity, SimpleText, NetworkInformation
+from elements.text import  TemperatureHumidity
 
 from elements.helpers import Helpers
 
@@ -37,7 +34,7 @@ class CoolingConfigs:
         # On Neuromancer AIDA64 is has mixed some of these assignments up (verified by looking directly at the
         #   app data), here are the actual assignemnts:
         # chassis_1_fan = front intakes combined
-        # chassis_2_fan = rear intake
+        # chassis_2_fan = bottom intakes
         # chassis_3_fan = rear exhaust
         # cpu_opt = forward exhaust
 
@@ -51,11 +48,11 @@ class CoolingConfigs:
         self.front_intake_fan_bar.size = (110, 20)
         self.front_intake_fan_bar.dash_data = DashData.chassis_1_fan
 
-        self.rear_intake_fan_bar = copy(base_fan_bar_config)
-        self.rear_intake_fan_bar.size = (110, 20)
-        self.rear_intake_fan_bar.background_color = Color.grey_20
-        self.rear_intake_fan_bar.foreground_color = Color.grey_40
-        self.rear_intake_fan_bar.dash_data = DashData.chassis_2_fan
+        self.bottom_intake_fan_bar = copy(base_fan_bar_config)
+        self.bottom_intake_fan_bar.size = (110, 20)
+        self.bottom_intake_fan_bar.background_color = Color.grey_20
+        self.bottom_intake_fan_bar.foreground_color = Color.grey_40
+        self.bottom_intake_fan_bar.dash_data = DashData.chassis_2_fan
 
         self.cpu_fan_bar = copy(base_fan_bar_config)
         self.cpu_fan_bar.size = (100, 20)
@@ -77,59 +74,68 @@ class CoolingPositions:
         exhaust_fans_x = 20
         exhaust_fans_y = 50
 
-        self.rear_exhaust_fan_bar = (exhaust_fans_x, exhaust_fans_y)
-        self.forward_exhaust_fan_bar = (exhaust_fans_x + exhaust_fans_bars_width + exhaust_fans_bars_spacing, exhaust_fans_y)
-        self.front_intake_fan_bar = (350, 80)
-        self.rear_intake_fan_bar = (190, 250)
-        self.cpu_fan_bar = (70, 130)
-        self.gpu_fan_bar = (70, 180)
+        self.rear_exhaust_fan_bar = pygame.Rect(exhaust_fans_x, exhaust_fans_y, 110, 20)
+        forward_exhaust_fan_x = exhaust_fans_x + exhaust_fans_bars_width + exhaust_fans_bars_spacing
+        self.forward_exhaust_fan_bar = pygame.Rect(forward_exhaust_fan_x, exhaust_fans_y, 110, 20)
+        self.front_intake_fan_bar = pygame.Rect(350, 80, 110, 20)
+        self.bottom_intake_fan_bar = pygame.Rect(190, 250, 110, 20)
+        self.cpu_fan_bar = pygame.Rect(70, 130, 110, 20)
+        self.gpu_fan_bar = pygame.Rect(70, 180, 110, 20)
 
         self.temperature_humidity_rect = pygame.Rect(406, 180, 74, 56)
 
 
 class Cooling:
+    __working_surface = None
     __background = None
     __surface_flags = None
 
-    def __init__(self, width, height, surface_flags=0):
-        assert(0 != width and 0 != height)
+    def __init__(self, base_size, direct_surface=None, direct_rect=None, surface_flags=0):
+        assert(0 != base_size[0] and 0 != base_size[1])
 
-        self.__surface_flags = surface_flags
-        self.__working_surface = pygame.Surface((width, height), self.__surface_flags)
+        if direct_surface and direct_rect is not None:
+            self.__working_surface = direct_surface.subsurface(direct_rect)
+        else:
+            self.__working_surface = pygame.Surface(base_size, surface_flags)
 
         self.__font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
         self.__font_normal.kerning = True
 
         if __debug__:
-            self.__background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png"))
+            self.__background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png")).convert_alpha()
             self.__working_surface.blit(self.__background, (0,0))
-
 
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
 
-        self.__element_configs = CoolingConfigs(self.__font_normal)
-        self.__element_positions = CoolingPositions((width, height), self.__element_configs)
+        element_configs = CoolingConfigs(self.__font_normal)
+        element_positions = CoolingPositions(base_size, element_configs)
 
-        self.__rear_exhaust_fan_bar = BarGraph(self.__element_configs.rear_exhaust_bar)
-        self.__forward_exhaust_fan_bar = BarGraph(self.__element_configs.forward_exhaust_bar)
-        self.__cpu_fan_bar = BarGraph(self.__element_configs.cpu_fan_bar)
-        self.__gpu_fan_bar = BarGraph(self.__element_configs.gpu_fan_bar)
-        self.__front_intake_fan_bar = BarGraph(self.__element_configs.front_intake_fan_bar)
-        self.__rear_intake_fan_bar = BarGraph(self.__element_configs.rear_intake_fan_bar)
+        self.__rear_exhaust_fan_bar = BarGraph(
+            element_configs.rear_exhaust_bar, self.__working_surface, element_positions.rear_exhaust_fan_bar)
+        self.__forward_exhaust_fan_bar = BarGraph(
+            element_configs.forward_exhaust_bar, self.__working_surface, element_positions.forward_exhaust_fan_bar)
+        self.__cpu_fan_bar = BarGraph(
+            element_configs.cpu_fan_bar, self.__working_surface, element_positions.cpu_fan_bar)
+        self.__gpu_fan_bar = BarGraph(
+            element_configs.gpu_fan_bar, self.__working_surface, element_positions.gpu_fan_bar)
+        self.__front_intake_fan_bar = BarGraph(
+            element_configs.front_intake_fan_bar, self.__working_surface, element_positions.front_intake_fan_bar)
+        self.__bottom_intake_fan_bar = BarGraph(
+            element_configs.bottom_intake_fan_bar, self.__working_surface, element_positions.bottom_intake_fan_bar)
 
-        self.__temperature_humidity = TemperatureHumidity(self.__element_positions.temperature_humidity_rect)
+        self.__temperature_humidity = TemperatureHumidity(element_positions.temperature_humidity_rect)
     
-    def __draw_intake_fans__(self, value):
-        # Draw two bars matching the exhaust style, flip 90 CCW
-        single_intake_bar = self.__front_intake_fan_bar.draw_update(value)
-        fan_spacing = 20
-        dual_surface_size = ((single_intake_bar.get_width() * 2) + fan_spacing, single_intake_bar.get_height())
-        dual_fan_surface = pygame.Surface(dual_surface_size, self.__surface_flags)
-        dual_fan_surface.blit(single_intake_bar, (0,0))
-        dual_fan_surface.blit(single_intake_bar, (single_intake_bar.get_width() + fan_spacing, 0))
+    #def __draw_intake_fans__(self, value):
+    #    # Draw two bars matching the exhaust style, flip 90 CCW
+    #    single_intake_bar = self.__front_intake_fan_bar.draw_update(value)
+    #    fan_spacing = 20
+    #    dual_surface_size = ((single_intake_bar.get_width() * 2) + fan_spacing, single_intake_bar.get_height())
+    #    dual_fan_surface = pygame.Surface(dual_surface_size, self.__surface_flags)
+    #    dual_fan_surface.blit(single_intake_bar, (0,0))
+    #    dual_fan_surface.blit(single_intake_bar, (single_intake_bar.get_width() + fan_spacing, 0))
         
-        return pygame.transform.rotozoom(dual_fan_surface, 90, 1)
+    #    return pygame.transform.rotozoom(dual_fan_surface, 90, 1)
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
         assert(0 != len(aida64_data))
@@ -140,46 +146,35 @@ class Cooling:
             self.__working_surface.fill(Color.black)
 
         # chassis_1_fan = front intakes combined
-        # chassis_2_fan = rear intake
+        # chassis_2_fan = bottom intakes
         # chassis_3_fan = rear exhaust
         # cpu_opt = forward exhaust
 
+        update_rects = []
+
         # Fan bar graphs
         rear_exhaust_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_3_fan, "0")
-        self.__working_surface.blit(
-            self.__rear_exhaust_fan_bar.draw_update(rear_exhaust_fan_value), 
-            self.__element_positions.rear_exhaust_fan_bar)
+        update_rects.append(self.__rear_exhaust_fan_bar.draw_update(rear_exhaust_fan_value)[1])
 
         forward_exhaust_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
-        self.__working_surface.blit(
-            self.__forward_exhaust_fan_bar.draw_update(forward_exhaust_fan_value), 
-            self.__element_positions.forward_exhaust_fan_bar)
+        update_rects.append(self.__forward_exhaust_fan_bar.draw_update(forward_exhaust_fan_value)[1])
 
-        front_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
-        self.__working_surface.blit(
-            self.__draw_intake_fans__(front_intake_fan_value),
-            self.__element_positions.front_intake_fan_bar)
+        #front_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
+        #self.__working_surface.blit(
+        #    self.__draw_intake_fans__(front_intake_fan_value),
+        #    self.__element_positions.front_intake_fan_bar)
 
-        rear_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_2_fan, "0")
-        self.__working_surface.blit(
-            self.__rear_intake_fan_bar.draw_update(rear_intake_fan_value),
-            self.__element_positions.rear_intake_fan_bar)
+        bottom_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_2_fan, "0")
+        update_rects.append(self.__bottom_intake_fan_bar.draw_update(bottom_intake_fan_value)[1])
 
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
-        self.__working_surface.blit(
-            self.__cpu_fan_bar.draw_update(cpu_fan_value),
-            self.__element_positions.cpu_fan_bar)
+        update_rects.append(self.__cpu_fan_bar.draw_update(cpu_fan_value)[1])
 
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
-        self.__working_surface.blit(
-            self.__gpu_fan_bar.draw_update(gpu_fan_value),
-            self.__element_positions.gpu_fan_bar)
+        update_rects.append(self.__gpu_fan_bar.draw_update(gpu_fan_value)[1])
 
         # Ambient temperature and humidity
-        if None != dht22_data:
-            self.__working_surface.blit(
-                self.__temperature_humidity.draw_update(dht22_data),
-                (self.__element_positions.temperature_humidity_rect[0], self.__element_positions.temperature_humidity_rect[1]))
+        if dht22_data is not None:
+            update_rects.append(self.__temperature_humidity.draw_update(dht22_data)[1])
 
-
-        return self.__working_surface
+        return self.__working_surface, update_rects

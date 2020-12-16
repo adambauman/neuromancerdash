@@ -111,8 +111,7 @@ def main(argv):
 
     if __debug__:
         display_info = pygame.display.Info()
-        print(
-            "pygame started display started. driver: {}, display_info: \n{}".format(pygame.display.get_driver(), display_info))
+        print("pygame started display started. driver: {}, display_info: \n{}".format(pygame.display.get_driver(), display_info))
 
     display_surface.fill(Color.black)
     font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
@@ -120,10 +119,13 @@ def main(argv):
     font_message.render_to(display_surface, (10, 10), "Building elements and connecting...", Color.white)
     pygame.display.flip()
 
-    data_queue_maxlen = 1
 
+    ########
+    # Data Gathering
+    ########
     # Start the AIDA64 data thread, fastest update interval is usually ~100ms and can be
     # adjusted in the AIDA64 preferences.
+    data_queue_maxlen = 1
     aida64_deque = deque([], maxlen=data_queue_maxlen)
     aida64_data_thread = threading.Thread(target=AIDA64LCDSSE.threadable_stream_read, args=(aida64_deque, aida_sse_server))
     aida64_data_thread.setDaemon(True)
@@ -140,10 +142,16 @@ def main(argv):
         dht22_data_thread.setDaemon(True)
         dht22_data_thread.start()
 
+
+    ########
+    # Dash Page Setup
+    ########
     # Prepare dash page(s)
+    base_size = (display_surface.get_width(), display_surface.get_height())
+    base_rect = pygame.Rect(0, 0, display_surface.get_width(), display_surface.get_height())
     available_pages = []
-    available_pages.append(SystemStats(display_surface.get_width(), display_surface.get_height(), direct_surface=display_surface))
-    #available_pages.append(Cooling(display_surface.get_width(), display_surface.get_height(), direct_surface=display_surface))
+    available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
+    available_pages.append(Cooling(base_size, direct_surface=display_surface, direct_rect=base_rect))
 
     # Track selected page and copies of previously displayed pages
     current_page = 0
@@ -213,7 +221,7 @@ def main(argv):
         else:
             ticks_since_last_data = 0
 
-        # Grab DHT22 Data for ambient temperature and humidity readings (if equipped)
+        # Best attempt to grab DHT22 Data for ambient temperature and humidity readings
         if None != dht22_deque:
             if data_queue_maxlen <= len(dht22_deque):
                 dht22_data = dht22_deque.popleft()
@@ -222,11 +230,13 @@ def main(argv):
                 dht22_data = dht22_last_data
 
         if __debug__:
-            # Override, probably developing on a machine without GPIO. ;)
+            # Debug override, probably developing on a system without GPIO, here's some fake values for testing
             dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
+
 
         if g_benchmark:
             draw_start_ticks = pygame.time.get_ticks()
+
 
         # Data is ready, select the page and bring it to the display surface
         if current_page != requested_page:
@@ -236,24 +246,29 @@ def main(argv):
                 print("Switching from page index {} to {}".format(current_page, requested_page))
 
             #display_surface.blit(
-            #    available_pages[requested_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
-            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
+            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)[1]
             current_page = requested_page
         else:
-            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0)
-            #display_surface.blit(
-            #    available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data), (0, 0))
+            # Returns a surface to blit, if direct_surface and direct_rect defined it uses subsurfaces and
+            # returns "blitable_surface, updated rects" for each element that will not be None if they were redrawn.
+            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)[1]
+
 
         if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
         
+
+        # Update areas that have been modified. Elements will return "None" if they didn't draw an update,
+        # pygame.display.update will ignore those list entries.
         assert(0 != len(update_rects))
-        pygame.display.update(update_rects[0])
-        #pygame.display.flip()
+        pygame.display.update(update_rects)
+
 
         if g_benchmark:
             print("BENCHMARK: Loop update: {}ms".format(pygame.time.get_ticks() - loop_start_ticks))
 
+
+    # Loop broken, exit pygame to cleanup resources
     pygame.quit()
 
 if __name__ == "__main__":
