@@ -27,11 +27,11 @@ from elements.styles import Color, AssetPath, FontPaths
 try:
     import RPi.GPIO as GPIO
     from data.dht22 import DHT22, DHT22Data
-    g_dht22_enabled = False
-    g_gpio_button_enabled = False
+    g_dht22_enabled = True
+    g_gpio_button_enabled = True
     print("GPIO loaded, enabling DHT22 and Page Select button")
 except:
-    g_dht22_enabled = False 
+    g_dht22_enabled = False
     g_gpio_button_enabled = False
     print("Could not load GPIO, DHT22 and Page Select button disabled")
 
