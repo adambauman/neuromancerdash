@@ -11,47 +11,44 @@ import sys, getopt
 from collections import deque
 import threading
 
-from utilities.screensaver import MatrixScreensaver
 
 # Set true to benchmark various parts of the update process
 g_benchmark = False
 
-# Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
-# debug and develop on other platforms.
-if __debug__:
-    g_dht22_enabled = False
-    g_gpio_button_enabled = False
-else:
-    g_dht22_enabled = True
-    g_gpio_button_enabled = False
-
-if g_dht22_enabled:
-    from data.dht22 import DHT22, DHT22Data
-
-if g_gpio_button_enabled:
-    import RPi.GPIO as GPIO
-
 from data.aida64lcdsse import AIDA64LCDSSE
-
-from elements.styles import FontPaths, Color
+from utilities.screensaver import MatrixScreensaver
 from pages.systemstats import SystemStats
 from pages.cooling import Cooling
+from elements.styles import FontPaths, Color
 from elements.styles import Color, AssetPath, FontPaths
 
-if __debug__:
-    class DHT22Data:
-        humidity = None
-        temperature = None
+# Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
+# debug and develop on other platforms.
+try:
+    import RPi.GPIO as GPIO
+    from data.dht22 import DHT22, DHT22Data
 
+    g_dht22_enabled = False
+    g_gpio_button_enabled = False
+except:
+    g_dht22_enabled = False 
+    g_gpio_button_enabled = False
+
+
+if __debug__:
+    # Overrides to force drawing of fake DHT22 data
+    g_dht22_enabled = True
+    class DHT22Data:
+        humidity, temperature = None, None
         def __init__(self, humidity=0.0, temperature=0.0):
             self.humidity = humidity
             self.temperature = temperature
-
 
 class Hardware:
     screen_width = 480
     screen_height = 320
     gpio_button = 15
+
 
 def print_usage():
     print("")
