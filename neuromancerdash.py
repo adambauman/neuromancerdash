@@ -143,7 +143,7 @@ def main(argv):
     ########
     # Prepare dash page(s)
     base_size = (display_surface.get_width(), display_surface.get_height())
-    base_rect = pygame.Rect(0, 0, display_surface.get_width(), display_surface.get_height())
+    base_rect = pygame.Rect(0, 0, base_size[0], base_size[1])
     available_pages = []
     available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
     available_pages.append(Cooling(base_size, direct_surface=display_surface, direct_rect=base_rect))
@@ -240,7 +240,9 @@ def main(argv):
             if __debug__:
                 print("Switching from page index {} to {}".format(current_page, requested_page))
 
-            #display_surface.blit(
+            # Flush the previous page and start drawing the new page
+            display_surface.fill(Color.black)
+            pygame.display.flip()
             update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)[1]
             current_page = requested_page
         else:
