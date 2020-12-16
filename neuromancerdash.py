@@ -27,17 +27,18 @@ from elements.styles import Color, AssetPath, FontPaths
 try:
     import RPi.GPIO as GPIO
     from data.dht22 import DHT22, DHT22Data
-
     g_dht22_enabled = False
     g_gpio_button_enabled = False
+    print("GPIO loaded, enabling DHT22 and Page Select button")
 except:
     g_dht22_enabled = False 
     g_gpio_button_enabled = False
+    print("Could not load GPIO, DHT22 and Page Select button disabled")
 
 
 if __debug__:
     # Overrides to force drawing of fake DHT22 data
-    g_dht22_enabled = True
+    # g_dht22_enabled = True
     class DHT22Data:
         humidity, temperature = None, None
         def __init__(self, humidity=0.0, temperature=0.0):
@@ -91,19 +92,16 @@ def main(argv):
         print("    aidasse = {}".format(aida_sse_server))
 
     if g_gpio_button_enabled:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(Hardware.gpio_button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        # Button wiring: 3.3v -> button -> inline resistor -> GPIO15
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(Hardware.gpio_button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     pygame.init()
     pygame.mixer.quit()
     pygame.mouse.set_visible(False)
-    #pygame.event.set_allowed([pygame.QUIT])
 
-    if __debug__:
-        surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
-    else:
-        surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.FULLSCREEN
-
+    # | pygame.FULLSCREEN
+    surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
     display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height), surface_flags)
 
     if __debug__:
@@ -168,6 +166,7 @@ def main(argv):
         display_surface.fill(Color.black)
 
         # Handle any GPIO inputs
+        # TODO: Thread the GPIO read, handle send up a pygame event when pressed
         if g_gpio_button_enabled:
             if GPIO.input(Hardware.gpio_button):
                 if __debug__:
@@ -229,7 +228,6 @@ def main(argv):
         if __debug__:
             # Debug override, probably developing on a system without GPIO, here's some fake values for testing
             dht22_data = DHT22Data(humidity=44.6, temperature=67.8)
-
 
         if g_benchmark:
             draw_start_ticks = pygame.time.get_ticks()
