@@ -43,11 +43,8 @@ class SimpleCoreVisualizer:
 
     def __init__(self, core_visualizer_config, direct_surface=None, direct_rect=None, surface_flags=0):
 
-        if __debug__:
-            print("Setting up SimpleCoreVisualizer...")
-
         self.__config = core_visualizer_config
-        
+
         # NOTE: (Adam) 2020-11-19 Setting for compatability with new config setup
         self.__core_count = self.__config.core_count
 
@@ -67,14 +64,9 @@ class SimpleCoreVisualizer:
             (self.__core_width * self.__cores_per_row) + (self.__config.core_spacing * (self.__cores_per_row -1))
         base_height =\
             (self.__core_height * self.__config.core_rows) + (self.__config.core_spacing * (self.__config.core_rows - 1))
-        
-        if __debug__:
-            print("Setting up core visualizer, calculated base_width: {}, base_height: {}...".format(base_width, base_height))
 
         if None != direct_surface and None != direct_rect:
             assert(base_width <= direct_rect[2] and base_height <= direct_rect[3])
-            if __debug__:
-                print("CoreVisualizer using direct surface write")
 
             self.__using_direct_surface = True
             self.__working_surface = direct_surface.subsurface(direct_rect)

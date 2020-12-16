@@ -304,9 +304,6 @@ class FPSText:
             self.__config.label_font.kerning = True
 
         if None != direct_surface:
-            if __debug__:
-                print("FPSText using direct surface, rect: {}".format(fps_field_rect))
-
             self.__working_surface = direct_surface.subsurface(fps_field_rect)
             self.__using_direct_surface = True
         else:

@@ -169,17 +169,13 @@ def main(argv):
         # TODO: Thread the GPIO read, handle send up a pygame event when pressed
         if g_gpio_button_enabled:
             if GPIO.input(Hardware.gpio_button):
-                if __debug__:
-                    print("Page selected button depressed")
-
                 # Bump up a page, wrap around if it would overrun page list
                 if len(available_pages) != current_page + 1:
                     requested_page = current_page + 1
                 else:
                     requested_page = 0
 
-                if __debug__:
-                    print("Requested page now {}".format(requested_page))
+                pygame.time.wait(100) # debounce
 
         # Handle events
         for event in pygame.event.get():
@@ -240,27 +236,21 @@ def main(argv):
             if __debug__:
                 print("Switching from page index {} to {}".format(current_page, requested_page))
 
-            # Flush the previous page and start drawing the new page
+            # Flush the previous page and continue to the next update cycle.
+            # TODO: Figure out why some of the previous page lingers when testing page cycling on the Pi Zero
             display_surface.fill(Color.black)
             pygame.display.flip()
-            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)[1]
             current_page = requested_page
+            continue
         else:
             # Returns a surface to blit, if direct_surface and direct_rect defined it uses subsurfaces and
             # returns "blitable_surface, updated rects" for each element that will not be None if they were redrawn.
             update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)[1]
-
+            assert(0 != len(update_rects))
+            pygame.display.update(update_rects)
 
         if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
-        
-
-        # Update areas that have been modified. Elements will return "None" if they didn't draw an update,
-        # pygame.display.update will ignore those list entries.
-        assert(0 != len(update_rects))
-        pygame.display.update(update_rects)
-
-
         if g_benchmark:
             print("BENCHMARK: Loop update: {}ms".format(pygame.time.get_ticks() - loop_start_ticks))
 
@@ -273,6 +263,7 @@ if __name__ == "__main__":
 
     # Saves headaches when debugging in VS2019
     if __debug__ and 0 == len(command_arguments):
+        print("No command arguments passed and in debug, using http://localhost:8080/sse")
         command_arguments = ['--aidasse', 'http://localhost:8080/sse']
 
     main(command_arguments)
