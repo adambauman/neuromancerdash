@@ -114,7 +114,6 @@ def main(argv):
     font_message.render_to(display_surface, (10, 10), "Building elements and connecting...", Color.white)
     pygame.display.flip()
 
-
     ########
     # Data Gathering
     ########
@@ -137,7 +136,6 @@ def main(argv):
         dht22_data_thread.setDaemon(True)
         dht22_data_thread.start()
 
-
     ########
     # Dash Page Setup
     ########
@@ -145,7 +143,7 @@ def main(argv):
     base_size = (display_surface.get_width(), display_surface.get_height())
     base_rect = pygame.Rect(0, 0, base_size[0], base_size[1])
     available_pages = []
-    available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
+    #available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
     available_pages.append(Cooling(base_size, direct_surface=display_surface, direct_rect=base_rect))
 
     # Track selected page and copies of previously displayed pages
