@@ -50,8 +50,6 @@ class BarGraph:
     _working_surface = None
     _static_overlay_surface = None
     _font = None
-
-    _use_direct_draw = False
     _direct_rect = None
 
     current_value = None
@@ -61,18 +59,16 @@ class BarGraph:
 
         self._config = bar_graph_config
 
-        if None != direct_surface and None != direct_rect:
+        if direct_surface is not None and direct_rect is not None:
             self._working_surface = direct_surface.subsurface(direct_rect)
-            self._using_direct_surface = True
             self._direct_rect = direct_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
-            self._using_direct_surface = False
+            self._working_surface = pygame.Surface(self._config.size, surface_flags)
 
         self.__setup_bargraph__(surface_flags)
 
     def __setup_bargraph__(self, surface_flags):
-        assert(None != self._config)
+        assert(self._config is not None)
 
         # Use actual data field minmax if it's present in the config
         if None != self._config.dash_data:
@@ -81,7 +77,7 @@ class BarGraph:
         self.__prepare_static_overlay__(surface_flags)
 
     def __prepare_static_overlay__(self, surface_flags):
-        assert(None != self._config)
+        assert(self._config is not None)
 
         # Sets up static elements like min/max values
         # Must support alpha
@@ -92,15 +88,15 @@ class BarGraph:
         x_padding = 3
 
         # This section requires valid dash data, return if we don't have it
-        if None == config.dash_data:
+        if config.dash_data is None:
             return
 
         # Min value
-        if False != config.min_value_draw:
+        if config.min_value_draw:
             shadow_text = Helpers.get_shadowed_text(
                 font, "{}".format(config.dash_data.min_value), config.text_color, config.text_shadow_color)
             origin = config.min_value_position
-            if None == origin:
+            if origin is None:
                 # Place y-centered on the left with a small indent
                 origin = (x_padding, (config.size[1] / 2) - (shadow_text.get_height() / 2) + 1)
 
@@ -114,7 +110,7 @@ class BarGraph:
             else:
                 unit_text = config.dash_data.unit.symbol
             
-            if None != config.unit_position:
+            if config.unit_position is not None:
                 shadow_text = Helpers.get_shadowed_text(font, unit_text, config.text_color, config.text_shadow_color)
                 origin = config.unit_position
                 assert(origin[0] < config.size[0] and origin[1] < config.size[1])
@@ -122,8 +118,8 @@ class BarGraph:
                 self._static_overlay_surface.blit(shadow_text, origin)
 
         # Max value if position is valid. Otherwise we'll draw this with current value during updates
-        if False != config.max_value_draw and None != config.max_value_position:
-            if None != unit_text:
+        if config.max_value_draw and config.max_value_position is not None:
+            if unit_text is not None:
                 max_value_text = "{} {}".format(config.dash_data.max_value, unit_text)
             else:
                 max_value_text = "{}".format(config.dash_data.max_value)
@@ -136,8 +132,8 @@ class BarGraph:
             self._static_overlay_surface.blit(shadow_text, origin)
 
     def draw_update(self, value):
-        assert(None != self._working_surface)
-        assert(None != self._static_overlay_surface)
+        assert(self._working_surface is not None)
+        assert(self._static_overlay_surface is not None)
         
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
@@ -159,12 +155,12 @@ class BarGraph:
         if config.current_value_draw:
             value_text += "{}".format(value)
 
-        if config.max_value_draw and None != config.dash_data:
+        if config.max_value_draw and config.dash_data is not None:
             if config.current_value_draw:
                 value_text += "/"
             value_text += "{}".format(config.dash_data.max_value)
 
-        if config.unit_draw and None != config.dash_data:
+        if config.unit_draw and config.dash_data is not None:
             if config.unit_use_full_name:
                 value_text += " {}".format(config.dash_data.unit.name)
             else:

@@ -77,7 +77,7 @@ class CoolingPositions:
         self.rear_exhaust_fan_bar = pygame.Rect(exhaust_fans_x, exhaust_fans_y, 110, 20)
         forward_exhaust_fan_x = exhaust_fans_x + exhaust_fans_bars_width + exhaust_fans_bars_spacing
         self.forward_exhaust_fan_bar = pygame.Rect(forward_exhaust_fan_x, exhaust_fans_y, 110, 20)
-        self.front_intake_fan_bar = pygame.Rect(350, 80, 110, 20)
+        self.front_intake_fan_bars = pygame.Rect(350, 80, 110, 20)
         self.bottom_intake_fan_bar = pygame.Rect(190, 250, 110, 20)
         self.cpu_fan_bar = pygame.Rect(70, 130, 110, 20)
         self.gpu_fan_bar = pygame.Rect(70, 180, 110, 20)
@@ -92,6 +92,8 @@ class Cooling:
 
     def __init__(self, base_size, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(0 != base_size[0] and 0 != base_size[1])
+
+        self._surface_flags = surface_flags
 
         if direct_surface and direct_rect is not None:
             self._working_surface = direct_surface.subsurface(direct_rect)
@@ -109,33 +111,43 @@ class Cooling:
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
 
         element_configs = CoolingConfigs(self._font_normal)
-        element_positions = CoolingPositions(base_size, element_configs)
+        self._element_positions = CoolingPositions(base_size, element_configs)
 
         self._rear_exhaust_fan_bar = BarGraph(
-            element_configs.rear_exhaust_bar, self._working_surface, element_positions.rear_exhaust_fan_bar)
+            element_configs.rear_exhaust_bar, self._working_surface, self._element_positions.rear_exhaust_fan_bar)
         self._forward_exhaust_fan_bar = BarGraph(
-            element_configs.forward_exhaust_bar, self._working_surface, element_positions.forward_exhaust_fan_bar)
+            element_configs.forward_exhaust_bar, self._working_surface, self._element_positions.forward_exhaust_fan_bar)
         self._cpu_fan_bar = BarGraph(
-            element_configs.cpu_fan_bar, self._working_surface, element_positions.cpu_fan_bar)
+            element_configs.cpu_fan_bar, self._working_surface, self._element_positions.cpu_fan_bar)
         self._gpu_fan_bar = BarGraph(
-            element_configs.gpu_fan_bar, self._working_surface, element_positions.gpu_fan_bar)
-        self._front_intake_fan_bar = BarGraph(
-            element_configs.front_intake_fan_bar, self._working_surface, element_positions.front_intake_fan_bar)
+            element_configs.gpu_fan_bar, self._working_surface, self._element_positions.gpu_fan_bar)
         self._bottom_intake_fan_bar = BarGraph(
-            element_configs.bottom_intake_fan_bar, self._working_surface, element_positions.bottom_intake_fan_bar)
+            element_configs.bottom_intake_fan_bar, self._working_surface, self._element_positions.bottom_intake_fan_bar)
 
-        self._temperature_humidity = TemperatureHumidity(element_positions.temperature_humidity_rect)
-    
-    #def __draw_intake_fans__(self, value):
-    #    # Draw two bars matching the exhaust style, flip 90 CCW
-    #    single_intake_bar = self.__front_intake_fan_bar.draw_update(value)
-    #    fan_spacing = 20
-    #    dual_surface_size = ((single_intake_bar.get_width() * 2) + fan_spacing, single_intake_bar.get_height())
-    #    dual_fan_surface = pygame.Surface(dual_surface_size, self.__surface_flags)
-    #    dual_fan_surface.blit(single_intake_bar, (0,0))
-    #    dual_fan_surface.blit(single_intake_bar, (single_intake_bar.get_width() + fan_spacing, 0))
-        
-    #    return pygame.transform.rotozoom(dual_fan_surface, 90, 1)
+        self._temperature_humidity = TemperatureHumidity(self._element_positions.temperature_humidity_rect)
+
+        # Not using direct draw, elements need transforms before blit
+        self._front_intake_fan_bar = BarGraph(element_configs.front_intake_fan_bar)
+
+
+    def __draw_intake_fans__(self, value, using_direct_surface=False):
+        assert(self._surface_flags is not None)
+
+        # Draw two bars matching the exhaust style, flip 90 CCW
+        single_intake_bar = self._front_intake_fan_bar.draw_update(value)[0]
+        fan_spacing = 20
+        dual_surface_size = ((single_intake_bar.get_width() * 2) + fan_spacing, single_intake_bar.get_height())
+        dual_fan_surface = pygame.Surface(dual_surface_size, self._surface_flags)
+        dual_fan_surface.blit(single_intake_bar, (0,0))
+        dual_fan_surface.blit(single_intake_bar, (single_intake_bar.get_width() + fan_spacing, 0))
+        dual_fan_rotated_surface = pygame.transform.rotozoom(dual_fan_surface, 90, 1)
+
+        update_rect = self._element_positions.front_intake_fan_bars
+        if using_direct_surface:
+            update_rect = self._working_surface.blit(dual_fan_rotated_surface, update_rect)
+            self._working_surface.blit(dual_fan_rotated_surface, update_rect)
+
+        return dual_fan_rotated_surface, update_rect
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
         assert(0 != len(aida64_data))
@@ -159,10 +171,9 @@ class Cooling:
         forward_exhaust_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
         update_rects.append(self._forward_exhaust_fan_bar.draw_update(forward_exhaust_fan_value)[1])
 
-        #front_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
-        #self.__working_surface.blit(
-        #    self.__draw_intake_fans__(front_intake_fan_value),
-        #    self.__element_positions.front_intake_fan_bar)
+        front_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
+        update_rects.append(
+            self.__draw_intake_fans__(front_intake_fan_value, using_direct_surface=True)[1])
 
         bottom_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_2_fan, "0")
         update_rects.append(self._bottom_intake_fan_bar.draw_update(bottom_intake_fan_value)[1])
