@@ -19,30 +19,30 @@ class DHT22Data:
 
 class DHT22:
 
-    __dht_sensor = Adafruit_DHT.DHT22
-    __dht_pin = 4
+    _dht_sensor = Adafruit_DHT.DHT22
+    _dht_pin = 4
 
-    __last_humidity = 0
-    __last_temperature = 0
+    _last_humidity = 0
+    _last_temperature = 0
 
     # NOTE: (Adam) 2020-11-29 Pi GPIO timings mean we might not get a value off the DHT22, best effort
     #         will return the last value if the read attempt fails.
     @classmethod
     def best_effort_read(class_object, return_metric=False):
-        humidity, temperature = Adafruit_DHT.read(class_object.__dht_sensor, class_object.__dht_pin)
+        humidity, temperature = Adafruit_DHT.read(class_object._dht_sensor, class_object._dht_pin)
         # Use last values unless both humidity and temperature return. I have seen some funky values
         # if only one value returns None and you still try to use the other.
-        if None != humidity and None != temperature:
-            class_object.__last_humidity = humidity
-            class_object.__last_temperature = temperature
+        if humidity is not None and temperature is not None:
+            class_object._last_humidity = humidity
+            class_object._last_temperature = temperature
         else:
             #if __debug__:
                 #print("DHT22 read attempt failed, falling back on previous values")
 
-            humidity = class_object.__last_humidity
-            temperature = class_object.__last_temperature
+            humidity = class_object._last_humidity
+            temperature = class_object._last_temperature
 
-        if False == return_metric:
+        if not return_metric:
             temperature = (temperature * 1.8) + 32
 
         return DHT22Data(humidity, temperature)
@@ -52,8 +52,8 @@ class DHT22:
     # give us a value.
     @classmethod
     def read_retry(class_object, return_metric=False):
-        humidity, temperature = Adafruit_DHT.read_retry(class_object.__dht_sensor, class_object.__dht_pin)
-        assert(None != humidity and None != temperature)
+        humidity, temperature = Adafruit_DHT.read_retry(class_object._dht_sensor, class_object._dht_pin)
+        assert(humidity is not None and temperature is not None)
 
         if False == return_metric:
             temperature = (temperature * 1.8) + 32
@@ -62,7 +62,7 @@ class DHT22:
 
     @classmethod
     def threadable_read_retry(class_object, dht22_data_queue, return_metric = False):
-        assert(None != dht22_data_queue)
+        assert(dht22_data_queue is not None)
 
         while True:
             dht22_data = class_object.read_retry(return_metric)
@@ -76,7 +76,6 @@ class DHT22:
 def main():
     while True:
         humidity, temperature = DHT22.read_retry()
-        #humidity, temperature = DHT22.best_effort_read()
         print("Humidity: {:0.1f}%   Temp: {:0.1f}F".format(humidity, temperature))
         sleep(1)
 

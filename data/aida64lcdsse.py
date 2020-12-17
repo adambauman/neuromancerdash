@@ -110,8 +110,9 @@ class AIDA64LCDSSE:
 
     @classmethod
     def threadable_stream_read(class_object, data_queue, aida64_lcd_sse_address):
-        assert(None != data_queue)
-        assert(None != aida64_lcd_sse_address and 0 != len(aida64_lcd_sse_address))
+        assert(data_queue is not None)
+        assert(aida64_lcd_sse_address is not None)
+        assert(0 != len(aida64_lcd_sse_address))
 
         retry_attempts = 0
         while True:
@@ -126,7 +127,7 @@ class AIDA64LCDSSE:
 
                 retry_attempts = 0
                 for server_message in server_messages:
-                    if None == server_message.data or 0 == len(server_message.data):
+                    if 0 == len(server_message.data) or server_message.data is None:
                         continue
 
                     if "reload" == server_message.data.lower():

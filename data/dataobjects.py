@@ -9,8 +9,8 @@ from .units import Unit, Units
 
 class DataField:
     def __init__(
-        self, field_name = "", description = "", unit = Units.null_unit,
-        min_value = None, caution_value = None, warn_value = None, max_value = None):
+        self, field_name="", description="", unit = Units.null_unit,
+        min_value=None, caution_value=None, warn_value=None, max_value=None):
 
         self.field_name = field_name
         self.description = description

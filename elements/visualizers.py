@@ -25,80 +25,79 @@ class CoreVisualizerConfig:
         self.activity_threshold_percent = 12
 
 class SimpleCoreVisualizer:
-    __config = CoreVisualizerConfig
+    _config = CoreVisualizerConfig
 
-    __working_surface = None
-    __using_direct_surface = False
-    __direct_rect = None
+    _working_surface = None
+    _direct_rect = None
 
     # Tracking outside config in case we need to adjust on the fly
-    __core_height = 0
-    __core_width = 0
+    _core_height = 0
+    _core_width = 0
     
-    __core_count = 0
-    __cores_per_row = 0
-    __last_core_activity = []
+    _core_count = 0
+    _cores_per_row = 0
+    _last_core_activity = []
 
-    __first_run = True
+    # TODO: Ditch this, check if surfaces are prepped, last core activity is populated, etc.
+    _first_run = True
 
     def __init__(self, core_visualizer_config, direct_surface=None, direct_rect=None, surface_flags=0):
 
-        self.__config = core_visualizer_config
+        self._config = core_visualizer_config
 
         # NOTE: (Adam) 2020-11-19 Setting for compatability with new config setup
-        self.__core_count = self.__config.core_count
+        self._core_count = self._config.core_count
 
-        self.__core_width = self.__config.core_width
-        self.__core_height = self.__config.core_height
-        if None == self.__core_height:
-            self.__core_height = self.__core_width
+        self._core_width = self._config.core_width
+        self._core_height = self._config.core_height
+        if self._core_height is None:
+            self._core_height = self._core_width
 
-        assert(0 != self.__core_height)
+        assert(0 != self._core_height)
 
         # Rounds up if reminder exists
-        self.__cores_per_row =\
-            int(self.__core_count / self.__config.core_rows) + (self.__core_count % self.__config.core_rows > 0)
+        self._cores_per_row =\
+            int(self._core_count / self._config.core_rows) + (self._core_count % self._config.core_rows > 0)
 
         # Initialize working surface
         base_width =\
-            (self.__core_width * self.__cores_per_row) + (self.__config.core_spacing * (self.__cores_per_row -1))
+            (self._core_width * self._cores_per_row) + (self._config.core_spacing * (self._cores_per_row -1))
         base_height =\
-            (self.__core_height * self.__config.core_rows) + (self.__config.core_spacing * (self.__config.core_rows - 1))
+            (self._core_height * self._config.core_rows) + (self._config.core_spacing * (self._config.core_rows - 1))
 
         if None != direct_surface and None != direct_rect:
             assert(base_width <= direct_rect[2] and base_height <= direct_rect[3])
 
-            self.__using_direct_surface = True
-            self.__working_surface = direct_surface.subsurface(direct_rect)
-            self.__direct_rect = direct_rect
+            self._working_surface = direct_surface.subsurface(direct_rect)
+            self._direct_rect = direct_rect
         else:
-            self.__using_direct_surface = False
-            self.__working_surface = pygame.Surface((base_width, base_height), surface_flags)
+            self._working_surface = pygame.Surface((base_width, base_height), surface_flags)
 
         # Initialize last core activity and do a hack update
         initialize_data = {}
-        for index in range(self.__core_count):
+        for index in range(self._core_count):
             key = "cpu{}_util".format(index)
             initialize_data[key] = 0
-            self.__last_core_activity.append(False)
+            self._last_core_activity.append(False)
 
         self.update(initialize_data)
-        self.__first_run = False
+        self._first_run = False
 
     def update(self, data):
-        assert(None != self.__working_surface and 0 != len(self.__last_core_activity))
-        assert(len(data) >= self.__core_count)
+        assert(self._working_surface is not None)
+        assert(0 != len(self._last_core_activity))
+        assert(len(data) >= self._core_count)
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
         # Copy in last core surface, we will only update the altered representations
-        #self.__base_surface.blit(self.__last_base_surface, (0, 0))
+        #self._base_surface.blit(self._last_base_surface, (0, 0))
 
         core_origin_x = 0
         core_origin_y = 0
         core_activity_tracking = []
-        for index in range(self.__core_count):
+        for index in range(self._core_count):
 
             key_name = "cpu{}_util".format(index)
             core_activity_value = 0
@@ -111,7 +110,7 @@ class SimpleCoreVisualizer:
                     #traceback.print_exc()
 
             core_active = False
-            if core_activity_value >= self.__config.activity_threshold_percent:
+            if core_activity_value >= self._config.activity_threshold_percent:
                 #print("Core{} active at {}%".format(index, core_activity_value))
                 core_active = True
 
@@ -119,36 +118,32 @@ class SimpleCoreVisualizer:
             core_activity_tracking.append(core_active)
 
             # No need to re-draw if status hasn't changed
-            if self.__last_core_activity[index] == core_active and self.__first_run != False:
+            if self._last_core_activity[index] == core_active and self._first_run is not False:
                 continue
 
-            core_color = self.__config.inactive_color
+            core_color = self._config.inactive_color
             if core_active:
-                core_color = self.__config.active_color
+                core_color = self._config.active_color
 
             pygame.draw.rect(
-                self.__working_surface, 
+                self._working_surface, 
                 core_color, 
-                (core_origin_x, core_origin_y, self.__core_width, self.__core_width)
+                (core_origin_x, core_origin_y, self._core_width, self._core_width)
             )
 
-            if len(core_activity_tracking) == self.__cores_per_row:
+            if len(core_activity_tracking) == self._cores_per_row:
                 # Move to the next row
-                core_origin_y += self.__core_width + self.__config.core_spacing
+                core_origin_y += self._core_width + self._config.core_spacing
                 core_columns_drawn = 0
                 core_origin_x = 0
             else:
                 # Move to the next column
-                core_origin_x += self.__core_width + self.__config.core_spacing
+                core_origin_x += self._core_width + self._config.core_spacing
 
-
-        #assert(len(self.__last_core_activity) == len(core_activity_tracking))
-        self.__last_core_activity = core_activity_tracking
-
+        #assert(len(self._last_core_activity) == len(core_activity_tracking))
+        self._last_core_activity = core_activity_tracking
 
         if g_benchmark:
             print("BENCHMARK: CoreVisualizer: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface, self.__direct_rect
-
-
+        return self._working_surface, self._direct_rect

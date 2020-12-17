@@ -50,10 +50,10 @@ class MatrixScreensaver:
     def start(
         cls,
         surface = None, 
-        startup_message = "", config = MatrixScreensaverConfig(), 
-        stop_requested = lambda : False, data_queue_length = lambda : 0):
+        startup_message="", config=MatrixScreensaverConfig(), 
+        stop_requested=lambda : False, data_queue_length=lambda : 0):
 
-        if None == surface:
+        if surface is None:
             surface = pygame.display.get_surface()
         
         assert(None != surface)
@@ -69,7 +69,7 @@ class MatrixScreensaver:
         display_size = (display_info.current_w, display_info.current_h)
 
         # Font and letters setup
-        if None == config.matrix_font:
+        if config.matrix_font is None:
             matrix_font = pygame.font.Font(pygame.font.get_default_font(), 14)
         else:
             matrix_font = config.matrix_font

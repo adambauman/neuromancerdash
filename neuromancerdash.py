@@ -77,7 +77,7 @@ def get_command_args(argv):
         elif opt in ("--aidasse"):
             aida_sse_server = arg
 
-    if (None == aida_sse_server):
+    if (aida_sse_server is None):
         print_usage()
         sys.exit()
 
@@ -85,7 +85,7 @@ def get_command_args(argv):
 
 def main(argv):
     aida_sse_server = get_command_args(argv)
-    assert(None != aida_sse_server)
+    assert(aida_sse_server is not None)
 
     if __debug__:
         print("Passed arguments:")
@@ -215,7 +215,7 @@ def main(argv):
             ticks_since_last_data = 0
 
         # Best attempt to grab DHT22 Data for ambient temperature and humidity readings
-        if None != dht22_deque:
+        if dht22_deque is not None:
             if data_queue_maxlen <= len(dht22_deque):
                 dht22_data = dht22_deque.popleft()
                 dht22_last_data = dht22_data

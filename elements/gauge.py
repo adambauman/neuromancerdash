@@ -48,51 +48,51 @@ class GaugeConfig:
         self.label = ""
 
 class FlatArcGauge:
-    __config = None
+    _config = None
 
-    __working_surface = None
-    __using_direct_surface = False
+    _working_surface = None
+    _using_direct_surface = False
 
-    __current_value = None
+    _current_value = None
 
-    __static_elements_surface = None # Should not be changed after init
-    __needle_surface = None # Should not be changed after init
-    __needle_shadow_surface = None  # Should not be changed after init
+    _static_elements_surface = None # Should not be changed after init
+    _needle_surface = None # Should not be changed after init
+    _needle_shadow_surface = None  # Should not be changed after init
 
 
     def __init__(self, gauge_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(None != gauge_config.data_field)
         assert(0 < gauge_config.radius)
 
-        self.__config = gauge_config
-        self.__font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), self.__config.value_font_size)
-        self.__font_gauge_value.strong = True
+        self._config = gauge_config
+        self._font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), self._config.value_font_size)
+        self._font_gauge_value.strong = True
 
-        diameter = self.__config.radius * 2
+        diameter = self._config.radius * 2
         base_size = (diameter, diameter)
-        #self.__working_surface = pygame.Surface(base_size, surface_flags)
+        #self._working_surface = pygame.Surface(base_size, surface_flags)
 
         if None != direct_surface and None != direct_rect:
-            self.__working_surface = direct_surface.subsurface(direct_rect)
-            self.__using_direct_surface = True
+            self._working_surface = direct_surface.subsurface(direct_rect)
+            self._using_direct_surface = True
         else:
-            self.__working_surface = pygame.Surface(base_size, surface_flags)
-            self.__using_direct_surface = False
+            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self._using_direct_surface = False
         
-        self.__static_elements_surface = pygame.Surface(base_size, surface_flags)
-        self.__prepare_constant_elements(surface_flags)
-        assert(None != self.__static_elements_surface)
+        self._static_elements_surface = pygame.Surface(base_size, surface_flags)
+        self._prepare_constant_elements(surface_flags)
+        assert(None != self._static_elements_surface)
 
 
-    def __prepare_constant_elements(self, surface_flags):
-        assert(None != self.__static_elements_surface)
-        assert(0 < self.__config.aa_multiplier)
+    def _prepare_constant_elements(self, surface_flags):
+        assert(None != self._static_elements_surface)
+        assert(0 < self._config.aa_multiplier)
         
         # NOTE: (Adam) 2020-12-11 Careful with source image sizes if running on a weaker
         #           board like the RPi Zero, generation could take a while if you go overboard. 
 
         if __debug__:
-            print("Preparing {} arc gauge components...".format(self.__config.data_field.field_name))
+            print("Preparing {} arc gauge components...".format(self._config.data_field.field_name))
 
         # Have tried drwaing with pygame.draw and gfxdraw but the results were sub-par. Now using large
         # PNG shapes to build up the gauge then scaling down to final size.
@@ -109,93 +109,93 @@ class FlatArcGauge:
 
         # Draw background
         bg_surface = pygame.Surface((temp_surface.get_height(), temp_surface.get_width()), surface_flags | pygame.SRCALPHA)
-        bg_color = pygame.Color(self.__config.bg_color)
+        bg_color = pygame.Color(self._config.bg_color)
         pygame.draw.circle(bg_surface, bg_color, center, scaled_radius)
-        bg_surface.set_alpha(self.__config.bg_alpha)
+        bg_surface.set_alpha(self._config.bg_alpha)
         temp_surface.blit(bg_surface, (0, 0))
 
         # Apply color to main arc and blit
-        arc_main_color = pygame.Color(self.__config.arc_main_color)
+        arc_main_color = pygame.Color(self._config.arc_main_color)
         arc_bitmap.fill(arc_main_color, special_flags = pygame.BLEND_RGBA_MULT)
         temp_surface.blit(arc_bitmap, (0, 0))
 
         # Apply color to redline and blit
-        arc_redline_color = pygame.Color(self.__config.arc_redline_color)
+        arc_redline_color = pygame.Color(self._config.arc_redline_color)
         redline_bitmap.fill(arc_redline_color, special_flags = pygame.BLEND_RGBA_MULT)
-        if self.__config.counter_sweep:
+        if self._config.counter_sweep:
             temp_surface.blit(pygame.transform.flip(redline_bitmap, True, False), (0, 0))
         else:
             temp_surface.blit(redline_bitmap, (0, 0))
 
         # Draw static text
         # Unit
-        if self.__config.show_unit_symbol:
+        if self._config.show_unit_symbol:
             font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 120)
             font_unit.strong = False
-            unit_text_surface = font_unit.render(self.__config.data_field.unit.symbol, self.__config.unit_text_color)
+            unit_text_surface = font_unit.render(self._config.data_field.unit.symbol, self._config.unit_text_color)
             center_align = Helpers.calculate_center_align(temp_surface, unit_text_surface[0])
             temp_surface.blit(unit_text_surface[0], (center_align[0], center_align[1] + 300))
 
         # Scale to the final size
         scale_to_size = (
-            self.__static_elements_surface.get_width(), 
-            self.__static_elements_surface.get_height()
+            self._static_elements_surface.get_width(), 
+            self._static_elements_surface.get_height()
         )
         scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
 
         # Clear member static_elements surface and blit our scaled surface
-        self.__static_elements_surface.fill((0, 0, 0, 0))
-        self.__static_elements_surface = scaled_surface.copy()
+        self._static_elements_surface.fill((0, 0, 0, 0))
+        self._static_elements_surface = scaled_surface.copy()
      
         # Setup needle elements, these will be rotated when blitted but the memeber surfaces will remain static
         needle_bitmap = pygame.image.load(os.path.join(AssetPath.gauges, "arc_1_needle_1.png")).convert_alpha()
         
         # Apply color to needle, scale, then blit out to the needle surface
-        needle_color = pygame.Color(self.__config.needle_color)
+        needle_color = pygame.Color(self._config.needle_color)
         needle_bitmap.fill(needle_color, special_flags = pygame.BLEND_RGBA_MULT)
         needle_center = Helpers.calculate_center_align(temp_surface, needle_bitmap)
         temp_surface.fill((0, 0, 0, 0))
         temp_surface.blit(needle_bitmap, needle_center)
 
         needle_scaled_surface = pygame.transform.smoothscale(temp_surface, scale_to_size)
-        self.__needle_surface = needle_scaled_surface.copy()
+        self._needle_surface = needle_scaled_surface.copy()
 
         # Needle shadow
-        if self.__config.draw_shadow:
-            self.__needle_shadow_surface = self.__needle_surface.copy()
-            shadow_color = pygame.Color(self.__config.shadow_color)
-            shadow_color.a = self.__config.shadow_alpha
-            self.__needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
+        if self._config.draw_shadow:
+            self._needle_shadow_surface = self._needle_surface.copy()
+            shadow_color = pygame.Color(self._config.shadow_color)
+            shadow_color.a = self._config.shadow_alpha
+            self._needle_shadow_surface.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
 
         if __debug__:
             print("Done generating components!")
         
     def draw_update(self, value):
-        assert(None != self.__working_surface)
+        assert(None != self._working_surface)
 
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
         # Return the previous working surface if the value hasn't changed
-        if self.__current_value == value:
-            return self.__working_surface
+        if self._current_value == value:
+            return self._working_surface
         else:
-            self.__working_surface.fill((0, 0, 0, 0))
+            self._working_surface.fill((0, 0, 0, 0))
 
-        #self.__working_surface = self.__static_elements_surface.copy()
-        self.__working_surface.blit(self.__static_elements_surface, (0, 0))
+        #self._working_surface = self._static_elements_surface.copy()
+        self._working_surface.blit(self._static_elements_surface, (0, 0))
 
-        max_value = self.__config.data_field.max_value
-        min_value = self.__config.data_field.min_value
+        max_value = self._config.data_field.max_value
+        min_value = self._config.data_field.min_value
         arc_transposed_value = Helpers.transpose_ranges(float(value), max_value, min_value, -135, 135)
 
         # Needle
         # NOTE: (Adam) 2020-11-17 Not scaling but rotozoom provides a cleaner rotation surface
-        rotated_needle = pygame.transform.rotozoom(self.__needle_surface, arc_transposed_value, 1)
+        rotated_needle = pygame.transform.rotozoom(self._needle_surface, arc_transposed_value, 1)
 
         # Shadow
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
-        if self.__config.draw_shadow:
+        if self._config.draw_shadow:
             abs_change_from_zero = abs(arc_transposed_value)
             shadow_distance = 4 + ((abs(arc_transposed_value) / 135) * 10)
 
@@ -204,41 +204,41 @@ class FlatArcGauge:
                 shadow_rotation += shadow_distance
             else: #clockwise
                 shadow_rotation += -shadow_distance
-            rotated_shadow = pygame.transform.rotozoom(self.__needle_shadow_surface, shadow_rotation, 0.93)
+            rotated_shadow = pygame.transform.rotozoom(self._needle_shadow_surface, shadow_rotation, 0.93)
             #needle_shadow.set_alpha(20)
-            shadow_center = Helpers.calculate_center_align(self.__working_surface, rotated_shadow)
-            self.__working_surface.blit(rotated_shadow, shadow_center)
+            shadow_center = Helpers.calculate_center_align(self._working_surface, rotated_shadow)
+            self._working_surface.blit(rotated_shadow, shadow_center)
 
-        needle_center = Helpers.calculate_center_align(self.__working_surface, rotated_needle)
-        self.__working_surface.blit(rotated_needle, needle_center)
+        needle_center = Helpers.calculate_center_align(self._working_surface, rotated_needle)
+        self._working_surface.blit(rotated_needle, needle_center)
 
         # Value Text
-        value_color = self.__config.value_text_color
-        if None !=  self.__config.data_field.warn_value:
-            if not self.__config.counter_sweep and int(value) > self.__config.data_field.warn_value:
+        value_color = self._config.value_text_color
+        if None !=  self._config.data_field.warn_value:
+            if not self._config.counter_sweep and int(value) > self._config.data_field.warn_value:
                 value_color = Color.windows_red_1 # TODO: configurable warn color?
-            elif self.__config.counter_sweep and int(value) < self.__config.data_field.warn_value:
+            elif self._config.counter_sweep and int(value) < self._config.data_field.warn_value:
                 value_color = Color.windows_red_1 # TODO: configurable warn color?
 
-        if False != self.__config.show_value:
+        if False != self._config.show_value:
 
             value_text = "{}".format(value)
-            if self.__config.show_label_instead_of_value:
-                value_text = self.__config.label
+            if self._config.show_label_instead_of_value:
+                value_text = self._config.label
 
-            value_surface = self.__font_gauge_value.render(value_text, value_color)
+            value_surface = self._font_gauge_value.render(value_text, value_color)
 
-            if None != self.__config.value_font_origin:
-                value_origin = self.__config.value_font_origin
+            if None != self._config.value_font_origin:
+                value_origin = self._config.value_font_origin
             else:
-                value_origin = Helpers.calculate_center_align(self.__working_surface, value_surface[0])
+                value_origin = Helpers.calculate_center_align(self._working_surface, value_surface[0])
 
-            self.__working_surface.blit(value_surface[0], value_origin)
+            self._working_surface.blit(value_surface[0], value_origin)
 
         # Track for the next update
         self.current_value = value
 
         if g_benchmark:
-            print("BENCHMARK: ArcGauge {}: {}ms".format(self.__config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
+            print("BENCHMARK: ArcGauge {}: {}ms".format(self._config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface, None
+        return self._working_surface, None

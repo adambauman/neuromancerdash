@@ -46,47 +46,47 @@ class BarGraphConfig:
 
 
 class BarGraph:
-    __config = None
-    __working_surface = None
-    __static_overlay_surface = None
-    __font = None
+    _config = None
+    _working_surface = None
+    _static_overlay_surface = None
+    _font = None
 
-    __use_direct_draw = False
-    __direct_rect = None
+    _use_direct_draw = False
+    _direct_rect = None
 
     current_value = None
 
     def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert(0 != bar_graph_config.size[0] and 0 != bar_graph_config.size[1])
 
-        self.__config = bar_graph_config
+        self._config = bar_graph_config
 
         if None != direct_surface and None != direct_rect:
-            self.__working_surface = direct_surface.subsurface(direct_rect)
-            self.__using_direct_surface = True
-            self.__direct_rect = direct_rect
+            self._working_surface = direct_surface.subsurface(direct_rect)
+            self._using_direct_surface = True
+            self._direct_rect = direct_rect
         else:
-            self.__working_surface = pygame.Surface(base_size, surface_flags)
-            self.__using_direct_surface = False
+            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self._using_direct_surface = False
 
         self.__setup_bargraph__(surface_flags)
 
     def __setup_bargraph__(self, surface_flags):
-        assert(None != self.__config)
+        assert(None != self._config)
 
         # Use actual data field minmax if it's present in the config
-        if None != self.__config.dash_data:
-            self.__config.value_range = (self.__config.dash_data.min_value, self.__config.dash_data.max_value)
+        if None != self._config.dash_data:
+            self._config.value_range = (self._config.dash_data.min_value, self._config.dash_data.max_value)
 
         self.__prepare_static_overlay__(surface_flags)
 
     def __prepare_static_overlay__(self, surface_flags):
-        assert(None != self.__config)
+        assert(None != self._config)
 
         # Sets up static elements like min/max values
         # Must support alpha
-        self.__static_overlay_surface = pygame.Surface(self.__config.size, surface_flags | pygame.SRCALPHA)
-        config = self.__config
+        self._static_overlay_surface = pygame.Surface(self._config.size, surface_flags | pygame.SRCALPHA)
+        config = self._config
         font = config.font
 
         x_padding = 3
@@ -104,7 +104,7 @@ class BarGraph:
                 # Place y-centered on the left with a small indent
                 origin = (x_padding, (config.size[1] / 2) - (shadow_text.get_height() / 2) + 1)
 
-            self.__static_overlay_surface.blit(shadow_text, origin)
+            self._static_overlay_surface.blit(shadow_text, origin)
         
         unit_text = None
         # Draw unit if position is valid. Otherwise will be draw with max value
@@ -119,7 +119,7 @@ class BarGraph:
                 origin = config.unit_position
                 assert(origin[0] < config.size[0] and origin[1] < config.size[1])
 
-                self.__static_overlay_surface.blit(shadow_text, origin)
+                self._static_overlay_surface.blit(shadow_text, origin)
 
         # Max value if position is valid. Otherwise we'll draw this with current value during updates
         if False != config.max_value_draw and None != config.max_value_position:
@@ -133,25 +133,25 @@ class BarGraph:
             origin = config.max_value_position
             assert(origin[0] < config.size[0] and origin[1] < config.size[1])
 
-            self.__static_overlay_surface.blit(shadow_text, origin)
+            self._static_overlay_surface.blit(shadow_text, origin)
 
     def draw_update(self, value):
-        assert(None != self.__working_surface)
-        assert(None != self.__static_overlay_surface)
+        assert(None != self._working_surface)
+        assert(None != self._static_overlay_surface)
         
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self.__working_surface.fill(self.__config.background_color)
+        self._working_surface.fill(self._config.background_color)
 
-        config = self.__config
+        config = self._config
 
         # Draw the value rect
         data_field = config.dash_data
         transposed_value = Helpers.transpose_ranges(
             float(value), config.value_range[1], config.value_range[0], config.size[0], 0)
         draw_rect = (0, 0, transposed_value, config.size[1])
-        pygame.draw.rect(self.__working_surface, config.foreground_color, draw_rect)
+        pygame.draw.rect(self._working_surface, config.foreground_color, draw_rect)
 
         # Draw value, unit, max value text if configured
         x_padding = 3
@@ -176,14 +176,14 @@ class BarGraph:
             shadow_text_origin = (
                 config.size[0] - x_padding - shadow_text.get_width(), 
                 (config.size[1] / 2) - (shadow_text.get_height() / 2) + 1)
-            self.__working_surface.blit(shadow_text, shadow_text_origin)
+            self._working_surface.blit(shadow_text, shadow_text_origin)
 
         # Draw static overlay with min/max values, etc.
-        self.__working_surface.blit(self.__static_overlay_surface, (0, 0))
+        self._working_surface.blit(self._static_overlay_surface, (0, 0))
 
-        self.__last_value = value
+        self._last_value = value
 
         if g_benchmark:
             print("BENCHMARK: BarGraph {}: {}ms".format(self.config.dash_data.field_name, pygame.time.get_ticks() - start_ticks))
 
-        return self.__working_surface, self.__direct_rect
+        return self._working_surface, self._direct_rect
