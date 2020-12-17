@@ -181,6 +181,7 @@ def main(argv):
         for event in pygame.event.get():
             # TODO: Swap for GPIO read of hardware key
             if __debug__:
+                # For debug change pages on press of the UP key
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
                         # Bump up a page, wrap around if it would overrun page list
