@@ -17,7 +17,9 @@ class Color:
     black = "#000000"
     cyan_dark = "#1c2f2b"
     # Colors pulled from Win10 design doc swatches
+    # TODO: Convert all to RGBA values
     windows_cyan_1 = "#00b693"
+    windows_cyan_1_medium = "#00a585"
     windows_cyan_1_dark = "#015b4a"
     windows_cyan_2 = "#008589"
     windows_red_1 = "#eb2400"

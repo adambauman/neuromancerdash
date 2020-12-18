@@ -26,7 +26,7 @@ class BarGraphConfig:
         # Use system default if font isn't passed in
         self.text_color = Color.white
         self.text_shadow_draw = True
-        self.text_shadow_color = (0, 0, 0, 80)
+        self.text_shadow_color = (0, 0, 0, 255) # Supports alpha blending
         if None == font:
             self.font = pygame.freetype.SysFont(pygame.freetype.get_default_font(), 12)
         else:

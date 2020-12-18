@@ -163,9 +163,9 @@ class PumpStatusConfig:
             self.temperature_font = font
         
         self.temperature_font_color = Color.white
-        self.temperature_dropshadow_color = Color.black
+        self.temperature_shadow_color = Color.black
         self.pump_indicator_bg_color = Color.windows_cyan_1
-        self.draw_temperature_dropshadow = True
+        self.draw_temperature_shadow = True
         self.warning_temperature = 80
         self.draw_heat_colorization = True # Gradually make temperature text appear more red as temps increase
         self.start_heat_colorization_value = 50 # Value to start injecting the red. Remains solid green below this
@@ -240,7 +240,7 @@ class PumpStatus:
         #\u00b0
         shadowed_temperature_text = Helpers.get_shadowed_text(
                 self._config.temperature_font, "{}\u00b0".format(temperature_value), 
-                self._config.temperature_font_color)
+                self._config.temperature_font_color, self._config.temperature_shadow_color)
         # TODO: Dynamic temperature origin tied to scaled size
         self._working_surface.blit(shadowed_temperature_text, self._temperature_origin)
 

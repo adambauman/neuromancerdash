@@ -58,14 +58,11 @@ class CoolingConfigs:
         self.front_intake_fan_bar.dash_data = DashData.chassis_1_fan
 
         # Other elements
-        self.cpu_fan_bar = copy(base_fan_bar_config)
-        self.cpu_fan_bar.size = (100, 20)
-        self.cpu_fan_bar.dash_data = DashData.cpu_fan
-
         self.gpu_fan_bar = copy(base_fan_bar_config)
         self.gpu_fan_bar.dash_data = DashData.gpu_fan
 
         self.cpu_pump_status = PumpStatusConfig((100, 100))
+        self.cpu_pump_status.pump_indicator_bg_color = Color.windows_cyan_1_medium
 
 class CoolingPositions:
 
@@ -75,7 +72,7 @@ class CoolingPositions:
         exhaust_fans_bars_width = element_configs.rear_exhaust_bar.size[0]
         exhaust_fans_bars_spacing = 20
         exhaust_fans_x = 10
-        exhaust_fans_y = 10
+        exhaust_fans_y = 0
         exhaust_fan_bar_size = element_configs.rear_exhaust_bar.size
         self.rear_exhaust_fan_bar = pygame.Rect((exhaust_fans_x, exhaust_fans_y), exhaust_fan_bar_size)
         forward_exhaust_fan_x = exhaust_fans_x + exhaust_fans_bars_width + exhaust_fans_bars_spacing
@@ -86,10 +83,10 @@ class CoolingPositions:
         self.front_intake_fan_bars = pygame.Rect((350, 40), front_intake_bar_size)
 
         bottom_intake_fan_bar_size = element_configs.bottom_intake_fan_bar.size
-        self.bottom_intake_fan_bars = pygame.Rect((10, 283), bottom_intake_fan_bar_size)
+        self.bottom_intake_fan_bars = pygame.Rect((10, display_size[1] - bottom_intake_fan_bar_size[1]), bottom_intake_fan_bar_size)
 
-        self.cpu_pump = pygame.Rect((80, 80), element_configs.cpu_pump_status.size)
-        #self.cpu_fan_bar = pygame.Rect(70, 130, 110, 20)
+        self.cpu_pump = pygame.Rect((50, 60), element_configs.cpu_pump_status.size)
+
         #self.gpu_fan_bar = pygame.Rect(70, 180, 110, 20)
 
         self.temperature_humidity_rect = pygame.Rect(406, 180, 74, 56)
