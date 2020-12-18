@@ -13,7 +13,7 @@ import math
 import pygame
 import pygame.gfxdraw
 
-from dashboard_painter import Color, FontPaths, DataField, DashData, AssetPath, Units
+from dashboard_painter import Color, FontPath, DataField, DashData, AssetPath, Units
 
 class Helpers:
     @staticmethod
@@ -52,7 +52,7 @@ class DiskActivityVisualizer:
         self.__disk_letter_list = disk_letter_list
         self.__disk_bitmap = pygame.image.load(os.path.join(AssetPath.misc, "disk_02.png"))
         self.__disk_active_bitmap = pygame.image.load(os.path.join(AssetPath.misc, "disk_02_active.png"))
-        self.__letter_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        self.__letter_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
 
         for _ in range(self.__disk_count):
             self.__last_activity_values.append(False)

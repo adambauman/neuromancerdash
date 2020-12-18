@@ -7,7 +7,10 @@
 
 import pygame
 
-from .styles import Color
+import os
+
+from .helpers import Helpers
+from .styles import Color, AssetPath, FontPath
 
 # Set true to benchmark the update process
 g_benchmark = False
@@ -146,4 +149,102 @@ class SimpleCoreVisualizer:
         if g_benchmark:
             print("BENCHMARK: CoreVisualizer: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
+        return self._working_surface, self._direct_rect
+
+class PumpStatusConfig:
+    def __init__(self, size=(80, 80), temperature_font=None):
+        self.size = size
+        if temperature_font is None:
+            if not pygame.freetype.get_init():
+                pygame.freetype.init() # TODO: Why is this the only class constructor that requires this?
+            self.temperature_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 18)
+            self.temperature_font.kerning = True
+        else:
+            self.temperature_font = font
+        
+        self.temperature_font_color = Color.white
+        self.temperature_dropshadow_color = Color.black
+        self.pump_indicator_bg_color = Color.windows_cyan_1
+        self.draw_temperature_dropshadow = True
+        self.warning_temperature = 80
+        self.draw_heat_colorization = True # Gradually make temperature text appear more red as temps increase
+        self.start_heat_colorization_value = 50 # Value to start injecting the red. Remains solid green below this
+
+        self.pump_rpm_underspeed_value = 900
+        self.pump_indicator_warning_color = Color.windows_red_1
+
+class PumpStatus:
+    _working_surface = None
+    _cpu_pump = None
+    _pump_indicator_okay = None
+    _pump_indicator_warn = None
+    _temperature_origin = (44, 42)
+
+    _current_temperature_value = None
+    _current_rpm_value = None
+
+    # TODO: Pass in a config for colors, pump graphic, etc?
+
+    def __init__(self, pump_status_config=PumpStatusConfig(), direct_surface=None, direct_rect=None, surface_flags=None):
+
+        self._config = pump_status_config
+        self._surface_flags = surface_flags
+        self._direct_rect = direct_rect
+
+        if direct_surface and direct_rect:
+            self._working_surface = direct_surface.subsurface(direct_rect)
+        else:
+            self._working_surface = pygame.Surface(size, self._surface_flags)
+
+        # Prepare the initial working surface
+        self._working_surface.fill((0,0,0,0))
+        cpu_pump = pygame.image.load(os.path.join(AssetPath.hardware, "corsair_h100_head.png")).convert_alpha()
+        scale_modifier = self._config.size[0] / cpu_pump.get_width()
+        # CPU pump graphic is pretty big, scale it down to fit the configured element width
+        self._cpu_pump = pygame.transform.rotozoom(cpu_pump, 0, scale_modifier)
+
+        # Create initial indicator surfaces
+        # Scale the pump indicator graphic as well!
+        pump_indicator = pygame.image.load(os.path.join(AssetPath.hardware, "corsair_h100_head_indicator.png")).convert_alpha()
+        self._pump_indicator_okay = pygame.transform.rotozoom(pump_indicator, 0, scale_modifier)
+        self._pump_indicator_okay.fill(self._config.pump_indicator_bg_color, special_flags=pygame.BLEND_RGBA_MULT)
+        self._pump_indicator_warn = pygame.transform.rotozoom(pump_indicator, 0, scale_modifier)
+        self._pump_indicator_warn.fill(self._config.pump_indicator_warning_color, special_flags=pygame.BLEND_RGBA_MULT)
+
+
+    def draw_update(self, temperature_value, pump_rpm_value):
+        assert(self._working_surface is not None)
+        assert(self._pump_indicator_okay is not None and self._pump_indicator_warn is not None)
+
+        self._working_surface.blit(self._cpu_pump, (0, 0))
+
+        # Save some processing and return previous surface. If using direct surface draw the previous area will 
+        # remain static
+        # unless you draw something over/under it.
+        #if self._current_temperature_value == temperature_value and self._current_rpm_value == pump_rpm_value:
+        #    return self._working_surface, None
+        #else:
+        #    if __debug__:
+        #        print("Updating PumpStatus, temp: {}, pump_rpm: {}".format(temperature_value, pump_rpm_value))
+
+            # Do not clear the entire working surface, everything we need to update is within the indicator 
+            # surface's bounds
+        if self._config.pump_rpm_underspeed_value > int(pump_rpm_value):
+            # Pump is under speed, use warning surface!
+            self._working_surface.blit(self._pump_indicator_warn, (0, 0))
+        else:
+            self._working_surface.blit(self._pump_indicator_okay, (0, 0))
+
+        # TODO: Font coloration based on temperature, if enabled
+        # Draw temperature text within the indicator
+        #\u00b0
+        shadowed_temperature_text = Helpers.get_shadowed_text(
+                self._config.temperature_font, "{}\u00b0".format(temperature_value), 
+                self._config.temperature_font_color)
+        # TODO: Dynamic temperature origin tied to scaled size
+        self._working_surface.blit(shadowed_temperature_text, self._temperature_origin)
+
+        self._current_temperature_value = temperature_value
+        self._current_rpm_value = pump_rpm_value
+            
         return self._working_surface, self._direct_rect

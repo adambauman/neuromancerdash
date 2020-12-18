@@ -8,7 +8,7 @@
 import pygame
 
 from data.dataobjects import DataField, DashData
-from .styles import Color, FontPaths, AssetPath
+from .styles import Color, FontPath, AssetPath
 from .helpers import Helpers
 
 # Set true to benchmark the update process
@@ -64,7 +64,7 @@ class CPUDetails:
         # Config and fonts
         self._config = details_stack_config
         if self._config.font_normal is None:
-            self._font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
             self._font_normal.kerning = True
         else:
             self._font_normal = self._config.font_normal
@@ -172,7 +172,7 @@ class GPUDetails:
         # Config and fonts
         self._config = details_stack_config
         if self._config.font_normal is None:
-            self._font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
             self._font_normal.kerning = True
 
         if direct_surface is not None:
@@ -293,12 +293,12 @@ class FPSText:
         self._config = fps_config
 
         if self._config.number_font is None:
-            self._config.number_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 50)
+            self._config.number_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 50)
             self._config.number_font.kerning = True
             self._direct_rect = fps_field_rect
 
         if self._config.label_font is None:
-            self._config.label_font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self._config.label_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
             self._config.label_font.kerning = True
 
         if direct_surface is not None:
@@ -344,7 +344,7 @@ class TemperatureHumidity:
     def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0):
 
         if font is None:
-            self._font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
             self._font.kerning = True
         else:
             self._font = font
@@ -427,7 +427,7 @@ class SimpleText:
         self._text_template = text_template
 
         if font is None:
-            self._font = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         else:
             self._font = font
 
@@ -468,7 +468,7 @@ class NetworkInformation:
         self._label_color = label_color
 
         if font is None:
-            self._font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+            self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         else:
             self._font_normal = font
 

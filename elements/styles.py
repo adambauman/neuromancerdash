@@ -34,8 +34,9 @@ class AssetPath:
     misc = "assets/images/misc"
     backgrounds = "assets/images/backgrounds"
     icons = "assets/images/icons"
+    hardware = "assets/images/hardware"
 
-class FontPaths:
+class FontPath:
     # TODO: (Adam) 2020-11-15 Use os.path.join instead of string concact
     @staticmethod
     def open_sans_regular():

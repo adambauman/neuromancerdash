@@ -10,7 +10,7 @@ import pygame
 import os
 
 from .helpers import Helpers
-from .styles import Color, FontPaths, AssetPath
+from .styles import Color, FontPath, AssetPath
 
 # Set true to benchmark the update process
 g_benchmark = False
@@ -65,7 +65,7 @@ class FlatArcGauge:
         assert(0 < gauge_config.radius)
 
         self._config = gauge_config
-        self._font_gauge_value = pygame.freetype.Font(FontPaths.fira_code_semibold(), self._config.value_font_size)
+        self._font_gauge_value = pygame.freetype.Font(FontPath.fira_code_semibold(), self._config.value_font_size)
         self._font_gauge_value.strong = True
 
         diameter = self._config.radius * 2
@@ -130,7 +130,7 @@ class FlatArcGauge:
         # Draw static text
         # Unit
         if self._config.show_unit_symbol:
-            font_unit = pygame.freetype.Font(FontPaths.fira_code_semibold(), 120)
+            font_unit = pygame.freetype.Font(FontPath.fira_code_semibold(), 120)
             font_unit.strong = False
             unit_text_surface = font_unit.render(self._config.data_field.unit.symbol, self._config.unit_text_color)
             center_align = Helpers.calculate_center_align(temp_surface, unit_text_surface[0])
@@ -177,8 +177,9 @@ class FlatArcGauge:
             start_ticks = pygame.time.get_ticks()
 
         # Return the previous working surface if the value hasn't changed
+        # This is fine for direct draw, the previous surface section will be left as it was
         if self._current_value == value:
-            return self._working_surface
+            return self._working_surface, None
         else:
             self._working_surface.fill((0, 0, 0, 0))
 

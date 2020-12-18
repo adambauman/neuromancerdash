@@ -6,11 +6,10 @@
 #
 
 import os
-import pygame
+import pygame, pygame.freetype
 import sys, getopt
 from collections import deque
 import threading
-
 
 # Set true to benchmark various parts of the update process
 g_benchmark = False
@@ -19,8 +18,8 @@ from data.aida64lcdsse import AIDA64LCDSSE
 from utilities.screensaver import MatrixScreensaver
 from pages.systemstats import SystemStats
 from pages.cooling import Cooling
-from elements.styles import FontPaths, Color
-from elements.styles import Color, AssetPath, FontPaths
+from elements.styles import FontPath, Color
+from elements.styles import Color, AssetPath, FontPath
 
 # Simple check for RPi GPIO, will disable any stuff that requires GPIO access so you can
 # debug and develop on other platforms.
@@ -97,6 +96,7 @@ def main(argv):
         GPIO.setup(Hardware.gpio_button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     pygame.init()
+    pygame.freetype.init()
     pygame.mixer.quit()
     pygame.mouse.set_visible(False)
 
@@ -109,7 +109,7 @@ def main(argv):
         print("pygame started display started. driver: {}, display_info: \n{}".format(pygame.display.get_driver(), display_info))
 
     display_surface.fill(Color.black)
-    font_message = pygame.freetype.Font(FontPaths.fira_code_semibold(), 16)
+    font_message = pygame.freetype.Font(FontPath.fira_code_semibold(), 16)
     font_message.kerning = True
     font_message.render_to(display_surface, (10, 10), "Building elements and connecting...", Color.white)
     pygame.display.flip()
@@ -143,8 +143,9 @@ def main(argv):
     base_size = (display_surface.get_width(), display_surface.get_height())
     base_rect = pygame.Rect(0, 0, base_size[0], base_size[1])
     available_pages = []
-    #available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
     available_pages.append(Cooling(base_size, direct_surface=display_surface, direct_rect=base_rect))
+    available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
+
 
     # Track selected page and copies of previously displayed pages
     current_page = 0

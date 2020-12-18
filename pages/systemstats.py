@@ -5,7 +5,7 @@
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
 
-import pygame, pygame.freetype
+import pygame
 
 import os
 from copy import copy
@@ -15,7 +15,7 @@ from datetime import datetime
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
 
-from elements.styles import Color, AssetPath, FontPaths
+from elements.styles import Color, AssetPath, FontPath
 from elements.gauge import FlatArcGauge, GaugeConfig 
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.linegraph import LineGraphReverse, LineGraphConfig
@@ -142,7 +142,7 @@ class SystemStats:
         else:
             self._working_surface = pygame.Surface(self._base_size, surface_flags)
 
-        self.font_normal = pygame.freetype.Font(FontPaths.fira_code_semibold(), 12)
+        self.font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self.font_normal.kerning = True
 
         if __debug__:
