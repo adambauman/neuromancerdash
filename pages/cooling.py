@@ -143,7 +143,7 @@ class Cooling:
         self._icon_home = pygame.image.load(os.path.join(AssetPath.icons, "home_32px.png")).convert_alpha()
         self._icon_home.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
         self._case_profile = pygame.image.load(os.path.join(AssetPath.misc, "case_font_profile.png")).convert_alpha()
-        self._case_profile.fill(Color.grey_20, special_flags=pygame.BLEND_RGBA_MULT)
+        self._case_profile.fill(Color.grey_40, special_flags=pygame.BLEND_RGBA_MULT)
 
     def __draw_front_intake_fans__(self, value, using_direct_surface=False):
         assert(self._surface_flags is not None)
