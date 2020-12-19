@@ -89,7 +89,7 @@ class CoolingPositions:
 
         # Text elements
         self.motherboard_temps_rect = pygame.Rect(175, 73, 130, 100)
-        self.temperature_humidity_rect = pygame.Rect(405, 250, 74, 56)
+        self.home_temperature_rect = pygame.Rect(420, 150, 74, 56)
 
 
 class Cooling:
@@ -109,6 +109,8 @@ class Cooling:
 
         self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self._font_normal.kerning = True
+        self._font_room = pygame.freetype.Font(FontPath.fira_code_semibold(), 16)
+        self._font_room.kerning = True
 
         if __debug__:
             self._background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png")).convert_alpha()
@@ -130,8 +132,6 @@ class Cooling:
 
         self._motherboard_temps = MotherboardTemperatureSensors(
             self._element_positions.motherboard_temps_rect, direct_surface=self._working_surface)
-        self._temperature_humidity = TemperatureHumidity(
-            self._element_positions.temperature_humidity_rect, direct_surface=self._working_surface)
 
         # Not using direct draw, elements need transforms before blit
         self._front_intake_fan_bar = BarGraph(element_configs.front_intake_fan_bar)
@@ -140,6 +140,9 @@ class Cooling:
         # Load image files
         self._icon_linked = pygame.image.load(os.path.join(AssetPath.icons, "linked_24px.png")).convert_alpha()
         self._icon_linked.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
+        self._icon_home = pygame.image.load(os.path.join(AssetPath.icons, "home_32px.png")).convert_alpha()
+        self._icon_home.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
+
 
     def __draw_front_intake_fans__(self, value, using_direct_surface=False):
         assert(self._surface_flags is not None)
@@ -177,6 +180,29 @@ class Cooling:
             update_rect = self._working_surface.blit(dual_fan_surface, update_rect)
          
         return dual_fan_surface, update_rect
+
+    def __draw_room_temperature__(self, room_temperature, using_direct_draw=True):
+        assert(self._icon_home)
+        
+        # TODO: Toss this in an element class for reuse and optimization
+        text_surface = self._font_room.render("{}\u00b0F".format(room_temperature), Color.windows_cyan_1)[0]
+        icon_text_spacing = 4
+        required_height = icon_text_spacing + self._font_room.get_sized_height() + self._icon_home.get_height()
+        if text_surface.get_width() > self._icon_home.get_width():
+            required_width = text_surface.get_width()
+        else:
+            required_width = self._icon_home.get_width()
+        
+        final_surface = pygame.Surface((required_width, required_height), self._surface_flags)
+        final_surface.blit(self._icon_home, (13, 0)) # TODO: Make dynamic
+        final_surface.blit(text_surface, (0, self._icon_home.get_height() + icon_text_spacing))
+
+        update_rect = self._element_positions.home_temperature_rect
+        if using_direct_draw:
+            update_rect = self._working_surface.blit(final_surface, update_rect)
+
+        return final_surface, update_rect
+
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
         assert(0 != len(aida64_data))
@@ -226,6 +252,6 @@ class Cooling:
 
         # Ambient temperature and humidity
         if dht22_data is not None:
-            update_rects.append(self._temperature_humidity.draw_update(dht22_data)[1])
+            update_rects.append(self.__draw_room_temperature__(dht22_data.temperature, True)[1])
 
         return self._working_surface, update_rects
