@@ -32,6 +32,8 @@ class BarGraphConfig:
         else:
             self.font = font
 
+        self.draw_background = True
+
         self.current_value_draw = False
         self.current_value_position = None
 
@@ -104,8 +106,8 @@ class BarGraph:
         
         unit_text = None
         # Draw unit if position is valid. Otherwise will be draw with max value
-        if False != config.unit_draw:
-            if True == config.unit_use_full_name:
+        if config.unit_draw:
+            if config.unit_use_full_name:
                 unit_text = config.dash_data.unit.name
             else:
                 unit_text = config.dash_data.unit.symbol
@@ -138,9 +140,9 @@ class BarGraph:
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self._working_surface.fill(self._config.background_color)
-
         config = self._config
+        if config.draw_background:
+            self._working_surface.fill(self._config.background_color)
 
         # Draw the value rect
         data_field = config.dash_data
@@ -166,13 +168,17 @@ class BarGraph:
             else:
                 value_text += " {}".format(config.dash_data.unit.symbol)
 
+        value_position = self._config.current_value_position
         if 0 != len(value_text):
             shadow_text = Helpers.get_shadowed_text(
                 config.font, value_text, config.text_color, config.text_shadow_color)
-            shadow_text_origin = (
-                config.size[0] - x_padding - shadow_text.get_width(), 
-                (config.size[1] / 2) - (shadow_text.get_height() / 2) + 1)
-            self._working_surface.blit(shadow_text, shadow_text_origin)
+
+            if value_position is None:
+                value_position = (
+                    config.size[0] - x_padding - shadow_text.get_width(), 
+                    (config.size[1] / 2) - (shadow_text.get_height() / 2) + 1)
+
+            self._working_surface.blit(shadow_text, value_position)
 
         # Draw static overlay with min/max values, etc.
         self._working_surface.blit(self._static_overlay_surface, (0, 0))

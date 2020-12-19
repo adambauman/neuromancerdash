@@ -7,10 +7,11 @@
 
 import pygame
 
-import os
+import os, sys
 
 from .helpers import Helpers
 from .styles import Color, AssetPath, FontPath
+from .bargraph import BarGraph, BarGraphConfig
 
 # Set true to benchmark the update process
 g_benchmark = False
@@ -164,9 +165,9 @@ class PumpStatusConfig:
         
         self.temperature_font_color = Color.white
         self.temperature_shadow_color = Color.black
-        self.pump_indicator_bg_color = Color.windows_cyan_1
+        self.pump_indicator_bg_color = Color.windows_cyan_1_medium
         self.draw_temperature_shadow = True
-        self.warning_temperature = 80
+        self.warning_temperature = 82
         self.draw_heat_colorization = True # Gradually make temperature text appear more red as temps increase
         self.start_heat_colorization_value = 50 # Value to start injecting the red. Remains solid green below this
 
@@ -183,9 +184,7 @@ class PumpStatus:
     _current_temperature_value = None
     _current_rpm_value = None
 
-    # TODO: Pass in a config for colors, pump graphic, etc?
-
-    def __init__(self, pump_status_config=PumpStatusConfig(), direct_surface=None, direct_rect=None, surface_flags=None):
+    def __init__(self, pump_status_config=PumpStatusConfig(), direct_surface=None, direct_rect=None, surface_flags=0):
 
         self._config = pump_status_config
         self._surface_flags = surface_flags
@@ -227,9 +226,15 @@ class PumpStatus:
         #    if __debug__:
         #        print("Updating PumpStatus, temp: {}, pump_rpm: {}".format(temperature_value, pump_rpm_value))
 
-            # Do not clear the entire working surface, everything we need to update is within the indicator 
-            # surface's bounds
-        if self._config.pump_rpm_underspeed_value > int(pump_rpm_value):
+        # Do not clear the entire working surface, everything we need to update is within the indicator 
+        # surface's bounds
+        draw_warning = False
+        if self._config.pump_rpm_underspeed_value >= int(pump_rpm_value):
+            draw_warning = True
+        if self._config.warning_temperature <= int(temperature_value):
+            draw_warning = True
+
+        if draw_warning:
             # Pump is under speed, use warning surface!
             self._working_surface.blit(self._pump_indicator_warn, (0, 0))
         else:
@@ -237,7 +242,6 @@ class PumpStatus:
 
         # TODO: Font coloration based on temperature, if enabled
         # Draw temperature text within the indicator
-        #\u00b0
         shadowed_temperature_text = Helpers.get_shadowed_text(
                 self._config.temperature_font, "{}\u00b0".format(temperature_value), 
                 self._config.temperature_font_color, self._config.temperature_shadow_color)
@@ -246,5 +250,115 @@ class PumpStatus:
 
         self._current_temperature_value = temperature_value
         self._current_rpm_value = pump_rpm_value
+            
+        return self._working_surface, self._direct_rect
+
+
+class GPUTemperatureConfig:
+    def __init__(self, size=(305, 71), temperature_font=None):
+        self.size = size
+        if temperature_font is None:
+            if not pygame.freetype.get_init():
+                pygame.freetype.init()
+            self.temperature_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 18)
+            self.temperature_font.kerning = True
+        else:
+            self.temperature_font = font
+
+        self.fan_dash_data = None
+        self.temperature_dash_data = None
+        
+        self.temperature_font_color = Color.white
+        self.temperature_shadow_color = Color.black
+        self.indicator_bg_color = Color.windows_cyan_1_medium
+        self.draw_temperature_shadow = True
+        self.warning_temperature = 82
+        self.draw_heat_colorization = True # Gradually make temperature text appear more red as temps increase
+        self.start_heat_colorization_value = 50 # Value to start injecting the red. Remains solid green below this
+        self.indicator_warning_color = Color.windows_red_1
+
+# TODO: This is all a bit of a mismash ATM, clean it up, make more dynamic for sizing, etc.
+class GPUTemperature:
+    _working_surface = None
+    _heatsink_fins = None
+    _indicator_housing = None
+    _indicator_okay = None
+    _indicator_warn = None
+    _indicator_origin = None
+
+    _current_temperature_value = None
+    _current_rpm_value = None
+
+    def __init__(self, pump_status_config=GPUTemperatureConfig(), direct_surface=None, direct_rect=None, surface_flags=0):
+
+        self._config = pump_status_config
+        self._surface_flags = surface_flags
+        self._direct_rect = direct_rect
+
+        if direct_surface and direct_rect:
+            self._working_surface = direct_surface.subsurface(direct_rect)
+        else:
+            self._working_surface = pygame.Surface(size, self._surface_flags)
+
+        fan_graph_config = BarGraphConfig((230, 32), (0,2000))
+        fan_graph_config.draw_background = False
+        fan_graph_config.dash_data = self._config.fan_dash_data
+        fan_graph_config.unit_draw = False
+        fan_graph_config.current_value_draw = True
+        fan_graph_config.current_value_position = (190, 10)
+        fan_graph_config.unit_position = (190, 10)
+        fan_graph_rect = pygame.Rect((0, 29), fan_graph_config.size)
+        self._fan_graph = BarGraph(fan_graph_config, self._working_surface, fan_graph_rect)
+
+        self.__prepare_surfaces_()
+
+
+    def __prepare_surfaces_(self):
+        assert(self._working_surface is not None)
+
+        # Load images, using pre-scaled for now
+        self._heatsink_fins = pygame.image.load(os.path.join(AssetPath.hardware, "gpu_fins.png")).convert_alpha()
+        assert(self._config.size[0] >= self._heatsink_fins.get_width())
+
+        self._indicator_housing = pygame.image.load(os.path.join(AssetPath.hardware, "loose_indicator_housing_scaled.png")).convert_alpha()
+        assert(self._config.size[1] >= self._indicator_housing.get_height())
+
+        indicator_base = pygame.image.load(os.path.join(AssetPath.hardware, "loose_indicator_scaled.png")).convert_alpha()
+        assert(self._indicator_housing.get_width() == indicator_base.get_width() and self._indicator_housing.get_height() == indicator_base.get_height())
+
+        # Setup okay and warning indicators with multiplied fills
+        self._indicator_okay = indicator_base.copy()
+        self._indicator_okay.fill(self._config.indicator_bg_color, special_flags=pygame.BLEND_RGBA_MULT)
+        self._indicator_warn = indicator_base.copy()
+        self._indicator_warn.fill(self._config.indicator_warning_color, special_flags=pygame.BLEND_RGBA_MULT)
+
+
+    def draw_update(self, temperature_value, fan_rpm_value):
+        assert(self._working_surface is not None)
+        assert(self._heatsink_fins is not None)
+        assert(self._indicator_housing is not None)
+        assert(self._indicator_okay is not None and self._indicator_warn is not None)
+
+        indicator_origin = (220, 4)
+        self._working_surface.blit(self._heatsink_fins, (0, 0))
+        self._fan_graph.draw_update(fan_rpm_value)
+        self._working_surface.blit(self._indicator_housing, indicator_origin)
+
+        # TODO: Could add GPU fan warning, lots of modern GPUs spin down when idle though
+        if self._config.warning_temperature <= int(temperature_value):
+            self._working_surface.blit(self._indicator_warn, indicator_origin)
+        else:
+            self._working_surface.blit(self._indicator_okay, indicator_origin)
+
+        # TODO: Font coloration based on temperature, if enabled
+        # Draw temperature text within the indicator
+        shadowed_temperature_text = Helpers.get_shadowed_text(
+                self._config.temperature_font, "{}\u00b0".format(temperature_value), 
+                self._config.temperature_font_color, self._config.temperature_shadow_color)
+        # TODO: Dynamic temperature origin tied to scaled size
+        self._working_surface.blit(shadowed_temperature_text, (242, 32))
+
+        self._current_temperature_value = temperature_value
+        self._current_rpm_value = fan_rpm_value
             
         return self._working_surface, self._direct_rect

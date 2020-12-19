@@ -1,3 +1,4 @@
+
 #
 # disk_visualizer_scratch - messing around with a new disk activity visualizer
 # ============================================================================
@@ -216,3 +217,125 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+
+
+# Went a little too nuts here, save this for future updates to GPUTemperature visualizer?
+
+class GPUTemperature:
+    _working_surface = None
+    _static_elements = None
+    _indicator_okay = None
+    _indicator_warn = None
+    _indicator_origin = None
+    _temperature_origin = (44, 42)
+
+    _current_temperature_value = None
+    _current_rpm_value = None
+
+    def __init__(self, pump_status_config=GPUTemperatureConfig(), direct_surface=None, direct_rect=None, surface_flags=0):
+
+        self._config = pump_status_config
+        self._surface_flags = surface_flags
+        self._direct_rect = direct_rect
+
+        if direct_surface and direct_rect:
+            self._working_surface = direct_surface.subsurface(direct_rect)
+        else:
+            self._working_surface = pygame.Surface(size, self._surface_flags)
+
+        self.__prepare_surfaces_()
+
+
+    def __prepare_surfaces_(self):
+        assert(self._working_surface is not None)
+
+        # Base images are much larger than display, scale to fit using heatsink section height to calculate
+        heatsink_section_unscaled = pygame.image.load(os.path.join(AssetPath.hardware, "gpu_fins_med.png")).convert_alpha()
+        scale_modifier = self._config.size[1] / heatsink_section_unscaled.get_height()
+
+        # Load images
+        heatsink_section = pygame.transform.rotozoom(heatsink_section_unscaled, 0, scale_modifier)
+
+        indicator_base = pygame.transform.rotozoom(
+            pygame.image.load(os.path.join(AssetPath.hardware, "loose_indicator_housing.png")).convert_alpha(),
+            0, scale_modifier)
+
+        indicator_housing = pygame.transform.rotozoom(
+            pygame.image.load(os.path.join(AssetPath.hardware, "loose_indicator_housing.png")).convert_alpha(),
+            0, scale_modifier)
+
+        self._indicator_okay = indicator_base.copy()
+        self._indicator_okay.fill(self._config.indicator_bg_color, special_flags=pygame.BLEND_RGBA_MULT)
+        self._indicator_warn = indicator_base.copy()
+        self._indicator_warn.fill(self._config.indicator_warning_color, special_flags=pygame.BLEND_RGBA_MULT)
+
+        # Reaching the configured size is a best-effort affair, depends on how many heatsink tiles we can fit
+        assert(self._config.size[0] > heatsink_section.get_width())
+        heatsink_section_count = int(self._config.size[0] / heatsink_section.get_width()) # python int() on division rounds towards floor
+
+        # Create the heatsink surface and blit out the sections
+        assert(self._config.size[1] >= heatsink_section.get_height())
+        heatsink_width = heatsink_section_count * heatsink_section.get_width()
+        heatsink = pygame.Surface((heatsink_width, heatsink_section.get_height()), self._surface_flags)
+        for index in range(heatsink_section_count):
+
+            if heatsink_section_count != index:
+                x = index * heatsink_section.get_width()
+                heatsink.blit(heatsink_section, (x, 0))
+            else:
+                # Flip the last element to nicely cap off the heatsink graphic
+                cap_section = pygame.transform.flip(heatsink_section, True)
+                x = heatsink.get_width() - cap_section.get_width()
+                heatsink.blit(cap_section, (x, 0))
+
+        # Create final static elements surface
+        # Default is to draw the indicator one surface section from the right
+        # TODO: Could add this to config once tested
+        indicator_housing_vertical_offset = 4
+        indicator_housing_origin = (
+            heatsink.get_width() - indicator_housing.get_width() - heatsink_section.get_width(), 
+            indicator_housing_vertical_offset)
+        # Save origin for update draws, indicator is sized to overlay right on the housing
+        self._indicator_origin = indicator_housing_origin
+        
+        # TODO: Could account for other indicator offsets
+        base_width = heatsink.get_width()
+        base_height = heatsink.get_height() + indicator_housing_vertical_offset
+        self._static_elements = pygame.Surface((base_width, base_height), self._surface_flags)
+        self._static_elements.blit(heatsink, (0,0))
+        self._static_elements.blit(indicator_housing, indicator_housing_origin)
+        
+        # All done, blit out to work surface
+        self._working_surface.blit(self._static_elements, (0, 0))
+
+
+    def draw_update(self, temperature_value, fan_rpm_value):
+        assert(self._working_surface is not None)
+        assert(self._static_elements is not None)
+        assert(self._indicator_origin is not None)
+        assert(self._indicator_okay is not None and self._indicator_warn is not None)
+
+        self._working_surface.blit(self._static_elements, (0, 0))
+
+        # TODO: Could add GPU fan warning, lots of modern GPUs spin down when idle though
+        if self._config.warning_temperature <= int(temperature_value):
+            self._working_surface.blit(self._indicator_warn, self._indicator_origin)
+        else:
+            self._working_surface.blit(self._indicator_okay, self._indicator_origin)
+
+        # TODO: Font coloration based on temperature, if enabled
+        # Draw temperature text within the indicator
+        shadowed_temperature_text = Helpers.get_shadowed_text(
+                self._config.temperature_font, "{}\u00b0".format(temperature_value), 
+                self._config.temperature_font_color, self._config.temperature_shadow_color)
+        # TODO: Dynamic temperature origin tied to scaled size
+        self._working_surface.blit(shadowed_temperature_text, self._temperature_origin)
+
+        # TODO: Update bargraph!
+
+        self._current_temperature_value = temperature_value
+        self._current_rpm_value = fan_rpm_value
+            
+        return self._working_surface, self._direct_rect
+

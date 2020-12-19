@@ -412,6 +412,100 @@ class TemperatureHumidity:
         return self._working_surface, self._direct_rect
 
 
+class MotherboardTemperatureSensors:
+    # DynamicFields
+    _motherboard = None
+    _pch = None
+    _unlabeled = None
+
+    # Surfaces
+    _working_surface = None
+    _static_elements = None
+    _direct_rect = None
+
+    def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0):
+
+        if font is None:
+            self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
+            self._font.kerning = True
+        else:
+            self._font = font
+
+        base_size = (element_rect[2], element_rect[3])
+        if direct_surface is not None:
+            self._working_surface = direct_surface.subsurface(element_rect)
+            self._direct_rect = element_rect
+        else:
+            self._working_surface = pygame.Surface(base_size, surface_flags)
+
+        self.__setup_surfaces_and_fields__(element_rect, surface_flags)
+
+
+    def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
+        assert(self._static_elements is None)
+
+        base_size = (element_rect[2], element_rect[3])
+        assert(0 != base_size[0] or 0 != base_size[1])
+    
+        self._static_elements = pygame.Surface(base_size, surface_flags)
+
+        y_offset = -2
+        font_height = self._font.get_sized_height()
+
+        # Start doing a little mock drawing here to workout where the static label(s) are positioned
+        # Static Label
+        origin = (0, 0)
+        self._font.render_to(self._static_elements, origin, "Motherboard", Color.white)
+
+        # Motherboard
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self._motherboard = DynamicField(
+            origin, 
+            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
+            "{}\u00b0C", Color.windows_cyan_1, self._font)
+
+        # Static Label
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self._font.render_to(self._static_elements, origin, "PCH", Color.white)
+
+        # PCH
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self._pch = DynamicField(
+            origin,
+            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
+            "{}\u00b0C", Color.windows_cyan_1, self._font)
+
+        # Static Label
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self._font.render_to(self._static_elements, origin, "Unlabeled Sensor", Color.white)
+
+        # Unlabeled
+        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        self._unlabeled = DynamicField(
+            origin,
+            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
+            "{}\u00b0C", Color.windows_cyan_1, self._font)
+
+    def draw_update(self, motherboard_temperature, pch_temperature, unlabeled_temperature):
+        assert(self._working_surface is not None)
+        assert(self._static_elements is not None)
+
+        self._working_surface.fill((0,0,0,0))
+        self._working_surface.blit(self._static_elements, (0, 0))
+
+        if g_benchmark:
+            start_ticks = pygame.time.get_ticks()
+
+        self._motherboard.update(motherboard_temperature)
+        self._pch.update(pch_temperature)
+        self._unlabeled.update(unlabeled_temperature)
+
+        if g_benchmark:
+            print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))
+
+        return self._working_surface, self._direct_rect
+
+
 class SimpleText:
     _working_surface = None
     _using_direct_surface = False

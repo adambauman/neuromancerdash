@@ -55,6 +55,7 @@ class DashData:
     volts_3_3 = DataField("3_3v", "3.3v Rail", Units.volts, min_value=3.135, max_value=3.456)
     volts_dimm = DataField("v_dimm", "Memory Voltage", Units.volts)
     pch_temp = DataField("pch_temp", Units.celsius, min_value=20, caution_value=81, max_value=80, warn_value=82)
+    unlabeled_temp = DataField("unlabeled_temp", Units.celsius, min_value=20, caution_value=81, max_value=80, warn_value=82)
     drive_c_free = DataField("drive_c_free", "Drive C: Free Space", Units.gigabytes, min_value=0, max_value=465)
     drive_d_free = DataField("drive_d_free", "Drive D: Free Space", Units.gigabytes, min_value=0, max_value=930)
     drive_e_free = DataField("drive_e_free", "Drive E: Free Space", Units.gigabytes, min_value=0, max_value=232)

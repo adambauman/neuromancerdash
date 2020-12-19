@@ -16,8 +16,8 @@ from data.dataobjects import DataField, DashData
 from elements.helpers import Helpers
 from elements.styles import Color, AssetPath, FontPath
 from elements.bargraph import BarGraph, BarGraphConfig
-from elements.text import  TemperatureHumidity
-from elements.visualizers import PumpStatus, PumpStatusConfig
+from elements.text import  TemperatureHumidity, MotherboardTemperatureSensors
+from elements.visualizers import PumpStatus, PumpStatusConfig, GPUTemperature, GPUTemperatureConfig
 
 if __debug__:
     import traceback
@@ -57,12 +57,11 @@ class CoolingConfigs:
         self.front_intake_fan_bar.size = (122, 35)
         self.front_intake_fan_bar.dash_data = DashData.chassis_1_fan
 
-        # Other elements
-        self.gpu_fan_bar = copy(base_fan_bar_config)
-        self.gpu_fan_bar.dash_data = DashData.gpu_fan
-
         self.cpu_pump_status = PumpStatusConfig((100, 100))
-        self.cpu_pump_status.pump_indicator_bg_color = Color.windows_cyan_1_medium
+        self.gpu_temperature = GPUTemperatureConfig()
+        self.gpu_temperature.fan_dash_data = DashData.gpu_fan
+        self.gpu_temperature.temperature_dash_data = DashData.gpu_temp
+
 
 class CoolingPositions:
 
@@ -85,11 +84,12 @@ class CoolingPositions:
         bottom_intake_fan_bar_size = element_configs.bottom_intake_fan_bar.size
         self.bottom_intake_fan_bars = pygame.Rect((10, display_size[1] - bottom_intake_fan_bar_size[1]), bottom_intake_fan_bar_size)
 
-        self.cpu_pump = pygame.Rect((50, 60), element_configs.cpu_pump_status.size)
+        self.cpu_pump = pygame.Rect((40, 70), element_configs.cpu_pump_status.size)
+        self.gpu_temperature = pygame.Rect((10, 200), element_configs.gpu_temperature.size)
 
-        #self.gpu_fan_bar = pygame.Rect(70, 180, 110, 20)
-
-        self.temperature_humidity_rect = pygame.Rect(406, 180, 74, 56)
+        # Text elements
+        self.motherboard_temps_rect = pygame.Rect(175, 78, 130, 100)
+        self.temperature_humidity_rect = pygame.Rect(405, 250, 74, 56)
 
 
 class Cooling:
@@ -126,13 +126,12 @@ class Cooling:
             element_configs.forward_exhaust_bar, self._working_surface, self._element_positions.forward_exhaust_fan_bar)
 
         self._cpu_pump_status = PumpStatus(element_configs.cpu_pump_status, self._working_surface, self._element_positions.cpu_pump)
+        self._gpu_temperature = GPUTemperature(element_configs.gpu_temperature, self._working_surface, self._element_positions.gpu_temperature)
 
-        #self._cpu_fan_bar = BarGraph(
-        #    element_configs.cpu_fan_bar, self._working_surface, self._element_positions.cpu_fan_bar)
-        #self._gpu_fan_bar = BarGraph(
-        #    element_configs.gpu_fan_bar, self._working_surface, self._element_positions.gpu_fan_bar)
-
-        self._temperature_humidity = TemperatureHumidity(self._element_positions.temperature_humidity_rect)
+        self._motherboard_temps = MotherboardTemperatureSensors(
+            self._element_positions.motherboard_temps_rect, direct_surface=self._working_surface)
+        self._temperature_humidity = TemperatureHumidity(
+            self._element_positions.temperature_humidity_rect, direct_surface=self._working_surface)
 
         # Not using direct draw, elements need transforms before blit
         self._front_intake_fan_bar = BarGraph(element_configs.front_intake_fan_bar)
@@ -150,7 +149,7 @@ class Cooling:
         fan_spacing = 20
         dual_surface_size = ((single_intake_bar.get_width() * 2) + fan_spacing, single_intake_bar.get_height())
         dual_fan_surface = pygame.Surface(dual_surface_size, self._surface_flags)
-        dual_fan_surface.blit(single_intake_bar, (0,0))
+        dual_fan_surface.blit(single_intake_bar, (0, 0))
         dual_fan_surface.blit(single_intake_bar, (single_intake_bar.get_width() + fan_spacing, 0))
         #dual_fan_rotated_surface = pygame.transform.rotozoom(dual_fan_surface, 90, 1)
         dual_fan_rotated_surface = pygame.transform.rotate(dual_fan_surface, 90)
@@ -196,9 +195,13 @@ class Cooling:
 
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
         cpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        cpu_pump_rect = self._cpu_pump_status.draw_update(cpu_temperature_value, cpu_fan_value)[1]
-        if cpu_pump_rect is not None:
-            update_rects.append(cpu_pump_rect)
+        update_rects.append(self._cpu_pump_status.draw_update(cpu_temperature_value, cpu_fan_value)[1])
+        #if cpu_pump_rect is not None:
+        #    update_rects.append(cpu_pump_rect)
+
+        gpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
+        gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
+        update_rects.append(self._gpu_temperature.draw_update(gpu_temperature_value, gpu_fan_value)[1])
 
         # Fan bar graphs
         rear_exhaust_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_3_fan, "0")
@@ -215,12 +218,11 @@ class Cooling:
         update_rects.append(
             self.__draw_bottom_intake_fans_(bottom_intake_fan_value, using_direct_surface=True)[1])
 
-
-
-        #update_rects.append(self._cpu_fan_bar.draw_update(cpu_fan_value)[1])
-
-        #gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
-        #update_rects.append(self._gpu_fan_bar.draw_update(gpu_fan_value)[1])
+        motherboard_temp_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
+        pch_temp_value = DashData.best_attempt_read(aida64_data, DashData.pch_temp, "0")
+        unlabeled_temp_value = DashData.best_attempt_read(aida64_data, DashData.unlabeled_temp, "0")
+        update_rects.append(
+            self._motherboard_temps.draw_update(motherboard_temp_value, pch_temp_value, unlabeled_temp_value)[1])
 
         # Ambient temperature and humidity
         if dht22_data is not None:
