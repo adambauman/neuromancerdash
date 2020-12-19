@@ -88,7 +88,7 @@ class CoolingPositions:
         self.gpu_temperature = pygame.Rect((10, 200), element_configs.gpu_temperature.size)
 
         # Text elements
-        self.motherboard_temps_rect = pygame.Rect(175, 78, 130, 100)
+        self.motherboard_temps_rect = pygame.Rect(175, 73, 130, 100)
         self.temperature_humidity_rect = pygame.Rect(405, 250, 74, 56)
 
 

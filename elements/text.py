@@ -26,13 +26,18 @@ class DynamicField:
 
         self.current_value = value
 
-    def update(self, new_value):
+    def update(self, new_value, override_color=None):
 
         if 0 < self._clamp_chars:
             render_text = self._text.format(Helpers.clamp_text(new_value, 11, ""))
         else:
             render_text = self._text.format(new_value)
-        self._font.render_to(self._subsurface, (0,0), render_text, self._text_color)
+
+        if override_color:
+            self._font.render_to(self._subsurface, (0,0), render_text, override_color)
+        else:
+            self._font.render_to(self._subsurface, (0,0), render_text, self._text_color)
+
         self.current_value = new_value
 
 class StackHelpers:
@@ -423,13 +428,12 @@ class MotherboardTemperatureSensors:
     _static_elements = None
     _direct_rect = None
 
-    def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0):
+    def __init__(self, element_rect, direct_surface=None, surface_flags=0):
 
-        if font is None:
-            self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
-            self._font.kerning = True
-        else:
-            self._font = font
+        self._label_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
+        self._label_font.kerning = True
+        self._value_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 16)
+        self._value_font.kerning = True
 
         base_size = (element_rect[2], element_rect[3])
         if direct_surface is not None:
@@ -440,7 +444,6 @@ class MotherboardTemperatureSensors:
 
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
-
     def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
         assert(self._static_elements is None)
 
@@ -450,41 +453,42 @@ class MotherboardTemperatureSensors:
         self._static_elements = pygame.Surface(base_size, surface_flags)
 
         y_offset = -2
-        font_height = self._font.get_sized_height()
+        label_font_height = self._label_font.get_sized_height()
+        value_font_height = self._value_font.get_sized_height()
 
         # Start doing a little mock drawing here to workout where the static label(s) are positioned
         # Static Label
         origin = (0, 0)
-        self._font.render_to(self._static_elements, origin, "Motherboard", Color.white)
+        self._label_font.render_to(self._static_elements, origin, "Motherboard", Color.white)
 
         # Motherboard
-        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        origin = (origin[0], (origin[1] + label_font_height) + y_offset)
         self._motherboard = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{}\u00b0C", Color.windows_cyan_1, self._font)
+            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), value_font_height + y_offset)),
+            "{}\u00b0C", Color.windows_cyan_1, self._value_font)
 
         # Static Label
-        origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self._font.render_to(self._static_elements, origin, "PCH", Color.white)
+        origin = (origin[0], (origin[1] + value_font_height) + y_offset)
+        self._label_font.render_to(self._static_elements, origin, "PCH", Color.white)
 
         # PCH
-        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        origin = (origin[0], (origin[1] + label_font_height) + y_offset)
         self._pch = DynamicField(
             origin,
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{}\u00b0C", Color.windows_cyan_1, self._font)
+            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), value_font_height + y_offset)),
+            "{}\u00b0C", Color.windows_cyan_1, self._value_font)
 
         # Static Label
-        origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self._font.render_to(self._static_elements, origin, "Unlabeled Sensor", Color.white)
+        origin = (origin[0], (origin[1] + value_font_height) + y_offset)
+        self._label_font.render_to(self._static_elements, origin, "Unlabeled Sensor", Color.white)
 
         # Unlabeled
-        origin = (origin[0], (origin[1] + font_height) + y_offset)
+        origin = (origin[0], (origin[1] + label_font_height) + y_offset)
         self._unlabeled = DynamicField(
             origin,
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{}\u00b0C", Color.windows_cyan_1, self._font)
+            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), value_font_height + y_offset)),
+            "{}\u00b0C", Color.windows_cyan_1, self._value_font)
 
     def draw_update(self, motherboard_temperature, pch_temperature, unlabeled_temperature):
         assert(self._working_surface is not None)
@@ -496,9 +500,21 @@ class MotherboardTemperatureSensors:
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        self._motherboard.update(motherboard_temperature)
-        self._pch.update(pch_temperature)
-        self._unlabeled.update(unlabeled_temperature)
+        # TODO: Pull actual warn values from DashData
+        if 40 <= int(motherboard_temperature):
+            self._motherboard.update(motherboard_temperature, Color.windows_red_1)
+        else:
+            self._motherboard.update(motherboard_temperature)
+
+        if 50 <= int(pch_temperature):
+            self._pch.update(pch_temperature, Color.windows_red_1)
+        else:
+            self._pch.update(pch_temperature)
+
+        if 35 <= int(unlabeled_temperature):
+            self._unlabeled.update(unlabeled_temperature, Color.windows_red_1)
+        else:
+            self._unlabeled.update(unlabeled_temperature)
 
         if g_benchmark:
             print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))
