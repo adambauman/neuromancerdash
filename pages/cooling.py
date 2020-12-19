@@ -142,7 +142,8 @@ class Cooling:
         self._icon_linked.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
         self._icon_home = pygame.image.load(os.path.join(AssetPath.icons, "home_32px.png")).convert_alpha()
         self._icon_home.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
-
+        self._case_profile = pygame.image.load(os.path.join(AssetPath.misc, "case_font_profile.png")).convert_alpha()
+        self._case_profile.fill(Color.grey_20, special_flags=pygame.BLEND_RGBA_MULT)
 
     def __draw_front_intake_fans__(self, value, using_direct_surface=False):
         assert(self._surface_flags is not None)
@@ -185,7 +186,7 @@ class Cooling:
         assert(self._icon_home)
         
         # TODO: Toss this in an element class for reuse and optimization
-        text_surface = self._font_room.render("{}\u00b0F".format(room_temperature), Color.windows_cyan_1)[0]
+        text_surface = self._font_room.render("{:.1f}\u00b0F".format(room_temperature), Color.windows_cyan_1)[0]
         icon_text_spacing = 4
         required_height = icon_text_spacing + self._font_room.get_sized_height() + self._icon_home.get_height()
         if text_surface.get_width() > self._icon_home.get_width():
@@ -218,6 +219,8 @@ class Cooling:
         # cpu_opt = forward exhaust
 
         update_rects = []
+
+        self._working_surface.blit(self._case_profile, (366, 0))
 
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
         cpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
