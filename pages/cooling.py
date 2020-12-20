@@ -17,7 +17,7 @@ from elements.helpers import Helpers
 from elements.styles import Color, AssetPath, FontPath
 from elements.bargraph import BarGraph, BarGraphConfig
 from elements.text import  TemperatureHumidity, MotherboardTemperatureSensors
-from elements.visualizers import PumpStatus, PumpStatusConfig, GPUTemperature, GPUTemperatureConfig
+from elements.visualizers import PumpStatus, PumpStatusConfig, GPUTemperature, GPUTemperatureConfig, HomeTemperature, HomeTemperatureConfig
 
 if __debug__:
     import traceback
@@ -57,17 +57,21 @@ class CoolingConfigs:
         self.front_intake_fan_bar.size = (122, 35)
         self.front_intake_fan_bar.dash_data = DashData.chassis_1_fan
 
+        # Visualizer elements
         self.cpu_pump_status = PumpStatusConfig((100, 100))
+
         self.gpu_temperature = GPUTemperatureConfig()
         self.gpu_temperature.fan_dash_data = DashData.gpu_fan
         self.gpu_temperature.temperature_dash_data = DashData.gpu_temp
 
+        self.home_temperature = HomeTemperatureConfig()
 
 class CoolingPositions:
 
     def __init__(self, display_size, element_configs):
         assert(0 != display_size[0] and 0 != display_size[1])
 
+        # Bars
         exhaust_fans_bars_width = element_configs.rear_exhaust_bar.size[0]
         exhaust_fans_bars_spacing = 20
         exhaust_fans_x = 10
@@ -84,12 +88,18 @@ class CoolingPositions:
         bottom_intake_fan_bar_size = element_configs.bottom_intake_fan_bar.size
         self.bottom_intake_fan_bars = pygame.Rect((10, display_size[1] - bottom_intake_fan_bar_size[1]), bottom_intake_fan_bar_size)
 
+        # Visualizers
         self.cpu_pump = pygame.Rect((40, 70), element_configs.cpu_pump_status.size)
         self.gpu_temperature = pygame.Rect((10, 200), element_configs.gpu_temperature.size)
 
+        # NOTE: Trying a better(?) coordinate setup system with home temperature
+        # original = self.home_temperature_rect = pygame.Rect(420, 150, 74, 56)
+        self.home_temperature = (418, 250)
+
         # Text elements
         self.motherboard_temps_rect = pygame.Rect(175, 73, 130, 100)
-        self.home_temperature_rect = pygame.Rect(420, 150, 74, 56)
+
+
 
 
 class Cooling:
@@ -109,8 +119,6 @@ class Cooling:
 
         self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self._font_normal.kerning = True
-        self._font_room = pygame.freetype.Font(FontPath.fira_code_semibold(), 16)
-        self._font_room.kerning = True
 
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
@@ -129,6 +137,11 @@ class Cooling:
         self._motherboard_temps = MotherboardTemperatureSensors(
             self._element_positions.motherboard_temps_rect, direct_surface=self._working_surface, surface_flags=pygame.SRCALPHA)
 
+        # NOTE: Trying new setup method that allows for dynamic resizing with reduced headaches
+        self._home_temperature = HomeTemperature(surface_flags=surface_flags)
+        home_temp_rect = pygame.Rect(self._element_positions.home_temperature, self._home_temperature.base_size)
+        self._home_temperature.set_direct_draw(self._working_surface, home_temp_rect)
+
         # Not using direct draw, elements need transforms before blit
         self._front_intake_fan_bar = BarGraph(element_configs.front_intake_fan_bar)
         self._bottom_intake_fan_bar = BarGraph(element_configs.bottom_intake_fan_bar)
@@ -136,8 +149,6 @@ class Cooling:
         # Load image files
         self._icon_linked = pygame.image.load(os.path.join(AssetPath.icons, "linked_24px.png")).convert_alpha()
         self._icon_linked.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
-        self._icon_home = pygame.image.load(os.path.join(AssetPath.icons, "home_32px.png")).convert_alpha()
-        self._icon_home.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
         self._case_profile = pygame.image.load(os.path.join(AssetPath.misc, "case_font_profile.png")).convert_alpha()
         self._case_profile.fill(Color.grey_40, special_flags=pygame.BLEND_RGBA_MULT)
         self._heat_map = pygame.image.load(os.path.join(AssetPath.misc, "case_heatmap.png")).convert() # Meant as BG, no alpha
@@ -152,7 +163,6 @@ class Cooling:
         dual_fan_surface = pygame.Surface(dual_surface_size, self._surface_flags)
         dual_fan_surface.blit(single_intake_bar, (0, 0))
         dual_fan_surface.blit(single_intake_bar, (single_intake_bar.get_width() + fan_spacing, 0))
-        #dual_fan_rotated_surface = pygame.transform.rotozoom(dual_fan_surface, 90, 1)
         dual_fan_rotated_surface = pygame.transform.rotate(dual_fan_surface, 90)
         # TODO: Use maths to align link icon
         dual_fan_rotated_surface.blit(self._icon_linked, (6, 127))
@@ -160,7 +170,6 @@ class Cooling:
         update_rect = self._element_positions.front_intake_fan_bars
         if using_direct_surface:
             update_rect = self._working_surface.blit(dual_fan_rotated_surface, update_rect)
-            #self._working_surface.blit(dual_fan_rotated_surface, update_rect)
 
         return dual_fan_rotated_surface, update_rect
 
@@ -179,47 +188,16 @@ class Cooling:
          
         return dual_fan_surface, update_rect
 
-    def __draw_room_temperature__(self, room_temperature, using_direct_draw=True):
-        assert(self._icon_home)
-        
-        # TODO: Toss this in an element class for reuse and optimization
-        text_surface = self._font_room.render("{:.1f}\u00b0F".format(room_temperature), Color.windows_cyan_1)[0]
-        icon_text_spacing = 4
-        required_height = icon_text_spacing + self._font_room.get_sized_height() + self._icon_home.get_height()
-        if text_surface.get_width() > self._icon_home.get_width():
-            required_width = text_surface.get_width()
-        else:
-            required_width = self._icon_home.get_width()
-        
-        final_surface = pygame.Surface((required_width, required_height), self._surface_flags)
-        final_surface.blit(self._icon_home, (13, 0)) # TODO: Make dynamic
-        final_surface.blit(text_surface, (0, self._icon_home.get_height() + icon_text_spacing))
-
-        update_rect = self._element_positions.home_temperature_rect
-        if using_direct_draw:
-            update_rect = self._working_surface.blit(final_surface, update_rect)
-
-        return final_surface, update_rect
-
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
+
         assert(0 != len(aida64_data))
-
-        #if self._background is not None:
-        #    self._working_surface.blit(self._background, (0, 0))
-        #else:
-        #    self._working_surface.fill(0, 0, 0, 0)
-
-        # chassis_1_fan = front intakes combined
-        # chassis_2_fan = bottom intakes
-        # chassis_3_fan = rear exhaust
-        # cpu_opt = forward exhaust
-
-        update_rects = []
 
         # Bit wasteful, but for now blit out BG and case profile graphic
         self._working_surface.blit(self._heat_map, (0, 0))
         self._working_surface.blit(self._case_profile, (366, 0))
+
+        update_rects = []
 
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
         cpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
@@ -246,14 +224,10 @@ class Cooling:
         update_rects.append(
             self.__draw_bottom_intake_fans_(bottom_intake_fan_value, using_direct_surface=True)[1])
 
-        motherboard_temp_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
-        pch_temp_value = DashData.best_attempt_read(aida64_data, DashData.pch_temp, "0")
-        unlabeled_temp_value = DashData.best_attempt_read(aida64_data, DashData.unlabeled_temp, "0")
-        update_rects.append(
-            self._motherboard_temps.draw_update(motherboard_temp_value, pch_temp_value, unlabeled_temp_value)[1])
+        update_rects.append(self._motherboard_temps.draw_update(aida64_data)[1])
 
         # Ambient temperature and humidity
         if dht22_data is not None:
-            update_rects.append(self.__draw_room_temperature__(dht22_data.temperature, True)[1])
+            update_rects.append(self._home_temperature.draw_update(dht22_data.temperature)[1])
 
         return self._working_surface, update_rects

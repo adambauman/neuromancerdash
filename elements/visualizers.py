@@ -13,6 +13,9 @@ from .helpers import Helpers
 from .styles import Color, AssetPath, FontPath
 from .bargraph import BarGraph, BarGraphConfig
 
+if not pygame.freetype.get_init():
+    pygame.freetype.init()
+
 # Set true to benchmark the update process
 g_benchmark = False
 
@@ -156,8 +159,6 @@ class PumpStatusConfig:
     def __init__(self, size=(80, 80), temperature_font=None):
         self.size = size
         if temperature_font is None:
-            if not pygame.freetype.get_init():
-                pygame.freetype.init() # TODO: Why is this the only class constructor that requires this?
             self.temperature_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 18)
             self.temperature_font.kerning = True
         else:
@@ -258,8 +259,6 @@ class GPUTemperatureConfig:
     def __init__(self, size=(305, 71), temperature_font=None):
         self.size = size
         if temperature_font is None:
-            if not pygame.freetype.get_init():
-                pygame.freetype.init()
             self.temperature_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 18)
             self.temperature_font.kerning = True
         else:
@@ -303,10 +302,9 @@ class GPUTemperature:
         fan_graph_config = BarGraphConfig((230, 32), (0,2000))
         fan_graph_config.draw_background = False
         fan_graph_config.dash_data = self._config.fan_dash_data
-        fan_graph_config.unit_draw = False
+        fan_graph_config.unit_draw = True
         fan_graph_config.current_value_draw = True
-        fan_graph_config.current_value_position = (190, 10)
-        fan_graph_config.unit_position = (190, 10)
+        fan_graph_config.current_value_position = (155, 10)
         fan_graph_rect = pygame.Rect((0, 29), fan_graph_config.size)
         self._fan_graph = BarGraph(fan_graph_config, self._working_surface, fan_graph_rect)
 
@@ -362,3 +360,87 @@ class GPUTemperature:
         self._current_rpm_value = fan_rpm_value
             
         return self._working_surface, self._direct_rect
+
+class HomeTemperatureConfig:
+    def __init__(self):
+        self.text_color = Color.windows_cyan_1
+        self.temperature_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 16)
+        self.temperature_font.kerning = True
+        self.temperature_text_template = "{:.1f}\u00b0"
+        self.icon_text_spacing = 6
+        self.override_home_icon_filename = None
+        self.home_icon_color = Color.grey_40
+        self.display_fahrenheit = True
+
+class HomeTemperature:
+    _config = None
+    _working_surface = None
+    
+    direct_rect = None
+    base_size = None
+    current_value = None
+
+    def __init__(self, home_temperature_config=HomeTemperatureConfig(), direct_surface=None, direct_rect=None, surface_flags=0):
+
+        self._config = home_temperature_config
+        self._surface_flags = surface_flags
+
+        # Load home icon
+        icon_filename = "home_48px.png"
+        if self._config.override_home_icon_filename:
+            icon_filename = self._config.override_home_icon_filename
+        self._icon_home = pygame.image.load(os.path.join(AssetPath.icons, icon_filename)).convert_alpha()
+        self._icon_home.fill(self._config.home_icon_color, special_flags=pygame.BLEND_RGB_MULT)
+
+        if direct_surface and direct_rect:
+            self._working_surface = direct_surface.subsurface(direct_rect, surface_flags)
+            self.base_size = (direct_rect[0], direct_rect[1])
+            self.direct_rect = direct_rect
+        else:
+            # Render a test readout and get the surface parameters
+            test_text = self.__draw_temperature__(temperature=900)
+            required_width = self._icon_home.get_width()
+            if required_width < test_text.get_width():
+                required_width = test_text.get_width()
+            required_height =\
+               self._icon_home.get_height() + self._config.icon_text_spacing + self._config.temperature_font.get_sized_height()
+            self.base_size = (required_width, required_height)
+
+            self._working_surface = pygame.Surface(self.base_size, self._surface_flags)
+
+
+    def __draw_temperature__(self, temperature):
+        assert(self._config)
+
+        config = self._config
+        text_template = config.temperature_text_template
+        return config.temperature_font.render(text_template.format(temperature), config.text_color)[0]
+
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert(0 != direct_rect[2] and 0 != direct_rect[3])
+
+        self._working_surface = direct_surface.subsurface(direct_rect)
+
+    def draw_update(self, room_temperature):
+        assert(self._working_surface)
+        assert(self._config)
+
+        if self.current_value == room_temperature:
+            # No update necessary
+            return self._working_surface, None
+        
+        self._working_surface.fill((0, 0, 0, 0))
+        icon_centered_origin = Helpers.get_centered_origin(self._working_surface.get_size(), self._icon_home.get_size())
+        self._working_surface.blit(self._icon_home, (icon_centered_origin[0], 0))
+
+        text_surface = self.__draw_temperature__(room_temperature)
+        text_x = Helpers.get_centered_origin(self._working_surface.get_size(), text_surface.get_size())[0]
+        text_y = self._icon_home.get_height() + self._config.icon_text_spacing
+        assert(self._working_surface.get_height() >= text_y)
+
+        self._working_surface.blit(self.__draw_temperature__(room_temperature), (text_x, text_y))
+        self._current_value = room_temperature
+
+        return self._working_surface, self.direct_rect

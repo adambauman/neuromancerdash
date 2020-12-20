@@ -6,27 +6,26 @@
 #
 
 class Color:
-    yellow = "#ffff00"
-    green = "#00dc00"
-    dark_green = "#173828"
-    red = "#dc0000"
-    white = "#ffffff"
-    grey_20 = "#333333"
-    grey_40 = "#666666"
-    grey_75 = "#c0c0c0"
-    black = "#000000"
-    cyan_dark = "#1c2f2b"
+    yellow = (255, 255, 0, 255)
+    green = (0, 220, 0, 255)
+    dark_green = (23, 56, 40, 255)
+    red = (220, 0, 0, 255)
+    white = (255, 255, 255, 255)
+    grey_20 = (51, 51, 51, 255)
+    grey_40 = (102, 102, 102, 255)
+    grey_75 = (192, 192, 192, 255)
+    black = (0, 0, 0, 255)
+    cyan_dark = (28, 47, 43, 255)
     # Colors pulled from Win10 design doc swatches
-    # TODO: Convert all to RGBA values
-    windows_cyan_1 = "#00b693"
-    windows_cyan_1_medium = "#00a585"
-    windows_cyan_1_dark = "#015b4a"
-    windows_cyan_2 = "#008589"
-    windows_red_1 = "#eb2400"
-    windows_dkgrey_1_highlight = "#b3aeaa"
-    windows_dkgrey_1 = "#4c4a48"
-    windows_light_grey_1 = "#7b7574"
-    hot_pink = "#f542ce"
+    windows_cyan_1 = (0, 182, 147, 255)
+    windows_cyan_1_medium = (0, 165, 133, 255)
+    windows_cyan_1_dark = (1, 91, 74, 255)
+    windows_cyan_2 = (0, 133, 137, 255)
+    windows_red_1 = (235, 36, 0, 255)
+    windows_dkgrey_1_highlight = (179, 174, 170, 255)
+    windows_dkgrey_1 = (76, 74, 72, 255)
+    windows_light_grey_1 = (123, 117, 116, 255)
+    hot_pink = (245, 66, 206, 255)
 
 class AssetPath:
     # No trailing slashes

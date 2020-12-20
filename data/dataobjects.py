@@ -54,12 +54,16 @@ class DashData:
     volts_5 = DataField("5v", Units.volts, min_value=4.75, max_value=5.25)
     volts_3_3 = DataField("3_3v", "3.3v Rail", Units.volts, min_value=3.135, max_value=3.456)
     volts_dimm = DataField("v_dimm", "Memory Voltage", Units.volts)
-    pch_temp = DataField("pch_temp", Units.celsius, min_value=20, caution_value=81, max_value=80, warn_value=82)
-    unlabeled_temp = DataField("unlabeled_temp", Units.celsius, min_value=20, caution_value=81, max_value=80, warn_value=82)
+    volts_cpu_vid = DataField("cpu_vid", "CPU VID", Units.volts)
+    volts_cpu_core = DataField("cpu_core_volts", "CPU Core Voltage", Units.volts)
+    volts_gpu_core = DataField("gpu_core_volts", "GPU Core Voltage", Units.volts)
+    pch_temp = DataField("pch_temp", Units.celsius, min_value=20, caution_value=50, max_value=80, warn_value=60)
+    unlabeled_temp = DataField("unlabeled_temp", Units.celsius, min_value=20, caution_value=45, max_value=80, warn_value=50)
     drive_c_free = DataField("drive_c_free", "Drive C: Free Space", Units.gigabytes, min_value=0, max_value=465)
     drive_d_free = DataField("drive_d_free", "Drive D: Free Space", Units.gigabytes, min_value=0, max_value=930)
     drive_e_free = DataField("drive_e_free", "Drive E: Free Space", Units.gigabytes, min_value=0, max_value=232)
     drive_f_free = DataField("drive_f_free", "Drive F: Free Space", Units.gigabytes, min_value=0, max_value=1810)
+    nvme_temp = DataField("nvme_temp", "NVME Temperature", Units.celsius, min_value=0, max_value=80, warn_value=75)
 
     # Iterate the following, labels in data source should be setup to be 0-indexed
     disk_activity = DataField("disk_{}_activity", "Disk {} Activity", Units.percent, min_value=0, max_value=100)

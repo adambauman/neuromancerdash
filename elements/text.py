@@ -421,7 +421,7 @@ class MotherboardTemperatureSensors:
     # DynamicFields
     _motherboard = None
     _pch = None
-    _unlabeled = None
+    _nvme = None
 
     # Surfaces
     _working_surface = None
@@ -481,16 +481,16 @@ class MotherboardTemperatureSensors:
 
         # Static Label
         origin = (origin[0], (origin[1] + value_font_height) + y_offset)
-        self._label_font.render_to(self._static_elements, origin, "Unlabeled Sensor", Color.white)
+        self._label_font.render_to(self._static_elements, origin, "NVME", Color.white)
 
-        # Unlabeled
+        # NVME
         origin = (origin[0], (origin[1] + label_font_height) + y_offset)
-        self._unlabeled = DynamicField(
+        self._nvme = DynamicField(
             origin,
             self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), value_font_height + y_offset)),
             "{}\u00b0C", Color.windows_cyan_1, self._value_font)
 
-    def draw_update(self, motherboard_temperature, pch_temperature, unlabeled_temperature):
+    def draw_update(self, aida64_data):
         assert(self._working_surface is not None)
         assert(self._static_elements is not None)
 
@@ -500,21 +500,24 @@ class MotherboardTemperatureSensors:
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()
 
-        # TODO: Pull actual warn values from DashData
-        if 40 <= int(motherboard_temperature):
-            self._motherboard.update(motherboard_temperature, Color.windows_red_1)
-        else:
-            self._motherboard.update(motherboard_temperature)
+        motherboard_temp = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
+        pch_temp = DashData.best_attempt_read(aida64_data, DashData.pch_temp, "0")
+        nvme_temp = DashData.best_attempt_read(aida64_data, DashData.nvme_temp, "0")
 
-        if 50 <= int(pch_temperature):
-            self._pch.update(pch_temperature, Color.windows_red_1)
+        if DashData.motherboard_temp.warn_value <= int(motherboard_temp):
+            self._motherboard.update(motherboard_temp, Color.windows_red_1)
         else:
-            self._pch.update(pch_temperature)
+            self._motherboard.update(motherboard_temp)
 
-        if 35 <= int(unlabeled_temperature):
-            self._unlabeled.update(unlabeled_temperature, Color.windows_red_1)
+        if DashData.pch_temp.warn_value <= int(pch_temp):
+            self._pch.update(pch_temp, Color.windows_red_1)
         else:
-            self._unlabeled.update(unlabeled_temperature)
+            self._pch.update(pch_temp)
+
+        if DashData.nvme_temp.warn_value <= int(nvme_temp):
+            self._nvme.update(nvme_temp, Color.windows_red_1)
+        else:
+            self._nvme.update(nvme_temp)
 
         if g_benchmark:
             print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))

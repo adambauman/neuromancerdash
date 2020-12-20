@@ -162,7 +162,7 @@ class BarGraph:
                 value_text += "/"
             value_text += "{}".format(config.dash_data.max_value)
 
-        if config.unit_draw and config.dash_data is not None:
+        if config.unit_draw and config.dash_data and not config.unit_position:
             if config.unit_use_full_name:
                 value_text += " {}".format(config.dash_data.unit.name)
             else:
