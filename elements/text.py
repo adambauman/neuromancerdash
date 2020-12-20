@@ -494,7 +494,7 @@ class MotherboardTemperatureSensors:
         assert(self._working_surface is not None)
         assert(self._static_elements is not None)
 
-        self._working_surface.fill((0,0,0,0))
+        #self._working_surface.fill((0,0,0,0))
         self._working_surface.blit(self._static_elements, (0, 0))
 
         if g_benchmark:

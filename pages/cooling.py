@@ -112,10 +112,6 @@ class Cooling:
         self._font_room = pygame.freetype.Font(FontPath.fira_code_semibold(), 16)
         self._font_room.kerning = True
 
-        if __debug__:
-            self._background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png")).convert_alpha()
-            self._working_surface.blit(self._background, (0,0))
-
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
 
@@ -131,7 +127,7 @@ class Cooling:
         self._gpu_temperature = GPUTemperature(element_configs.gpu_temperature, self._working_surface, self._element_positions.gpu_temperature)
 
         self._motherboard_temps = MotherboardTemperatureSensors(
-            self._element_positions.motherboard_temps_rect, direct_surface=self._working_surface)
+            self._element_positions.motherboard_temps_rect, direct_surface=self._working_surface, surface_flags=pygame.SRCALPHA)
 
         # Not using direct draw, elements need transforms before blit
         self._front_intake_fan_bar = BarGraph(element_configs.front_intake_fan_bar)
@@ -144,6 +140,7 @@ class Cooling:
         self._icon_home.fill(Color.grey_40, special_flags=pygame.BLEND_RGB_MULT)
         self._case_profile = pygame.image.load(os.path.join(AssetPath.misc, "case_font_profile.png")).convert_alpha()
         self._case_profile.fill(Color.grey_40, special_flags=pygame.BLEND_RGBA_MULT)
+        self._heat_map = pygame.image.load(os.path.join(AssetPath.misc, "case_heatmap.png")).convert() # Meant as BG, no alpha
 
     def __draw_front_intake_fans__(self, value, using_direct_surface=False):
         assert(self._surface_flags is not None)
@@ -220,6 +217,8 @@ class Cooling:
 
         update_rects = []
 
+        # Bit wasteful, but for now blit out BG and case profile graphic
+        self._working_surface.blit(self._heat_map, (0, 0))
         self._working_surface.blit(self._case_profile, (366, 0))
 
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
