@@ -94,7 +94,7 @@ class CoolingPositions:
 
         # NOTE: Trying a better(?) coordinate setup system with home temperature
         # original = self.home_temperature_rect = pygame.Rect(420, 150, 74, 56)
-        self.home_temperature = (418, 250)
+        self.home_temperature = (420, 250)
 
         # Text elements
         self.motherboard_temps_rect = pygame.Rect(175, 73, 130, 100)
