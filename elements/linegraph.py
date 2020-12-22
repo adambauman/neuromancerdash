@@ -59,10 +59,10 @@ class LineGraphReverse:
 
         if self._config.display_background:
             # Only store what we need for grid
-            # TODO: Could probably just tile a slice of the grid BG
             full_background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_cyan_dots.png")).convert_alpha()
             self._cropped_background = pygame.Surface((self._config.width, self._config.height), surface_flags)
             self._cropped_background.blit(full_background, (0, 0))
+            self._working_surface.blit(self._cropped_background, (0, 0))
 
         # TODO: Fix bug where grid is not fully visible until the updates reach the left-most edge
 
