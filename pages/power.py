@@ -1,5 +1,5 @@
 #
-# cooling.py - Contains layout, configurations, and update routines for cooling info page
+# power.py - Contains layout, configurations, and update routines for power info page
 # =======================================================================================
 #
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
