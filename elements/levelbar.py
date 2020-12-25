@@ -19,11 +19,11 @@ class LevelBarConfig:
 
         self.size = size
         self.value_range = value_range
-        self.dash_data = None
         self.value_bar_fill = Color.windows_cyan_1
         self.range_bar_fill = Color.windows_cyan_1_dark
         self.outline_color = Color.grey_75
         self.outline_thickness = 2
+        self.outline_radius = 0
         self.bg_color = Color.black
 
         out_of_range_warn = True
@@ -40,19 +40,24 @@ class LevelBarConfig:
 
 class LevelBar:
     _config = None
+    _data_field = None
+
     _working_surface = None
     _outline = None
     _minmax_history = None
+    _outline_rect = None
     _direct_rect = None
 
     current_value = None
     min_history = None
     max_history = None
 
-    def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
+    def __init__(self, bar_graph_config, data_field, direct_surface=None, direct_rect=None, surface_flags=0):
         assert((0, 0) != bar_graph_config.size)
+        assert(data_field)
 
         self._config = bar_graph_config
+        self._data_field = data_field
         if direct_surface and direct_rect:
             self._working_surface = direct_surface.subsurface(direct_rect)
             self._direct_rect = direct_rect
@@ -62,16 +67,17 @@ class LevelBar:
         self.__setup_bargraph__(surface_flags)
 
     def __setup_levelbar__(self, surface_flags):
-        assert(self._config is not None)
+        assert(self._config)
+        assert(self._data_field)
 
-        # Use actual data field minmax if it's present in the config
-        if None != self._config.dash_data:
-            self._config.value_range = (self._config.dash_data.min_value, self._config.dash_data.max_value)
-
-            outline_working = pygame.Surface(self._working_surface.get_size(), pygame.SRCALPHA)
-            outline_working.fill(self._config.outline_color)
-            inner_erase_size =\
-                (outline_working.get_width() - (self._config.outline_thickness * 2),
+        # Setup rect for the outline. P
+        outline_origin = (
+            self._config.size[0] + self._config.outline_thickness, 
+            self._config.size[1] + self._config.outline_thickness)
+        outline_size = (
+            self._working_surface.get_width() - (self._config.outline_thickness * 2),
+            self._working_surface.get_height() - (self._config.outline_thickness * 2))
+        outline_rect = pygame.Rect(outline_origin, )
 
 
     def draw_update(self, value):
