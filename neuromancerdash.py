@@ -100,8 +100,9 @@ def main(argv):
     pygame.mixer.quit() # Mixer not required, avoids ALSA overrun error messages as well
     pygame.mouse.set_visible(False)
 
-    surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
-    display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height), surface_flags)
+    #surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
+    #display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height), surface_flags)
+    display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height), pygame.SRCALPHA)
 
     if __debug__:
         display_info = pygame.display.Info()
