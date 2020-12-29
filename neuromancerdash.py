@@ -228,7 +228,6 @@ def main(argv):
         if g_benchmark:
             draw_start_ticks = pygame.time.get_ticks()
 
-
         # Data is ready, select the page and bring it to the display surface
         if current_page != requested_page:
             assert(len(available_pages) >= requested_page)
