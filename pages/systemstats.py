@@ -226,13 +226,13 @@ class SystemStats:
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
         update_rects.append(self._cpu_graph.update(cpu_utilization_value)[1])
 
-        gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
-        update_rects.append(self._gpu_graph.update(gpu_utilization_value)[1])
+        #gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
+        #update_rects.append(self._gpu_graph.update(gpu_utilization_value)[1])
 
-        cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        update_rects.append(self._cpu_temp_gauge.draw_update(cpu_temperature)[1])
-        gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        update_rects.append(self._gpu_temp_gauge.draw_update(gpu_temperature)[1])
+        #cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
+        #update_rects.append(self._cpu_temp_gauge.draw_update(cpu_temperature)[1])
+        #gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
+        #update_rects.append(self._gpu_temp_gauge.draw_update(gpu_temperature)[1])
 
         #fan1_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
         #update_rects.append(self._fan1_gauge.draw_update(fan1_value)[1])
