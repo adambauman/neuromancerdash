@@ -18,6 +18,7 @@ from data.aida64lcdsse import AIDA64LCDSSE
 from utilities.screensaver import MatrixScreensaver
 from pages.systemstats import SystemStats
 from pages.cooling import Cooling
+from pages.power import Power
 from elements.styles import FontPath, Color
 from elements.styles import Color, AssetPath, FontPath
 
@@ -143,8 +144,9 @@ def main(argv):
     base_size = (display_surface.get_width(), display_surface.get_height())
     base_rect = pygame.Rect(0, 0, base_size[0], base_size[1])
     available_pages = []
-    available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
-    available_pages.append(Cooling(base_size, direct_surface=display_surface, direct_rect=base_rect))
+    #available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
+    #available_pages.append(Cooling(base_size, direct_surface=display_surface, direct_rect=base_rect))
+    available_pages.append(Power(base_size, direct_surface=display_surface, direct_rect=base_rect))
 
 
     # Track selected page and copies of previously displayed pages

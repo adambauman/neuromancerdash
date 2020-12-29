@@ -12,7 +12,7 @@ from copy import copy
 
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
-
+from elements.levelbar import LevelBar, LevelBarConfig
 from elements.helpers import Helpers
 from elements.styles import Color, AssetPath, FontPath
 
@@ -22,14 +22,15 @@ if __debug__:
 class PowerConfigs:
 
     def __init__(self, base_font=None):
-
+        self.volts_12 = LevelBarConfig((200, 32))
         
 
 class PowerPositions:
 
     def __init__(self, display_size, element_configs):
-        assert(0 != display_size[0] and 0 != display_size[1])
+        assert((0, 0) != display_size)
 
+        self.volts_12 = (20, 20)
 
 
 
@@ -51,13 +52,21 @@ class Power:
         self._font_normal.kerning = True
 
         element_configs = PowerConfigs(self._font_normal)
-        self._element_positions = PowerPositions(base_size, element_configs)
+        element_positions = PowerPositions(base_size, element_configs)
+
+        self._volts_12 = LevelBar(element_configs.volts_12, DashData.volts_12)
+        volts_12_rect = pygame.Rect(element_positions.volts_12, self._volts_12.base_size)
+        self._volts_12.set_direct_draw(self._working_surface, volts_12_rect)
 
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
 
         assert(0 != len(aida64_data))
 
+        update_rects = []
+
+        volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, "0")
+        update_rects.append(self._volts_12.draw_update(volts_12_value)[1])
         
 
         return self._working_surface, update_rects

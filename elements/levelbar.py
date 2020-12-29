@@ -14,11 +14,10 @@ from .helpers import Helpers
 g_benchmark = False
 
 class LevelBarConfig:
-    def __init__(self, size, value_range, font=None):
-        assert(2 == len(size) and 2 == len(value_range))
+    def __init__(self, size, font=None):
+        assert(2 == len(size))
 
         self.size = size
-        self.value_range = value_range
         self.value_bar_fill = Color.windows_cyan_1
         self.range_bar_fill = Color.windows_cyan_1_dark
         self.outline_color = Color.grey_75
@@ -44,10 +43,11 @@ class LevelBar:
 
     _working_surface = None
     _outline = None
-    _minmax_history = None
     _outline_rect = None
+    _minmax_history = None
     _direct_rect = None
 
+    base_size = None
     current_value = None
     min_history = None
     max_history = None
@@ -58,32 +58,45 @@ class LevelBar:
 
         self._config = bar_graph_config
         self._data_field = data_field
+        self.base_size = self._config.size
+
         if direct_surface and direct_rect:
             self._working_surface = direct_surface.subsurface(direct_rect)
             self._direct_rect = direct_rect
         else:
             self._working_surface = pygame.Surface(self._config.size, surface_flags)
 
-        self.__setup_bargraph__(surface_flags)
+        self.__setup_levelbar__(surface_flags)
 
     def __setup_levelbar__(self, surface_flags):
         assert(self._config)
         assert(self._data_field)
 
-        # Setup rect for the outline. P
-        outline_origin = (
-            self._config.size[0] + self._config.outline_thickness, 
-            self._config.size[1] + self._config.outline_thickness)
+        # Setup rect for the outline. 
+        outline_origin = ((self._config.outline_thickness, self._config.outline_thickness))
         outline_size = (
             self._working_surface.get_width() - (self._config.outline_thickness * 2),
             self._working_surface.get_height() - (self._config.outline_thickness * 2))
-        outline_rect = pygame.Rect(outline_origin, )
+        self._outline_rect = pygame.Rect(outline_origin, outline_size)
+        self._outline = pygame.Surface(self._working_surface.get_size(), pygame.SRCALPHA)
+        self._outline.fill((0,0,0,0))
+        pygame.draw.rect(
+            self._outline, 
+            self._config.outline_color, 
+            self._outline_rect, self._config.outline_thickness, self._config.outline_radius)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert(0 != direct_rect[2] and 0 != direct_rect[3])
+
+        self._working_surface = direct_surface.subsurface(direct_rect)
+        self._direct_rect = direct_rect
 
     def draw_update(self, value):
-        assert(self._working_surface is not None)
-        assert(self._static_overlay_surface is not None)
+        assert(self._working_surface)
+        assert(self._outline)
         
-
+        self._working_surface.blit(self._outline, (0, 0))
 
         return self._working_surface, self._direct_rect
