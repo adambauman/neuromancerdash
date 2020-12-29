@@ -12,7 +12,7 @@ from collections import deque
 import threading
 
 # Set true to benchmark various parts of the update process
-g_benchmark = False
+g_benchmark = True
 
 from data.aida64lcdsse import AIDA64LCDSSE
 from utilities.screensaver import MatrixScreensaver
@@ -97,10 +97,9 @@ def main(argv):
 
     pygame.init()
     pygame.freetype.init()
-    pygame.mixer.quit()
+    pygame.mixer.quit() # Mixer not required, avoids ALSA overrun error messages as well
     pygame.mouse.set_visible(False)
 
-    # | pygame.FULLSCREEN
     surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
     display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height), surface_flags)
 
