@@ -86,8 +86,7 @@ class LineGraphReverse:
         transposed_value = Helpers.transpose_ranges(
             float(value), 
             data_field.max_value, data_field.min_value, 
-            plot_y, plot_height
-        )
+            plot_y, plot_height)
 
         # Append new plot point with transposed value as Y
         self._plot_points.append((self._working_surface.get_width(), transposed_value))

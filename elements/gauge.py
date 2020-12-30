@@ -195,7 +195,6 @@ class FlatArcGauge:
         needle_center = Helpers.calculate_center_align(self._working_surface, rotated_needle)
         self._working_surface.blit(rotated_needle, needle_center)
 
-
     def __draw_value_text__(self, value):
         # Set value text color, change it to the warning color if the data field has a warn level value
         value_color = self._config.value_text_color
