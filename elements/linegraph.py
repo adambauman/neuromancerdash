@@ -97,13 +97,14 @@ class LineGraphReverse:
         # Prepare plot points by shifting them left by steps_per_update
         self.__shift_plots__()
 
-        # Transpose value into graph space
+        # Transpose value into graph space, plot min/max reversed
         data_field = self._config.data_field
+        plot_y = self._plot_area[1]
         plot_height = self._plot_area[3]
         transposed_value = Helpers.transpose_ranges(
             float(value), 
             data_field.max_value, data_field.min_value, 
-            0, plot_height
+            plot_y, plot_height
         )
 
         # Append new plot point with transposed value as Y
