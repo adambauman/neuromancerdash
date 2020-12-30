@@ -15,7 +15,7 @@ from .helpers import Helpers
 # Set true to benchmark the update process
 g_benchmark = False
 
-class LineGraphConfig:
+class OldLineGraphConfig:
     def __init__(self, height, width, data_field):
         self.height, self.width = height, width
         self.plot_padding = 0
@@ -30,10 +30,10 @@ class LineGraphConfig:
         self.draw_on_zero = True
 
     
-class NewLineGraphConfig:
+class LineGraphConfig:
     def __init__(self, size, data_field):
         self.size = size
-        self.plot_padding = 0
+        self.plot_vertical_padding = 1
         self.data_field = data_field
         self.steps_per_update = 5
         self.line_color = Color.yellow
@@ -44,7 +44,7 @@ class NewLineGraphConfig:
         self.display_background = False
         self.draw_on_zero = True
 
-class NewLineGraphReverse:
+class LineGraphReverse:
     def __init__(self, line_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert((0, 0) != line_graph_config.size)
 
@@ -57,33 +57,36 @@ class NewLineGraphReverse:
             self._working_surface = pygame.Surface(self._config.size, self._surface_flags)
             self.update_rect = pygame.Rect((0, 0), self._config.size)
 
+        self._background = None
         if self._config.display_background:
-            # Only store what we need for grid
-            #full_background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_cyan_dots.png")).convert()
             self._background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_cyan_dots.png")).convert()
-            #self._background = pygame.Surface(self._config.size, surface_flags)
-            #self._background.blit(full_background, (0, 0))
-        else:
-            self._background = None
+
+        # Built a plotting area that accounts for padding and the line width
+        plot_x = self._config.plot_vertical_padding
+        plot_y = self._config.plot_vertical_padding + self._config.line_width
+        plot_width = self._working_surface.get_width() - (self._config.plot_vertical_padding * 2)
+        plot_height = self._working_surface.get_height() - (self._config.plot_vertical_padding * 2) - (self._config.line_width * 2)
+        self._plot_area = pygame.Rect(plot_x, plot_y, plot_width, plot_height)
 
         plot_queue_length = int(self._working_surface.get_width() / self._config.steps_per_update)
         self._plot_points = deque([], maxlen=plot_queue_length)
-        self._plot_points.append((self._working_surface.get_width(), 0))
+        self._plot_points.append((plot_width, plot_height))
 
     def __shift_plots__(self):
         assert(self._plot_points)
 
+        # Shift each point's X to the left
         for index in range(len(self._plot_points)):
-            # Shift X left
             self._plot_points[index] = (self._plot_points[index][0] - self._config.steps_per_update, self._plot_points[index][1])
 
-        
         # First point will be out of the working area, pop it
         if 0 > (self._plot_points[0][0] - self._config.steps_per_update):
             self._plot_points.popleft()
 
     def draw_update(self, value):
-        assert(self._working_surface and self._config)
+        assert(self._working_surface)
+        assert(self._config)
+        assert(self._plot_area)
 
         # Clear the working surface
         if self._background:
@@ -96,10 +99,11 @@ class NewLineGraphReverse:
 
         # Transpose value into graph space
         data_field = self._config.data_field
+        plot_height = self._plot_area[3]
         transposed_value = Helpers.transpose_ranges(
             float(value), 
             data_field.max_value, data_field.min_value, 
-            self._working_surface.get_height(), 0
+            0, plot_height
         )
 
         # Append new plot point with transposed value as Y
@@ -110,7 +114,7 @@ class NewLineGraphReverse:
 
 
 
-class LineGraphReverse:
+class OldLineGraphReverse:
     # Simple line graph that plots data from right to left
 
     _last_plot_y = 0

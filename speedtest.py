@@ -117,7 +117,7 @@ def main(argv):
 
     cpu_graph_config = NewLineGraphConfig((70, 300), DashData.cpu_util)
     cpu_graph_config.display_background = True
-    cpu_graph_rect = pygame.Rect(0, 0, 300, 70)
+    cpu_graph_rect = pygame.Rect(50, 50, 300, 70)
     cpu_graph = NewLineGraphReverse(cpu_graph_config, display_surface, cpu_graph_rect)
 
     simulated_data = SimulatedAida64Data()

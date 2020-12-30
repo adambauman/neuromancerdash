@@ -34,9 +34,9 @@ class SystemStatsConfigs:
         ### Configurations
         self.core_visualizer = CoreVisualizerConfig(8)
 
-        self.cpu_graph = LineGraphConfig(70, 300, DashData.cpu_util)
+        self.cpu_graph = LineGraphConfig((70, 300), DashData.cpu_util)
         self.cpu_graph.display_background = True
-        self.gpu_graph = LineGraphConfig(70, 300, DashData.gpu_util)
+        self.gpu_graph = LineGraphConfig((70, 300), DashData.gpu_util)
         self.gpu_graph.display_background = True
 
         self.sys_memory_bar = BarGraphConfig((300, 25), (0, 32768), base_font)
@@ -56,7 +56,7 @@ class SystemStatsConfigs:
         self.gpu_temp_gauge = GaugeConfig(DashData.gpu_temp, 45, value_font_size=16, value_font_origin=(35, 70))
         self.gpu_temp_gauge.show_unit_symbol = False 
 
-        self.fps_graph = LineGraphConfig(70, 200, DashData.rtss_fps)
+        self.fps_graph = LineGraphConfig((70, 200), DashData.rtss_fps)
         self.fps_graph.display_background = True
         self.fps_graph.draw_on_zero = False
 
@@ -224,7 +224,7 @@ class SystemStats:
         update_rects = []
 
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        update_rects.append(self._cpu_graph.update(cpu_utilization_value)[1])
+        update_rects.append(self._cpu_graph.draw_update(cpu_utilization_value)[1])
 
         #gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
         #update_rects.append(self._gpu_graph.update(gpu_utilization_value)[1])
