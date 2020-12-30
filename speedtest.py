@@ -10,7 +10,7 @@ g_benchmark = True
 from data.aida64lcdsse import AIDA64LCDSSE
 from data.dataobjects import DashData, DataField
 from elements.styles import Color
-from elements.linegraph import LineGraphReverse, LineGraphConfig
+from elements.linegraph import NewLineGraphReverse, NewLineGraphConfig
 
 class Hardware:
     screen_size = (480, 320)
@@ -115,10 +115,10 @@ def main(argv):
     display_surface.fill(Color.black)
     pygame.display.flip()
 
-    cpu_graph_config = LineGraphConfig(70, 300, DashData.cpu_util)
+    cpu_graph_config = NewLineGraphConfig((70, 300), DashData.cpu_util)
     cpu_graph_config.display_background = True
     cpu_graph_rect = pygame.Rect(0, 0, 300, 70)
-    cpu_graph = LineGraphReverse(cpu_graph_config, display_surface, cpu_graph_rect)
+    cpu_graph = NewLineGraphReverse(cpu_graph_config, display_surface, cpu_graph_rect)
 
     simulated_data = SimulatedAida64Data()
 
@@ -142,7 +142,7 @@ def main(argv):
   
         update_rects = []
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        update_rects.append(cpu_graph.update(cpu_utilization_value)[1])
+        update_rects.append(cpu_graph.draw_update(cpu_utilization_value)[1])
 
         pygame.display.update(update_rects)
 
