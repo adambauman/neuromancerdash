@@ -102,10 +102,11 @@ class FlatArcGauge:
         ########
 
         # Create the base surface for stuff like the gauge background, arc, redline
-        gauge_base_surface = pygame.Surface(arc_bitmap.get_size(), surface_flags)
+        assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
+        base_surface_size = (arc_bitmap.get_width(), arc_bitmap.get_width()) # TODO: figure out which is actually bigger
+        gauge_base_surface = pygame.Surface(base_surface_size, surface_flags)
 
         # Calculate some bounds and origin points
-        assert(arc_bitmap.get_width() >= arc_bitmap.get_height())
         center = (gauge_base_surface.get_width() / 2, gauge_base_surface.get_height() / 2)
         scaled_radius = arc_bitmap.get_width() / 2
 
@@ -136,15 +137,13 @@ class FlatArcGauge:
 
         # Scale the base surface to the final size and blit to the static elements surface
         assert(self._working_surface.get_size() == base_size)
-        scaled_base_surface = pygame.transform.smoothscale(gauge_base_surface, base_size)
-        self._static_elements_surface = pygame.Surface(base_size)
-        self._static_elements_surface.blit(scaled_base_surface, (0, 0))
-     
+        self._static_elements_surface = pygame.transform.smoothscale(gauge_base_surface, base_size)
+
         ########
         # Needle
         ########
 
-        # Create a temporary working surface for the needle, mirror dimensions of the unscaled base working surface
+        # Create a temporary working surface for the needle, mirror dimensions of the unscaled arc bitmap
         # for proper centering. Alpha flag required.
         needle_surface = pygame.Surface(gauge_base_surface.get_size(), surface_flags | pygame.SRCALPHA)
 
@@ -158,7 +157,7 @@ class FlatArcGauge:
         # Find the needle's center, blit to center of the working surface, then store it as a member surface
         needle_center = Helpers.calculate_center_align(gauge_base_surface, needle_bitmap)
         needle_surface.blit(needle_bitmap, needle_center)
-        self._needle_surface = pygame.transform.smoothscale(gauge_base_surface, base_size)
+        self._needle_surface = pygame.transform.smoothscale(needle_surface, base_size)
 
         ########
         # Needle Shadow
@@ -252,10 +251,11 @@ class FlatArcGauge:
         min_value = self._config.data_field.min_value
         arc_transposed_value = Helpers.transpose_ranges(float(value), max_value, min_value, -135, 135)
 
-        # If the proposed needle rotation is less than the configured buffer we can skip needle rotation
-        rotate_needle = False
-        if self._config.rotation_buffer_degrees < abs(arc_transposed_value - self._current_needle_rotation):
-            rotate_needle = True
+        ## If the proposed needle rotation is less than the configured buffer we can skip needle rotation
+        #rotate_needle = False
+        #if self._config.rotation_buffer_degrees < abs(arc_transposed_value - self._current_needle_rotation):
+        #    rotate_needle = True
+        rotate_needle = True
 
         if rotate_needle:
             self.__draw_needle_rotation__(arc_transposed_value)
