@@ -175,7 +175,8 @@ class FlatArcGauge:
 
     def __draw_needle_rotation__(self, rotation_degrees):
         # NOTE: (Adam) 2020-11-17 Rotozoom provides a cleaner rotation surface than plain rotation
-        rotated_needle = pygame.transform.rotozoom(self._needle_surface, rotation_degrees, 1)
+        #rotated_needle = pygame.transform.rotozoom(self._needle_surface, rotation_degrees, 1)
+        rotated_needle = pygame.transform.rotate(self._needle_surface, rotation_degrees)
 
         # Shadow
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
