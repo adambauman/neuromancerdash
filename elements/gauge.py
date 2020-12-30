@@ -72,12 +72,14 @@ class FlatArcGauge:
         base_size = (diameter, diameter)
         #self._working_surface = pygame.Surface(base_size, surface_flags)
 
-        if None != direct_surface and None != direct_rect:
+        if direct_surface and direct_rect:
             self._working_surface = direct_surface.subsurface(direct_rect)
             self._using_direct_surface = True
+            self.update_rect = direct_rect
         else:
             self._working_surface = pygame.Surface(base_size, surface_flags)
             self._using_direct_surface = False
+            self.update_rect = ((0, 0), base_size)
         
         self._static_elements_surface = pygame.Surface(base_size, surface_flags)
         self._prepare_constant_elements(surface_flags)
@@ -242,4 +244,4 @@ class FlatArcGauge:
         if g_benchmark:
             print("BENCHMARK: ArcGauge {}: {}ms".format(self._config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        return self._working_surface, None
+        return self._working_surface, self.update_rect

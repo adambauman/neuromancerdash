@@ -1,5 +1,5 @@
 import os
-import pygame
+import pygame, pygame.freetype
 import sys, getopt
 #from collections import deque
 #import threading
@@ -10,7 +10,7 @@ g_benchmark = True
 from data.aida64lcdsse import AIDA64LCDSSE
 from data.dataobjects import DashData, DataField
 from elements.styles import Color
-from elements.linegraph import NewLineGraphReverse, NewLineGraphConfig
+from elements.gauge import FlatArcGauge, GaugeConfig
 
 class Hardware:
     screen_size = (480, 320)
@@ -83,12 +83,13 @@ class SimDataItem:
 
 class SimulatedAida64Data:
     def __init__(self):
-        self.cpu_util = SimDataItem(0, DashData.cpu_util.min_value, DashData.cpu_util.max_value)
+        self.cpu_util = SimDataItem(DashData.cpu_util.min_value, DashData.cpu_util.min_value, DashData.cpu_util.max_value)
+        self.cpu_temp = SimDataItem(DashData.cpu_temp.min_value, DashData.cpu_temp.min_value, DashData.cpu_temp.max_value)
 
     def get_update(self):
         sim_data = {}
         sim_data[DashData.cpu_util.field_name] = self.cpu_util.step()
-        
+        sim_data[DashData.cpu_temp.field_name] = self.cpu_temp.step()
         return sim_data
 
 
@@ -101,7 +102,7 @@ def main(argv):
         print("    aidasse = {}".format(aida_sse_server))
 
     pygame.init()
-    #pygame.freetype.init()
+    pygame.freetype.init()
     pygame.mixer.quit() # Mixer not required, avoids ALSA overrun error messages as well
     pygame.mouse.set_visible(False)
 
@@ -115,10 +116,12 @@ def main(argv):
     display_surface.fill(Color.black)
     pygame.display.flip()
 
-    cpu_graph_config = NewLineGraphConfig((70, 300), DashData.cpu_util)
-    cpu_graph_config.display_background = True
-    cpu_graph_rect = pygame.Rect(50, 50, 300, 70)
-    cpu_graph = NewLineGraphReverse(cpu_graph_config, display_surface, cpu_graph_rect)
+    cpu_temp_gauge_config = GaugeConfig(DashData.cpu_temp, 45, value_font_size=16, value_font_origin=(35, 70))
+    cpu_temp_gauge_config.show_unit_symbol = False
+    cpu_temp_gauge_rect = pygame.Rect(100, 7, 90, 90)
+    cpu_temp_gauge = FlatArcGauge(
+        cpu_temp_gauge_config,
+        display_surface, cpu_temp_gauge_rect)
 
     simulated_data = SimulatedAida64Data()
 
@@ -141,8 +144,8 @@ def main(argv):
             draw_start_ticks = pygame.time.get_ticks()
   
         update_rects = []
-        cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        update_rects.append(cpu_graph.draw_update(cpu_utilization_value)[1])
+        cpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
+        update_rects.append(cpu_temp_gauge.draw_update(cpu_temperature_value)[1])
 
         pygame.display.update(update_rects)
 
