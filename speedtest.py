@@ -117,7 +117,7 @@ def main(argv):
     pygame.display.flip()
 
     cpu_temp_gauge_config = GaugeConfig(DashData.cpu_temp, 45, value_font_size=16, value_font_origin=(35, 70))
-    cpu_temp_gauge_config.show_unit_symbol = False
+    cpu_temp_gauge_config.draw_unit_symbol = False
     cpu_temp_gauge_rect = pygame.Rect(100, 7, 90, 90)
     cpu_temp_gauge = FlatArcGauge(
         cpu_temp_gauge_config,
@@ -150,6 +150,7 @@ def main(argv):
         pygame.display.update(update_rects)
 
         if g_benchmark:
+            # Pre-optimizaiton Arc Guage on Pi zero: ~16ms
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
 
         pygame.time.wait(16)
