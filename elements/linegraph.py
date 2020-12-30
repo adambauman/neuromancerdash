@@ -35,7 +35,7 @@ class NewLineGraphConfig:
         self.size = size
         self.plot_padding = 0
         self.data_field = data_field
-        self.steps_per_update = 6
+        self.steps_per_update = 5
         self.line_color = Color.yellow
         self.line_width = 1
         self.vertex_color = Color.yellow
@@ -59,9 +59,10 @@ class NewLineGraphReverse:
 
         if self._config.display_background:
             # Only store what we need for grid
-            full_background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_cyan_dots.png")).convert()
-            self._background = pygame.Surface(self._config.size, surface_flags)
-            self._background.blit(full_background, (0, 0))
+            #full_background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_cyan_dots.png")).convert()
+            self._background = pygame.image.load(os.path.join(AssetPath.graphs, "grid_cyan_dots.png")).convert()
+            #self._background = pygame.Surface(self._config.size, surface_flags)
+            #self._background.blit(full_background, (0, 0))
         else:
             self._background = None
 
@@ -72,14 +73,14 @@ class NewLineGraphReverse:
     def __shift_plots__(self):
         assert(self._plot_points)
 
-        # First point will be out of the working area, pop it
-        if 0 > (self._plot_points[0][0] - self._config.steps_per_update):
-            self._plot_points.popleft()
-
         for index in range(len(self._plot_points)):
             # Shift X left
             self._plot_points[index] = (self._plot_points[index][0] - self._config.steps_per_update, self._plot_points[index][1])
 
+        
+        # First point will be out of the working area, pop it
+        if 0 > (self._plot_points[0][0] - self._config.steps_per_update):
+            self._plot_points.popleft()
 
     def draw_update(self, value):
         assert(self._working_surface and self._config)
@@ -103,7 +104,7 @@ class NewLineGraphReverse:
 
         # Append new plot point with transposed value as Y
         self._plot_points.append((self._working_surface.get_width(), transposed_value))
-        pygame.draw.lines(self._working_surface, self._config.line_color, True, self._plot_points)
+        pygame.draw.lines(self._working_surface, self._config.line_color, False, self._plot_points)
 
         return self._working_surface, self.update_rect
 

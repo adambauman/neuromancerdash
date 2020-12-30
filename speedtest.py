@@ -149,6 +149,8 @@ def main(argv):
         if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
 
+        pygame.time.wait(16)
+
     ############
     ## Main Loop
     ############
