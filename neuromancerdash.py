@@ -1,6 +1,6 @@
 #
-# disk_visualizer_scratch - messing around with a new disk activity visualizer
-# ============================================================================
+# neuromancerdash - standalone computer health monitoring using AIDA64 data
+# =========================================================================
 #
 # Author: Adam J. Bauman (https://gist.github.com/adambauman)
 #
@@ -12,7 +12,7 @@ from collections import deque
 import threading
 
 # Set true to benchmark various parts of the update process
-g_benchmark = True
+g_benchmark = False
 
 from data.aida64lcdsse import AIDA64LCDSSE
 from utilities.screensaver import MatrixScreensaver
@@ -102,7 +102,6 @@ def main(argv):
 
     surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
     display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height), surface_flags)
-    #display_surface = pygame.display.set_mode((Hardware.screen_width, Hardware.screen_height))
 
     if __debug__:
         display_info = pygame.display.Info()
