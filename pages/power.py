@@ -12,7 +12,7 @@ from copy import copy
 
 from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
-from elements.levelbar import LevelBar, LevelBarConfig
+from elements.levelbar import HistoryBar, HistoryBarConfig
 from elements.helpers import Helpers
 from elements.styles import Color, AssetPath, FontPath
 
@@ -23,7 +23,7 @@ class PowerConfigs:
 
     def __init__(self, base_font=None):
         #self.volts_12 = LevelBarConfig((200, 32), DashData.volts_12)
-        self.volts_12 = LevelBarConfig((200, 32), DashData.cpu_temp)
+        self.volts_12 = HistoryBarConfig((200, 32), DashData.cpu_temp)
         
 
 class PowerPositions:
@@ -55,7 +55,7 @@ class Power:
         element_configs = PowerConfigs(self._font_normal)
         element_positions = PowerPositions(base_size, element_configs)
 
-        self._volts_12 = LevelBar(element_configs.volts_12)
+        self._volts_12 = HistoryBar(element_configs.volts_12)
         volts_12_rect = pygame.Rect(element_positions.volts_12, self._volts_12.base_size)
         self._volts_12.set_direct_draw(self._working_surface, volts_12_rect)
 

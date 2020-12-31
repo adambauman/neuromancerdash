@@ -123,7 +123,7 @@ class SystemStatsPositions:
         self.fan_opt_gauge = pygame.Rect(width - 40, 230, 40, 40)
         self.cpu_fan_gauge = pygame.Rect(self.cpu_temp_gauge[0], 275, 40, 40)
         self.gpu_fan_gauge = pygame.Rect(self.fan_opt_gauge[0], self.cpu_fan_gauge[1], 40, 40)
-        self.mobo_temp_rect = pygame.Rect(width-52, 268, 14, 14)
+        self.mobo_temp_rect = pygame.Rect(self.cpu_temp_gauge[0], 275, 14, 14)
 
         self.network_info = pygame.Rect(0, height-12, 300, 12)
         self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 12)
