@@ -23,12 +23,15 @@ if __debug__:
 class PowerConfigs:
 
     def __init__(self, base_font=None):
-        self.volts_12 = HistoryBarConfig((345, 31), DashData.volts_12)
-        self.volts_5 = HistoryBarConfig((345, 31), DashData.volts_5)
-        self.volts_3_3 = HistoryBarConfig((345, 31), DashData.volts_3_3)
-        self.volts_cpuvid = HistoryBarConfig((345, 31), DashData.volts_cpu_vid)
-        self.volts_dimm = HistoryBarConfig((345, 31), DashData.volts_dimm)
-        self.volts_gpu_core = HistoryBarConfig((345, 31), DashData.volts_gpu_core)
+
+        volt_bar_width = 300
+
+        self.volts_12 = HistoryBarConfig((volt_bar_width, 31), DashData.volts_12)
+        self.volts_5 = HistoryBarConfig((volt_bar_width, 31), DashData.volts_5)
+        self.volts_3_3 = HistoryBarConfig((volt_bar_width, 31), DashData.volts_3_3)
+        self.volts_cpuvid = HistoryBarConfig((volt_bar_width, 31), DashData.volts_cpu_vid)
+        self.volts_dimm = HistoryBarConfig((volt_bar_width, 31), DashData.volts_dimm)
+        self.volts_gpu_core = HistoryBarConfig((volt_bar_width, 31), DashData.volts_gpu_core)
 
         self.volt_label_config = EnclosedLabelConfig(
             base_font, text_padding=10, text_color=Color.black,
@@ -43,29 +46,30 @@ class PowerPositions:
     def __init__(self, display_size, element_configs):
         assert((0, 0) != display_size)
 
-        value_offset = 343
-
-        self.volts_12 = (68, 0)
+        value_offset = 298
+        bar_x = 90
+        
+        self.volts_12 = (bar_x, 0)
         self.volts_12_label = (self.volts_12[0] - 68, self.volts_12[1])
         self.volts_12_value = (self.volts_12[0] + value_offset, self.volts_12[1])
 
-        self.volts_5 = (68, 30)
+        self.volts_5 = (bar_x, 30)
         self.volts_5_label = (self.volts_5[0] - 68, self.volts_5[1])
         self.volts_5_value = (self.volts_5[0] + value_offset, self.volts_5[1])
 
-        self.volts_3_3 = (68, 60)
+        self.volts_3_3 = (bar_x, 60)
         self.volts_3_3_label = (self.volts_3_3[0] - 68, self.volts_3_3[1])
         self.volts_3_3_value = (self.volts_3_3[0] + value_offset, self.volts_3_3[1])
 
-        self.volts_cpuvid = (68, 100)
+        self.volts_cpuvid = (bar_x, 100)
         self.volts_cpuvid_label = (self.volts_cpuvid[0] - 68, self.volts_cpuvid[1])
         self.volts_cpuvid_value = (self.volts_cpuvid[0] + value_offset, self.volts_cpuvid[1])
 
-        self.volts_dimm = (68, 130)
+        self.volts_dimm = (bar_x, 130)
         self.volts_dimm_label = (self.volts_dimm[0] - 68, self.volts_dimm[1])
         self.volts_dimm_value = (self.volts_dimm[0] + value_offset, self.volts_dimm[1])
 
-        self.volts_gpu_core = (68, 170)
+        self.volts_gpu_core = (bar_x, 170)
         self.volts_gpu_core_label = (self.volts_gpu_core[0] - 68, self.volts_gpu_core[1])
         self.volts_gpu_core_value = (self.volts_gpu_core[0] + value_offset, self.volts_gpu_core[1])
 
@@ -191,6 +195,15 @@ class Power:
         self._volts_gpu_core = HistoryBar(element_configs.volts_gpu_core)
         volts_gpu_core_rect = pygame.Rect(element_positions.volts_gpu_core, self._volts_gpu_core.base_size)
         self._volts_gpu_core.set_direct_draw(self._working_surface, volts_gpu_core_rect)
+
+    def backup_element_surface(self):
+        # Blit, copy doesn't work if this is a subsurfaced direct-draw element
+        self._backup_surface = pygame.Surface(self._working_surface.get_size())
+        self._backup_surface.blit(self._working_surface, (0, 0))
+
+    def restore_element_surface(self):
+        if self._backup_surface:
+            self._working_surface.blit(self._backup_surface, (0, 0))
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
 
