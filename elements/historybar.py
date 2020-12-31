@@ -88,7 +88,6 @@ class HistoryBar:
             outline_color, self._outline_rect, self._config.outline_thickness, self._config.outline_radius)
 
     def __draw_history__(self, transposed_x, warn=False):
-
         history_color = self._config.history_bar_color
         if warn:
             history_color = self._config.warn_history_bar_color
@@ -97,6 +96,8 @@ class HistoryBar:
         if not self.min_history_x and not self.max_history_x:
             self.min_history_x = transposed_x
             self.max_history_x = transposed_x
+
+        assert(self.max_history_x >= self.min_history_x)
 
         # Update minmax ranges
         if self.min_history_x > transposed_x:

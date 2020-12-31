@@ -648,3 +648,101 @@ class NetworkInformation:
             print("BENCHMARK: NetworkInformation: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
         return self._working_surface, self._direct_rect
+
+class EnclosedLabelConfig:
+    def __init__(self, 
+        font=None, text_color=Color.white, text_padding=2, 
+        draw_text_shadow=False, text_shadow_color=(0, 0, 0, 255),
+        outline_color=Color.white, outline_line_width=1, outline_radius=0):
+
+        self.text_color = text_color
+        self.text_padding = text_padding
+        self.draw_text_shadow = draw_text_shadow
+        self.text_shadow_color = text_shadow_color
+        self.outline_color = outline_color
+        self.outline_line_width = outline_line_width
+        self.outline_radius = outline_radius
+
+        if font:
+            self.font = font
+        else:
+            self.font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
+
+class EnclosedLabel:
+    base_rect = None
+    first_draw = True
+
+    _direct_draw = False
+    _outline_rect = None
+    _text_centered_position = None
+
+    def __init__(self, position, text, enclosed_label_config=EnclosedLabelConfig(), direct_surface=None, surface_flags=0):
+        assert(0 != len(text))
+
+        self._config = enclosed_label_config
+        self._text = text
+
+        # Calculate how big our working area needs to be before setting the working surface
+        if self._config.draw_text_shadow:
+            rendered_text = Helpers.get_shadowed_text(
+                self._config.font, self._text, self._config.text_color, self._config.text_shadow_color)
+            text_rect = pygame.Rect((0, 0), rendered_text.get_size())
+        else:
+            rendered_text, text_rect = self._config.font.render(self._text, self._config.text_color)
+
+        required_width = text_rect.width + self._config.outline_line_width + (self._config.text_padding * 2)
+        required_height = text_rect.height + self._config.outline_line_width + (self._config.text_padding * 2)
+        self.base_rect = pygame.Rect(position, (required_width, required_height))
+        self._text_centered_position = Helpers.get_centered_origin(self.base_rect.size, text_rect.size)
+
+        if direct_surface:
+            self._working_surface = direct_surface.subsurface(self.base_rect)
+            self._direct_draw = True
+        else:
+            self._working_surface = pygame.Surface(self.base_rect.size, surface_flags)
+
+    def __draw_rect__(self):
+        # Outline rect needs a little calculation if it isn't filled because of pygame line drawing logic
+        if not self._outline_rect:
+            line_width = self._config.outline_line_width
+            if line_width > 0: 
+                outline_origin = (line_width / 2, line_width / 2)
+                outline_size = (self._working_surface.get_width() - line_width, self._working_surface.get_height() - line_width)
+                self._outline_rect = pygame.Rect(outline_origin, outline_size)
+            else:
+                outline_origin = (0, 0)
+                outline_size = self._working_surface.get_size()
+                self._outline_rect = pygame.Rect(outline_origin, outline_size)
+
+        assert(self._outline_rect)
+
+        pygame.draw.rect(
+            self._working_surface, 
+            self._config.outline_color, self._outline_rect, self._config.outline_line_width, self._config.outline_radius)
+
+    def __draw_text__(self, text=None):
+        assert(self._text_centered_position)
+
+        if not text:
+            text = self._text
+
+        if self._config.draw_text_shadow:
+            rendered_text = Helpers.get_shadowed_text(
+                self._config.font, text, self._config.text_color, self._config.text_shadow_color)
+            self._working_surface.blit(rendered_text, self._text_centered_position)
+        else:
+            self._config.font.render_to(self._working_surface, self._text_centered_position, text, self._config.text_color)
+
+    def draw(self, text=None):
+        assert(self._working_surface)
+        assert(self._config)
+        assert(self.base_rect)
+
+        self._working_surface.fill((0, 0, 0, 0))
+
+        self.__draw_rect__()
+        self.__draw_text__(text)
+
+        self.first_draw = False
+
+        return self._working_surface, self.base_rect
