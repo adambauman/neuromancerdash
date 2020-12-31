@@ -49,7 +49,8 @@ class MatrixScreensaver:
     @classmethod
     def start(
         cls,
-        surface = None, 
+        surface=None,
+        restore_surface=None,
         startup_message="", config=MatrixScreensaverConfig(), 
         stop_requested=lambda : False, data_queue_length=lambda : 0):
 
@@ -155,6 +156,10 @@ class MatrixScreensaver:
             if stop_requested() or 0 < data_queue_length():
                 if __debug__:
                     print("Stopping screen saver")
+                    if restore_surface:
+                        surface.blit(restore_surface, (0, 0))
+                    else:
+                        surface.fill((0, 0, 0, 0))
                 return
 
             # Process events to avoid freezing behavior
@@ -231,6 +236,10 @@ class MatrixScreensaver:
             if stop_requested() or 0 < data_queue_length():
                 if __debug__:
                     print("Stopping screen saver")
+                    if restore_surface:
+                        surface.blit(restore_surface, (0, 0))
+                    else:
+                        surface.fill((0, 0, 0, 0))
                 return
 
             # Process events to avoid freezing behavior

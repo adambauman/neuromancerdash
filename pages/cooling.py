@@ -100,10 +100,9 @@ class CoolingPositions:
         self.motherboard_temps_rect = pygame.Rect(175, 73, 130, 100)
 
 
-
-
 class Cooling:
     _working_surface = None
+    _backup_surface = None
     _background = None
     _surface_flags = None
 
@@ -188,6 +187,14 @@ class Cooling:
          
         return dual_fan_surface, update_rect
 
+    def backup_element_surface(self):
+        # Blit, copy doesn't work if this is a subsurfaced direct-draw element
+        self._backup_surface = pygame.Surface(self._working_surface.get_size())
+        self._backup_surface.blit(self._working_surface, (0, 0))
+
+    def restore_element_surface(self):
+        if self._backup_surface:
+            self._working_surface.blit(self._backup_surface, (0, 0))
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
 
