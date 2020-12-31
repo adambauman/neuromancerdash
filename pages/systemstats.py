@@ -52,7 +52,7 @@ class SystemStatsConfigs:
         self.gpu_memory_bar.current_value_draw = True
 
         self.cpu_temp_gauge = GaugeConfig(DashData.cpu_temp, 45, value_font_size=16, value_font_origin=(35, 70))
-        self.cpu_temp_gauge.show_unit_symbol = False
+        self.cpu_temp_gauge.draw_unit_symbol = False
         self.gpu_temp_gauge = GaugeConfig(DashData.gpu_temp, 45, value_font_size=16, value_font_origin=(35, 70))
         self.gpu_temp_gauge.show_unit_symbol = False 
 
@@ -67,9 +67,10 @@ class SystemStatsConfigs:
         case_fan_base.needle_color = Color.white
         case_fan_base.bg_color = Color.black
         case_fan_base.counter_sweep = True
-        case_fan_base.show_unit_symbol = False
-        case_fan_base.show_label_instead_of_value = True
+        case_fan_base.draw_unit_symbol = False
+        case_fan_base.draw_label_instead_of_value = True
         case_fan_base.draw_shadow = False
+        case_fan_base.use_smoothed_rotation = False
 
         # FAN1 = Front intakes combines
         self.fan1_gauge = copy(case_fan_base)
@@ -130,6 +131,7 @@ class SystemStatsPositions:
 
 class SystemStats:
     _working_surface = None
+    _backup_surface = None
     _background = None
     _base_size = None
 
@@ -145,9 +147,9 @@ class SystemStats:
         self.font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self.font_normal.kerning = True
 
-        if __debug__:
-            self._background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png")).convert_alpha()
-            self._working_surface.blit(self._background, (0,0))
+        #if __debug__:
+        #    self._background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png")).convert_alpha()
+        #    self._working_surface.blit(self._background, (0,0))
 
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
@@ -215,6 +217,14 @@ class SystemStats:
         self._network_info = NetworkInformation(element_positions.network_info, direct_surface=self._working_surface)
         self._clock = SimpleText(element_positions.clock, direct_surface=self._working_surface)
 
+    def backup_element_surface(self):
+        # Blit, copy doesn't work if this is a subsurfaced direct-draw element
+        self._backup_surface = pygame.Surface(self._working_surface.get_size())
+        self._backup_surface.blit(self._working_surface, (0, 0))
+
+    def restore_element_surface(self):
+        if self._backup_surface:
+            self._working_surface.blit(self._backup_surface, (0, 0))
 
     def draw_update(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
@@ -238,10 +248,12 @@ class SystemStats:
         update_rects.append(self._fan1_gauge.draw_update(fan1_value)[1])
         fan_opt_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
         update_rects.append(self._fan_opt_gauge.draw_update(fan_opt_value)[1])
-        cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
-        update_rects.append(self._cpu_fan_gauge.draw_update(cpu_fan_value)[1])
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
         update_rects.append(self._gpu_fan_gauge.draw_update(gpu_fan_value)[1])
+
+        # NOTE: CPU fan reporting is flaky on this motherboard? Disabling because it's unstable
+        #cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
+        #update_rects.append(self._cpu_fan_gauge.draw_update(cpu_fan_value)[1])
 
         update_rects.append(self._cpu_details.draw_update(aida64_data)[1])
         update_rects.append(self._gpu_details.draw_update(aida64_data)[1])

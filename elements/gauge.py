@@ -20,11 +20,9 @@ class GaugeConfig:
         self.radius = radius
         self.data_field = data_field
         self.redline_degrees = 35
-        self.aa_multiplier = 2
 
-        # Determines how much needle rotation is required to draw an update.
-        # Increasing this can smooth jumpy needles
-        self.rotation_buffer_degrees = 5
+        # Uses smooth rotozoom animation. This has a bit of a performance penalty if enabled.
+        self.use_smoothed_rotation = True
 
         self.value_font_size = value_font_size
         self.value_font_origin = value_font_origin # If None the value will be centered
@@ -83,7 +81,6 @@ class FlatArcGauge:
         self.__prepare_constant_elements__(base_size, surface_flags)
 
     def __prepare_constant_elements__(self, base_size, surface_flags):
-        assert(0 < self._config.aa_multiplier)
         assert((0, 0) != base_size)
         
         # NOTE: (Adam) 2020-12-11 Careful with source image sizes if running on a weaker
@@ -174,9 +171,10 @@ class FlatArcGauge:
             print("Done generating components!")
 
     def __draw_needle_rotation__(self, rotation_degrees):
-        # NOTE: (Adam) 2020-11-17 Rotozoom provides a cleaner rotation surface than plain rotation
-        #rotated_needle = pygame.transform.rotozoom(self._needle_surface, rotation_degrees, 1)
-        rotated_needle = pygame.transform.rotate(self._needle_surface, rotation_degrees)
+        if self._config.use_smoothed_rotation:
+            rotated_needle = pygame.transform.rotozoom(self._needle_surface, rotation_degrees, 1)
+        else:
+            rotated_needle = pygame.transform.rotate(self._needle_surface, rotation_degrees)
 
         # Shadow
         # Add a small %-change multiplier to give the shadow farther distance as values approach limits
@@ -241,28 +239,15 @@ class FlatArcGauge:
         # Reset the working surface
         self._working_surface.blit(self._static_elements_surface, (0, 0))
 
-        update_rect = None
-        if self._config.draw_value:
-            # Start with a small update_rect in case we don't need to redraw the needle
-            update_rect = self.__draw_value_text__(value)
+        self.__draw_value_text__(value)
             
         # Transpose value into gauge rotation space
         max_value = self._config.data_field.max_value
         min_value = self._config.data_field.min_value
         arc_transposed_value = Helpers.transpose_ranges(float(value), max_value, min_value, -135, 135)
 
-        ## If the proposed needle rotation is less than the configured buffer we can skip needle rotation
-        #rotate_needle = False
-        #if self._config.rotation_buffer_degrees < abs(arc_transposed_value - self._current_needle_rotation):
-        #    rotate_needle = True
-        rotate_needle = True
-
-        if rotate_needle:
-            self.__draw_needle_rotation__(arc_transposed_value)
-            # Use full update rect if we had to draw the needle
-            update_rect = self.update_rect
-
-        assert(update_rect)
+        self.__draw_needle_rotation__(arc_transposed_value)
+        # Use full update rect if we had to draw the needle
 
         # Track for the next update
         self.current_value = value
@@ -270,4 +255,4 @@ class FlatArcGauge:
         if g_benchmark:
             print("BENCHMARK: ArcGauge {}: {}ms".format(self._config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        return self._working_surface, update_rect
+        return self._working_surface, self.update_rect

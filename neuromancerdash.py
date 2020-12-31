@@ -146,7 +146,6 @@ def main(argv):
     available_pages.append(SystemStats(base_size, direct_surface=display_surface, direct_rect=base_rect))
     available_pages.append(Cooling(base_size, direct_surface=display_surface, direct_rect=base_rect))
 
-
     # Track selected page and copies of previously displayed pages
     current_page = 0
     requested_page = current_page
@@ -157,12 +156,13 @@ def main(argv):
     ticks_since_last_data = 0
     data_retry_delay = 50
     retry_ticks_before_screensaver = 2000
+
+    display_surface.fill(Color.black)
+    restore_surface = None
     while True:
 
         if g_benchmark:
             loop_start_ticks = pygame.time.get_ticks()
-
-        display_surface.fill(Color.black)
 
         # Handle any GPIO inputs
         # TODO: Thread the GPIO read, handle send up a pygame event when pressed
@@ -173,8 +173,7 @@ def main(argv):
                     requested_page = current_page + 1
                 else:
                     requested_page = 0
-
-                pygame.time.wait(100) # debounce
+                pygame.time.wait(200) # debounce
 
         # Handle events
         for event in pygame.event.get():
@@ -205,7 +204,7 @@ def main(argv):
                 if __debug__:
                     print("Data stream lost, starting screensaver...")
 
-                MatrixScreensaver.start(data_queue_length = lambda : len(aida64_deque))
+                MatrixScreensaver.start(restore_surface = display_surface.copy(), data_queue_length = lambda : len(aida64_deque))
 
             # Add a tiny delay while we wait to stop system resources from getting thrashed.
             pygame.time.wait(data_retry_delay)
@@ -235,12 +234,16 @@ def main(argv):
             if __debug__:
                 print("Switching from page index {} to {}".format(current_page, requested_page))
 
-            # Flush the previous page and continue to the next update cycle.
-            # TODO: Figure out why some of the previous page lingers when testing page cycling on the Pi Zero
-            display_surface.fill(Color.black)
-            pygame.display.flip()
+            # Backup page surface for quick restore when it comes around again
+            available_pages[current_page].backup_element_surface()
             current_page = requested_page
+
+            # Flush the previous page, restore the new page, then continue into the next update loop
+            display_surface.fill(Color.black)
+            available_pages[current_page].restore_element_surface()
+            pygame.display.flip()
             continue
+
         else:
             # Returns a surface to blit, if direct_surface and direct_rect defined it uses subsurfaces and
             # returns "blitable_surface, updated rects" for each element that will not be None if they were redrawn.
