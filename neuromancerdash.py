@@ -204,7 +204,11 @@ def main(argv):
                 if __debug__:
                     print("Data stream lost, starting screensaver...")
 
+                backup_surface = display_surface.copy()
                 MatrixScreensaver.start(restore_surface = display_surface.copy(), data_queue_length = lambda : len(aida64_deque))
+                display_surface.fill(Color.black)
+                display_surface.blit(backup_surface, (0, 0))
+                pygame.display.flip()
 
             # Add a tiny delay while we wait to stop system resources from getting thrashed.
             pygame.time.wait(data_retry_delay)
