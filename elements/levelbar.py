@@ -14,12 +14,14 @@ from .helpers import Helpers
 g_benchmark = False
 
 class LevelBarConfig:
-    def __init__(self, size, font=None):
+    def __init__(self, size, dash_data, font=None):
         assert(2 == len(size))
 
         self.size = size
-        self.value_bar_fill = Color.windows_cyan_1
-        self.range_bar_fill = Color.windows_cyan_1_dark
+        self.dash_data = dash_data
+        self.indicator_width = 8
+        self.indicator_color = Color.windows_cyan_1
+        self.history_bar_color = Color.windows_cyan_1_dark
         self.outline_color = Color.grey_75
         self.outline_thickness = 2
         self.outline_radius = 0
@@ -38,26 +40,18 @@ class LevelBarConfig:
             self.font = font
 
 class LevelBar:
-    _config = None
-    _data_field = None
-
     _working_surface = None
-    _outline = None
-    _outline_rect = None
-    _minmax_history = None
     _direct_rect = None
 
     base_size = None
     current_value = None
-    min_history = None
-    max_history = None
+    min_history_x = None
+    max_history_x = None
 
-    def __init__(self, bar_graph_config, data_field, direct_surface=None, direct_rect=None, surface_flags=0):
+    def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert((0, 0) != bar_graph_config.size)
-        assert(data_field)
 
         self._config = bar_graph_config
-        self._data_field = data_field
         self.base_size = self._config.size
 
         if direct_surface and direct_rect:
@@ -66,11 +60,8 @@ class LevelBar:
         else:
             self._working_surface = pygame.Surface(self._config.size, surface_flags)
 
-        self.__setup_levelbar__(surface_flags)
-
-    def __setup_levelbar__(self, surface_flags):
+    def __draw_outline__(self):
         assert(self._config)
-        assert(self._data_field)
 
         # Setup rect for the outline. 
         outline_origin = ((self._config.outline_thickness, self._config.outline_thickness))
@@ -78,12 +69,36 @@ class LevelBar:
             self._working_surface.get_width() - (self._config.outline_thickness * 2),
             self._working_surface.get_height() - (self._config.outline_thickness * 2))
         self._outline_rect = pygame.Rect(outline_origin, outline_size)
-        self._outline = pygame.Surface(self._working_surface.get_size(), pygame.SRCALPHA)
-        self._outline.fill((0,0,0,0))
         pygame.draw.rect(
-            self._outline, 
+            self._working_surface, 
             self._config.outline_color, 
             self._outline_rect, self._config.outline_thickness, self._config.outline_radius)
+
+    def __draw_history__(self, transposed_x):
+        # Initialize on the first run
+        if not self.min_history_x and not self.max_history_x:
+            self.min_history_x = transposed_x
+            self.max_history_x = transposed_x
+
+        # Update minmax ranges
+        if self.min_history_x > transposed_x:
+            self.min_history_x = transposed_x
+        if self.max_history_x < transposed_x:
+            self.max_history_x = transposed_x
+
+        # Draw
+        history_points = [
+            (self.max_history_x, self._working_surface.get_height() - self._config.outline_thickness), 
+            (self.min_history_x, self._working_surface.get_height() - self._config.outline_thickness),
+            (self.min_history_x, self._config.outline_thickness), 
+            (self.max_history_x, self._config.outline_thickness)]
+        pygame.draw.polygon(self._working_surface, self._config.history_bar_color, history_points)
+
+    def __draw_indicator__(self, transposed_x):
+      
+        pygame.draw.line(
+            self._working_surface, self._config.indicator_color, 
+            (transposed_x, 2), (transposed_x, self._working_surface.get_height() - 2), self._config.indicator_width)
 
     def set_direct_draw(self, direct_surface, direct_rect):
         # Draw element directly to a subsurface of the direct_surface
@@ -95,8 +110,23 @@ class LevelBar:
 
     def draw_update(self, value):
         assert(self._working_surface)
-        assert(self._outline)
+
+        value_float = float(value)
+
+        # Return last draw result if the value hasn't changed
+        if self.current_value == value_float:
+            return self._working_surface, None
+
+        self._working_surface.fill((0, 0, 0, 0))
+
+        max_value = self._config.dash_data.max_value
+        min_value = self._config.dash_data.min_value
+        transposed_x = Helpers.transpose_ranges(value_float, max_value, min_value, self._working_surface.get_width(), 0)
         
-        self._working_surface.blit(self._outline, (0, 0))
+        self.__draw_history__(transposed_x)
+        self.__draw_indicator__(transposed_x)
+        self.__draw_outline__()
+
+        self.current_value = value_float
 
         return self._working_surface, self._direct_rect

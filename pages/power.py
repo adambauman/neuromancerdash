@@ -22,7 +22,8 @@ if __debug__:
 class PowerConfigs:
 
     def __init__(self, base_font=None):
-        self.volts_12 = LevelBarConfig((200, 32))
+        #self.volts_12 = LevelBarConfig((200, 32), DashData.volts_12)
+        self.volts_12 = LevelBarConfig((200, 32), DashData.cpu_temp)
         
 
 class PowerPositions:
@@ -54,7 +55,7 @@ class Power:
         element_configs = PowerConfigs(self._font_normal)
         element_positions = PowerPositions(base_size, element_configs)
 
-        self._volts_12 = LevelBar(element_configs.volts_12, DashData.volts_12)
+        self._volts_12 = LevelBar(element_configs.volts_12)
         volts_12_rect = pygame.Rect(element_positions.volts_12, self._volts_12.base_size)
         self._volts_12.set_direct_draw(self._working_surface, volts_12_rect)
 
@@ -65,7 +66,8 @@ class Power:
 
         update_rects = []
 
-        volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, "0")
+        #volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, "0")
+        volts_12_value = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
         update_rects.append(self._volts_12.draw_update(volts_12_value)[1])
         
 
