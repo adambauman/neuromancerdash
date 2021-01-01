@@ -10,6 +10,7 @@ import pygame, pygame.freetype
 import sys, getopt
 from collections import deque
 import threading
+import traceback
 
 # Set true to benchmark various parts of the update process
 g_benchmark = False
@@ -249,12 +250,18 @@ def main(argv):
             pygame.display.flip()
             continue
 
-        else:
-            # Returns a surface to blit, if direct_surface and direct_rect defined it uses subsurfaces and
-            # returns "blitable_surface, updated rects" for each element that will not be None if they were redrawn.
+        # Returns a surface to blit, if direct_surface and direct_rect defined it uses subsurfaces and
+        # returns "blitable_surface, updated rects" for each element that will not be None if they were redrawn.
+        try:
             update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)[1]
-            assert(0 != len(update_rects))
-            pygame.display.update(update_rects)
+        except:
+            if __debug__:
+                print("Exception during update")
+                traceback.print_exc()
+                continue
+
+        assert(0 != len(update_rects))
+        pygame.display.update(update_rects)
 
         if g_benchmark:
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
