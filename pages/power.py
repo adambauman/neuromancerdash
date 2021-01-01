@@ -14,6 +14,7 @@ from data.units import Unit, Units
 from data.dataobjects import DataField, DashData
 from elements.historybar import HistoryBar, HistoryBarConfig
 from elements.text import EnclosedLabel, EnclosedLabelConfig, SimpleText
+from elements.linegraph import LineGraphConfig, LineGraphReverse
 from elements.helpers import Helpers
 from elements.styles import Color, AssetPath, FontPath
 
@@ -40,6 +41,11 @@ class PowerConfigs:
         self.volt_value_config = EnclosedLabelConfig(
             base_font, text_padding=10, text_color=Color.black,
             outline_line_width=0, outline_radius=0, outline_color=Color.grey_75, outline_size=outline_size)
+
+        self.cpu_graph = LineGraphConfig(DashData.cpu_util)
+        self.cpu_graph.display_background = True
+        self.gpu_graph = LineGraphConfig(DashData.gpu_util)
+        self.gpu_graph.display_background = True
 
 class PowerPositions:
 
@@ -85,6 +91,12 @@ class PowerPositions:
         self.volts_gpu_core_value = (self.volts_gpu_core[0] + value_offset, self.volts_gpu_core[1])
         self.volts_gpu_core_min = pygame.Rect((10, 178), minmax_rect_size)
         self.volts_gpu_core_max = pygame.Rect((420, 178), minmax_rect_size)
+
+        self.cpu_graph = pygame.Rect(0, 200, 235, 100)
+        self.cpu_graph_label = pygame.Rect(55, 305, 150, 10)
+        
+        self.gpu_graph = pygame.Rect(245, 200, 235, 100)
+        self.gpu_graph_label = pygame.Rect(295, 305, 150, 10)
 
 class Power:
     _working_surface = None
@@ -238,6 +250,16 @@ class Power:
         self._volts_gpu_core_max = SimpleText(
             self._positions.volts_gpu_core_max, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
 
+        # CPU Utilization
+        self._cpu_util_graph = LineGraphReverse(self._configs.cpu_graph, self._working_surface, self._positions.cpu_graph)
+        self._cpu_util_label = SimpleText(
+            self._positions.cpu_graph_label, "CPU Utilization: {}%", text_color=Color.grey_75, direct_surface=self._working_surface)
+
+        # GPU Utilization
+        self._gpu_util_graph = LineGraphReverse(self._configs.gpu_graph, self._working_surface, self._positions.gpu_graph)
+        self._gpu_util_label = SimpleText(
+            self._positions.gpu_graph_label, "GPU Utilization: {}%", text_color=Color.grey_75, direct_surface=self._working_surface)
+
     def backup_element_surface(self):
         # Blit, copy doesn't work if this is a subsurfaced direct-draw element
         self._backup_surface = pygame.Surface(self._working_surface.get_size())
@@ -348,5 +370,15 @@ class Power:
             update_rects.append(self._volts_gpu_core_max.draw_update(self._volts_gpu_core.max_history_value, Color.windows_red_1)[1])
         else:
             update_rects.append(self._volts_gpu_core_max.draw_update(self._volts_gpu_core.max_history_value)[1])
-        
+
+        # CPU Utilization
+        cpu_util = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
+        update_rects.append(self._cpu_util_graph.draw_update(cpu_util)[1])
+        update_rects.append(self._cpu_util_label.draw_update(cpu_util)[1])
+
+        # GPU Utilization
+        gpu_util = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
+        update_rects.append(self._gpu_util_graph.draw_update(gpu_util)[1])
+        update_rects.append(self._gpu_util_label.draw_update(gpu_util)[1])
+
         return self._working_surface, update_rects

@@ -16,7 +16,7 @@ from .helpers import Helpers
 g_benchmark = False
 
 class LineGraphConfig:
-    def __init__(self, size, data_field):
+    def __init__(self, data_field, size=None):
         self.size = size
         self.plot_vertical_padding = 1
         self.data_field = data_field
@@ -36,6 +36,7 @@ class LineGraphReverse:
             self._working_surface = direct_surface.subsurface(direct_rect)
             self.update_rect = direct_rect
         else:
+            assert(self._config.size)
             self._working_surface = pygame.Surface(self._config.size, self._surface_flags)
             self.update_rect = pygame.Rect((0, 0), self._config.size)
 
