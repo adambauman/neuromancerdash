@@ -539,21 +539,24 @@ class SimpleText:
         self._text_color = text_color
         self._text_template = text_template
 
-        if font is None:
-            self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
-        else:
+        if font:
             self._font = font
+        else:
+            self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
 
         base_size = (element_rect[2], element_rect[3])
-        if direct_surface is not None:
+        if direct_surface:
             self._working_surface = direct_surface.subsurface(element_rect)
             self._using_direct_surface = True
             self._direct_rect = element_rect
         else:
             self._working_surface = pygame.Surface(base_size, surface_flags)
 
-    def draw_update(self, value, force_draw=False):
-        assert(self._working_surface is not None)
+    def draw_update(self, value, new_text_color=None, force_draw=False):
+        assert(self._working_surface)
+
+        if new_text_color:
+            self._text_color = new_text_color
 
         if self._current_value != value or force_draw:
             self._working_surface.fill((0,0,0,0))
@@ -565,7 +568,6 @@ class SimpleText:
 
 
 class NetworkInformation:
-
     # Surfaces
     _working_surface = None
     _static_elements = None
