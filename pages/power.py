@@ -100,6 +100,7 @@ class PowerPositions:
 
 class Power:
     _working_surface = None
+    _backup_surface = None
     _background = None
     _surface_flags = None
 
