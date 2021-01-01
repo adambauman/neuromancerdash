@@ -276,114 +276,121 @@ class Power:
 
         update_rects = []
 
-        # NOTE: Using volt_min value to cover errors during best effort read, 
-        # will still show out-of-range values for actual readings
+        # NOTE: Don't update bars or values if updates fail, it will mess up your history bar's history
 
         # PSU 12v
-        volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, DashData.volts_12.min_value)
-        update_rects.append(self._volts_12.draw_update(volts_12_value)[1])
-        update_rects.append(self._volts_12_value.draw("{}v".format(volts_12_value))[1])
-        update_rects.append(self._volts_12_label.draw()[1])
+        volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, None)
+        if volts_12_value:
+            update_rects.append(self._volts_12.draw_update(volts_12_value)[1])
+            update_rects.append(self._volts_12_value.draw("{}v".format(volts_12_value))[1])
+            update_rects.append(self._volts_12_label.draw()[1])
 
-        if DashData.volts_12.min_value > float(volts_12_value):
-            update_rects.append(self._volts_12_min.draw_update(self._volts_12.min_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_12_min.draw_update(self._volts_12.min_history_value)[1])
+            if DashData.volts_12.min_value > float(volts_12_value):
+                update_rects.append(self._volts_12_min.draw_update(self._volts_12.min_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_12_min.draw_update(self._volts_12.min_history_value)[1])
 
-        if DashData.volts_12.max_value < float(volts_12_value):
-            update_rects.append(self._volts_12_max.draw_update(self._volts_12.max_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_12_max.draw_update(self._volts_12.max_history_value)[1])
+            if DashData.volts_12.max_value < float(volts_12_value):
+                update_rects.append(self._volts_12_max.draw_update(self._volts_12.max_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_12_max.draw_update(self._volts_12.max_history_value)[1])
 
         # PSU 5v
-        volts_5_value = DashData.best_attempt_read(aida64_data, DashData.volts_5, DashData.volts_5.min_value)
-        update_rects.append(self._volts_5.draw_update(volts_5_value)[1])
-        update_rects.append(self._volts_5_value.draw(" {}v".format(volts_5_value))[1])
-        update_rects.append(self._volts_5_label.draw()[1])
+        volts_5_value = DashData.best_attempt_read(aida64_data, DashData.volts_5, None)
+        if volts_5_value:
+            update_rects.append(self._volts_5.draw_update(volts_5_value)[1])
+            update_rects.append(self._volts_5_value.draw(" {}v".format(volts_5_value))[1])
+            update_rects.append(self._volts_5_label.draw()[1])
 
-        if DashData.volts_5.min_value > float(volts_5_value):
-            update_rects.append(self._volts_5_min.draw_update(self._volts_5.min_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_5_min.draw_update(self._volts_5.min_history_value)[1])
+            if DashData.volts_5.min_value > float(volts_5_value):
+                update_rects.append(self._volts_5_min.draw_update(self._volts_5.min_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_5_min.draw_update(self._volts_5.min_history_value)[1])
 
-        if DashData.volts_5.max_value < float(volts_5_value):
-            update_rects.append(self._volts_5_max.draw_update(self._volts_5.max_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_5_max.draw_update(self._volts_5.max_history_value)[1])
+            if DashData.volts_5.max_value < float(volts_5_value):
+                update_rects.append(self._volts_5_max.draw_update(self._volts_5.max_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_5_max.draw_update(self._volts_5.max_history_value)[1])
 
         # PSU 3.3v
-        volts_3_3_value = DashData.best_attempt_read(aida64_data, DashData.volts_3_3, DashData.volts_3_3.min_value)
-        update_rects.append(self._volts_3_3.draw_update(volts_3_3_value)[1])
-        update_rects.append(self._volts_3_3_value.draw(" {}v".format(volts_3_3_value))[1])
-        update_rects.append(self._volts_3_3_label.draw()[1])
+        volts_3_3_value = DashData.best_attempt_read(aida64_data, DashData.volts_3_3, None)
+        if volts_3_3_value:
+            update_rects.append(self._volts_3_3.draw_update(volts_3_3_value)[1])
+            update_rects.append(self._volts_3_3_value.draw(" {}v".format(volts_3_3_value))[1])
+            update_rects.append(self._volts_3_3_label.draw()[1])
 
-        if DashData.volts_3_3.min_value > float(volts_3_3_value):
-            update_rects.append(self._volts_3_3_min.draw_update(self._volts_3_3.min_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_3_3_min.draw_update(self._volts_3_3.min_history_value)[1])
+            if DashData.volts_3_3.min_value > float(volts_3_3_value):
+                update_rects.append(self._volts_3_3_min.draw_update(self._volts_3_3.min_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_3_3_min.draw_update(self._volts_3_3.min_history_value)[1])
 
-        if DashData.volts_3_3.max_value < float(volts_3_3_value):
-            update_rects.append(self._volts_3_3_max.draw_update(self._volts_3_3.max_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_3_3_max.draw_update(self._volts_3_3.max_history_value)[1])
+            if DashData.volts_3_3.max_value < float(volts_3_3_value):
+                update_rects.append(self._volts_3_3_max.draw_update(self._volts_3_3.max_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_3_3_max.draw_update(self._volts_3_3.max_history_value)[1])
 
         # CPU VID
         # NOTE: AIDA64 reports cpu_vid and cpu_core voltages as same value on my system
-        volts_cpuvid_value = DashData.best_attempt_read(aida64_data, DashData.volts_cpu_vid, DashData.volts_cpu_vid.min_value)
-        update_rects.append(self._volts_cpuvid.draw_update(volts_cpuvid_value)[1])
-        update_rects.append(self._volts_cpuvid_value.draw(" {}v".format(volts_cpuvid_value))[1])
-        update_rects.append(self._volts_cpuvid_label.draw()[1])
+        volts_cpuvid_value = DashData.best_attempt_read(aida64_data, DashData.volts_cpu_vid, None)
+        if volts_cpuvid_value:
+            update_rects.append(self._volts_cpuvid.draw_update(volts_cpuvid_value)[1])
+            update_rects.append(self._volts_cpuvid_value.draw(" {}v".format(volts_cpuvid_value))[1])
+            update_rects.append(self._volts_cpuvid_label.draw()[1])
 
-        if DashData.volts_cpu_vid.min_value > float(volts_cpuvid_value):
-            update_rects.append(self._volts_cpuvid_min.draw_update(self._volts_cpuvid.min_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_cpuvid_min.draw_update(self._volts_cpuvid.min_history_value)[1])
+            if DashData.volts_cpu_vid.min_value > float(volts_cpuvid_value):
+                update_rects.append(self._volts_cpuvid_min.draw_update(self._volts_cpuvid.min_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_cpuvid_min.draw_update(self._volts_cpuvid.min_history_value)[1])
 
-        if DashData.volts_cpu_vid.max_value < float(volts_cpuvid_value):
-            update_rects.append(self._volts_cpuvid_max.draw_update(self._volts_cpuvid.max_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_cpuvid_max.draw_update(self._volts_cpuvid.max_history_value)[1])
+            if DashData.volts_cpu_vid.max_value < float(volts_cpuvid_value):
+                update_rects.append(self._volts_cpuvid_max.draw_update(self._volts_cpuvid.max_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_cpuvid_max.draw_update(self._volts_cpuvid.max_history_value)[1])
 
         # DIMM V
-        volts_dimm_value = DashData.best_attempt_read(aida64_data, DashData.volts_dimm, DashData.volts_dimm.min_value)
-        update_rects.append(self._volts_dimm.draw_update(volts_dimm_value)[1])
-        update_rects.append(self._volts_dimm_value.draw(" {}v".format(volts_dimm_value))[1])
-        update_rects.append(self._volts_dimm_label.draw()[1])
+        volts_dimm_value = DashData.best_attempt_read(aida64_data, DashData.volts_dimm, None)
+        if volts_dimm_value:
+            update_rects.append(self._volts_dimm.draw_update(volts_dimm_value)[1])
+            update_rects.append(self._volts_dimm_value.draw(" {}v".format(volts_dimm_value))[1])
+            update_rects.append(self._volts_dimm_label.draw()[1])
 
-        if DashData.volts_dimm.min_value > float(volts_dimm_value):
-            update_rects.append(self._volts_dimm_min.draw_update(self._volts_dimm.min_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_dimm_min.draw_update(self._volts_dimm.min_history_value)[1])
+            if DashData.volts_dimm.min_value > float(volts_dimm_value):
+                update_rects.append(self._volts_dimm_min.draw_update(self._volts_dimm.min_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_dimm_min.draw_update(self._volts_dimm.min_history_value)[1])
 
-        if DashData.volts_dimm.max_value < float(volts_dimm_value):
-            update_rects.append(self._volts_dimm_max.draw_update(self._volts_dimm.max_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_dimm_max.draw_update(self._volts_dimm.max_history_value)[1])
+            if DashData.volts_dimm.max_value < float(volts_dimm_value):
+                update_rects.append(self._volts_dimm_max.draw_update(self._volts_dimm.max_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_dimm_max.draw_update(self._volts_dimm.max_history_value)[1])
 
         # GPU Core
-        volts_gpu_core_value = DashData.best_attempt_read(aida64_data, DashData.volts_gpu_core, DashData.volts_gpu_core.min_value)
-        update_rects.append(self._volts_gpu_core.draw_update(volts_gpu_core_value)[1])
-        update_rects.append(self._volts_gpu_core_value.draw(" {}v".format(volts_gpu_core_value))[1])
-        update_rects.append(self._volts_gpu_core_label.draw()[1])
+        volts_gpu_core_value = DashData.best_attempt_read(aida64_data, DashData.volts_gpu_core, None)
+        if volts_gpu_core_value:
+            update_rects.append(self._volts_gpu_core.draw_update(volts_gpu_core_value)[1])
+            update_rects.append(self._volts_gpu_core_value.draw(" {}v".format(volts_gpu_core_value))[1])
+            update_rects.append(self._volts_gpu_core_label.draw()[1])
 
-        if DashData.volts_gpu_core.min_value > float(volts_gpu_core_value):
-            update_rects.append(self._volts_gpu_core_min.draw_update(self._volts_gpu_core.min_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_gpu_core_min.draw_update(self._volts_gpu_core.min_history_value)[1])
+            if DashData.volts_gpu_core.min_value > float(volts_gpu_core_value):
+                update_rects.append(self._volts_gpu_core_min.draw_update(self._volts_gpu_core.min_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_gpu_core_min.draw_update(self._volts_gpu_core.min_history_value)[1])
 
-        if DashData.volts_gpu_core.max_value < float(volts_gpu_core_value):
-            update_rects.append(self._volts_gpu_core_max.draw_update(self._volts_gpu_core.max_history_value, Color.windows_red_1)[1])
-        else:
-            update_rects.append(self._volts_gpu_core_max.draw_update(self._volts_gpu_core.max_history_value)[1])
+            if DashData.volts_gpu_core.max_value < float(volts_gpu_core_value):
+                update_rects.append(self._volts_gpu_core_max.draw_update(self._volts_gpu_core.max_history_value, Color.windows_red_1)[1])
+            else:
+                update_rects.append(self._volts_gpu_core_max.draw_update(self._volts_gpu_core.max_history_value)[1])
 
         # CPU Utilization
-        cpu_util = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        update_rects.append(self._cpu_util_graph.draw_update(cpu_util)[1])
-        update_rects.append(self._cpu_util_label.draw_update(cpu_util)[1])
+        cpu_util = DashData.best_attempt_read(aida64_data, DashData.cpu_util, None)
+        if cpu_util:
+            update_rects.append(self._cpu_util_graph.draw_update(cpu_util)[1])
+            update_rects.append(self._cpu_util_label.draw_update(cpu_util)[1])
 
         # GPU Utilization
-        gpu_util = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
-        update_rects.append(self._gpu_util_graph.draw_update(gpu_util)[1])
-        update_rects.append(self._gpu_util_label.draw_update(gpu_util)[1])
+        gpu_util = DashData.best_attempt_read(aida64_data, DashData.gpu_util, None)
+        if gpu_util:
+            update_rects.append(self._gpu_util_graph.draw_update(gpu_util)[1])
+            update_rects.append(self._gpu_util_label.draw_update(gpu_util)[1])
 
         return self._working_surface, update_rects
