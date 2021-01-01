@@ -276,8 +276,11 @@ class Power:
 
         update_rects = []
 
+        # NOTE: Using volt_min value to cover errors during best effort read, 
+        # will still show out-of-range values for actual readings
+
         # PSU 12v
-        volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, "0.0")
+        volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, DashData.volts_12.min_value)
         update_rects.append(self._volts_12.draw_update(volts_12_value)[1])
         update_rects.append(self._volts_12_value.draw("{}v".format(volts_12_value))[1])
         update_rects.append(self._volts_12_label.draw()[1])
@@ -293,7 +296,7 @@ class Power:
             update_rects.append(self._volts_12_max.draw_update(self._volts_12.max_history_value)[1])
 
         # PSU 5v
-        volts_5_value = DashData.best_attempt_read(aida64_data, DashData.volts_5, "0.0")
+        volts_5_value = DashData.best_attempt_read(aida64_data, DashData.volts_5, DashData.volts_5.min_value)
         update_rects.append(self._volts_5.draw_update(volts_5_value)[1])
         update_rects.append(self._volts_5_value.draw(" {}v".format(volts_5_value))[1])
         update_rects.append(self._volts_5_label.draw()[1])
@@ -309,7 +312,7 @@ class Power:
             update_rects.append(self._volts_5_max.draw_update(self._volts_5.max_history_value)[1])
 
         # PSU 3.3v
-        volts_3_3_value = DashData.best_attempt_read(aida64_data, DashData.volts_3_3, "0.0")
+        volts_3_3_value = DashData.best_attempt_read(aida64_data, DashData.volts_3_3, DashData.volts_3_3.min_value)
         update_rects.append(self._volts_3_3.draw_update(volts_3_3_value)[1])
         update_rects.append(self._volts_3_3_value.draw(" {}v".format(volts_3_3_value))[1])
         update_rects.append(self._volts_3_3_label.draw()[1])
@@ -325,7 +328,8 @@ class Power:
             update_rects.append(self._volts_3_3_max.draw_update(self._volts_3_3.max_history_value)[1])
 
         # CPU VID
-        volts_cpuvid_value = DashData.best_attempt_read(aida64_data, DashData.volts_cpu_vid, "0.0")
+        # NOTE: AIDA64 reports cpu_vid and cpu_core voltages as same value on my system
+        volts_cpuvid_value = DashData.best_attempt_read(aida64_data, DashData.volts_cpu_vid, DashData.volts_cpu_vid.min_value)
         update_rects.append(self._volts_cpuvid.draw_update(volts_cpuvid_value)[1])
         update_rects.append(self._volts_cpuvid_value.draw(" {}v".format(volts_cpuvid_value))[1])
         update_rects.append(self._volts_cpuvid_label.draw()[1])
@@ -341,7 +345,7 @@ class Power:
             update_rects.append(self._volts_cpuvid_max.draw_update(self._volts_cpuvid.max_history_value)[1])
 
         # DIMM V
-        volts_dimm_value = DashData.best_attempt_read(aida64_data, DashData.volts_dimm, "0.0")
+        volts_dimm_value = DashData.best_attempt_read(aida64_data, DashData.volts_dimm, DashData.volts_dimm.min_value)
         update_rects.append(self._volts_dimm.draw_update(volts_dimm_value)[1])
         update_rects.append(self._volts_dimm_value.draw(" {}v".format(volts_dimm_value))[1])
         update_rects.append(self._volts_dimm_label.draw()[1])
@@ -357,7 +361,7 @@ class Power:
             update_rects.append(self._volts_dimm_max.draw_update(self._volts_dimm.max_history_value)[1])
 
         # GPU Core
-        volts_gpu_core_value = DashData.best_attempt_read(aida64_data, DashData.volts_gpu_core, "0.0")
+        volts_gpu_core_value = DashData.best_attempt_read(aida64_data, DashData.volts_gpu_core, DashData.volts_gpu_core.min_value)
         update_rects.append(self._volts_gpu_core.draw_update(volts_gpu_core_value)[1])
         update_rects.append(self._volts_gpu_core_value.draw(" {}v".format(volts_gpu_core_value))[1])
         update_rects.append(self._volts_gpu_core_label.draw()[1])
