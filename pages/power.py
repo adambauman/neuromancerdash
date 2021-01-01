@@ -276,11 +276,11 @@ class Power:
 
         update_rects = []
 
-        # NOTE: Don't update bars or values if updates fail, it will mess up your history bar's history
+        # NOTE: Don't update bars or values if updates fail or read zero, it will mess up your history bar's history
 
         # PSU 12v
         volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, None)
-        if volts_12_value:
+        if volts_12_value or "0" != volts_12_value:
             update_rects.append(self._volts_12.draw_update(volts_12_value))
             update_rects.append(self._volts_12_value.draw("{}v".format(volts_12_value))[1])
             update_rects.append(self._volts_12_label.draw()[1])
@@ -297,7 +297,7 @@ class Power:
 
         # PSU 5v
         volts_5_value = DashData.best_attempt_read(aida64_data, DashData.volts_5, None)
-        if volts_5_value:
+        if volts_5_value or "0" != volts_5_value:
             update_rects.append(self._volts_5.draw_update(volts_5_value))
             update_rects.append(self._volts_5_value.draw(" {}v".format(volts_5_value))[1])
             update_rects.append(self._volts_5_label.draw()[1])
@@ -314,7 +314,7 @@ class Power:
 
         # PSU 3.3v
         volts_3_3_value = DashData.best_attempt_read(aida64_data, DashData.volts_3_3, None)
-        if volts_3_3_value:
+        if volts_3_3_value or "0" != volts_3_3_value:
             update_rects.append(self._volts_3_3.draw_update(volts_3_3_value))
             update_rects.append(self._volts_3_3_value.draw(" {}v".format(volts_3_3_value))[1])
             update_rects.append(self._volts_3_3_label.draw()[1])
@@ -332,7 +332,7 @@ class Power:
         # CPU VID
         # NOTE: AIDA64 reports cpu_vid and cpu_core voltages as same value on my system
         volts_cpuvid_value = DashData.best_attempt_read(aida64_data, DashData.volts_cpu_vid, None)
-        if volts_cpuvid_value:
+        if volts_cpuvid_value or "0" != volts_cpuvid_value:
             update_rects.append(self._volts_cpuvid.draw_update(volts_cpuvid_value))
             update_rects.append(self._volts_cpuvid_value.draw(" {}v".format(volts_cpuvid_value))[1])
             update_rects.append(self._volts_cpuvid_label.draw()[1])
@@ -349,7 +349,7 @@ class Power:
 
         # DIMM V
         volts_dimm_value = DashData.best_attempt_read(aida64_data, DashData.volts_dimm, None)
-        if volts_dimm_value:
+        if volts_dimm_value or "0" != volts_dimm_value:
             update_rects.append(self._volts_dimm.draw_update(volts_dimm_value))
             update_rects.append(self._volts_dimm_value.draw(" {}v".format(volts_dimm_value))[1])
             update_rects.append(self._volts_dimm_label.draw()[1])
@@ -366,7 +366,7 @@ class Power:
 
         # GPU Core
         volts_gpu_core_value = DashData.best_attempt_read(aida64_data, DashData.volts_gpu_core, None)
-        if volts_gpu_core_value:
+        if volts_gpu_core_value or "0" != volts_gpu_core_value:
             update_rects.append(self._volts_gpu_core.draw_update(volts_gpu_core_value))
             update_rects.append(self._volts_gpu_core_value.draw(" {}v".format(volts_gpu_core_value))[1])
             update_rects.append(self._volts_gpu_core_label.draw()[1])
