@@ -45,13 +45,15 @@ class HistoryBarConfig:
 class HistoryBar:
     _working_surface = None
     _direct_rect = None
-
     _outline_rect = None
+
+    min_history_x = None
+    max_history_x = None
 
     base_size = None
     current_value = None
-    min_history_x = None
-    max_history_x = None
+    min_history_value = None
+    max_history_value = None
 
     def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert((0, 0) != bar_graph_config.size)
@@ -148,6 +150,18 @@ class HistoryBar:
 
         self._working_surface.fill((0, 0, 0, 0))
 
+        # Start tracking min/max values
+        if not self.min_history_value or not self.max_history_value:
+            self.min_history_value = value_float
+            self.max_history_value = value_float
+
+        if self.min_history_value > value_float:
+            self.min_history_value = value_float
+        
+        if self.max_history_value < value_float:
+            self.max_history_value = value_float
+
+        # Translate value to element display face
         max_value = self._config.dash_data.max_value
         min_value = self._config.dash_data.min_value
         transposed_x = Helpers.transpose_ranges(value_float, max_value, min_value, self._working_surface.get_width(), 0)

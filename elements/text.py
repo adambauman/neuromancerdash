@@ -653,7 +653,7 @@ class EnclosedLabelConfig:
     def __init__(self, 
         font=None, text_color=Color.white, text_padding=2, 
         draw_text_shadow=False, text_shadow_color=(0, 0, 0, 255),
-        outline_color=Color.white, outline_line_width=1, outline_radius=0):
+        outline_color=Color.white, outline_line_width=1, outline_radius=0, outline_size=None):
 
         self.text_color = text_color
         self.text_padding = text_padding
@@ -662,6 +662,7 @@ class EnclosedLabelConfig:
         self.outline_color = outline_color
         self.outline_line_width = outline_line_width
         self.outline_radius = outline_radius
+        self.outline_size = outline_size
 
         if font:
             self.font = font
@@ -681,6 +682,7 @@ class EnclosedLabel:
 
         self._config = enclosed_label_config
         self._text = text
+        self._outline_rect = pygame.Rect((0, 0), self._config.outline_size)
 
         # Calculate how big our working area needs to be before setting the working surface
         if self._config.draw_text_shadow:
@@ -689,9 +691,14 @@ class EnclosedLabel:
             text_rect = pygame.Rect((0, 0), rendered_text.get_size())
         else:
             rendered_text, text_rect = self._config.font.render(self._text, self._config.text_color)
+        
+        if self._outline_rect:
+            required_width = self._outline_rect.width
+            required_height = self._outline_rect.height
+        else:
+            required_width = text_rect.width + self._config.outline_line_width + (self._config.text_padding * 2)
+            required_height = text_rect.height + self._config.outline_line_width + (self._config.text_padding * 2)
 
-        required_width = text_rect.width + self._config.outline_line_width + (self._config.text_padding * 2)
-        required_height = text_rect.height + self._config.outline_line_width + (self._config.text_padding * 2)
         self.base_rect = pygame.Rect(position, (required_width, required_height))
         self._text_centered_position = Helpers.get_centered_origin(self.base_rect.size, text_rect.size)
 
@@ -702,7 +709,7 @@ class EnclosedLabel:
             self._working_surface = pygame.Surface(self.base_rect.size, surface_flags)
 
     def __draw_rect__(self):
-        # Outline rect needs a little calculation if it isn't filled because of pygame line drawing logic
+        # Outline rect needs a little calculation if the caller didn't specify an outline rect size
         if not self._outline_rect:
             line_width = self._config.outline_line_width
             if line_width > 0: 

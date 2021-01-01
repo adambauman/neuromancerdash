@@ -54,7 +54,7 @@ class DashData:
     volts_5 = DataField("5v", Units.volts, min_value=4.75, max_value=5.25)
     volts_3_3 = DataField("3_3v", "3.3v Rail", Units.volts, min_value=3.135, max_value=3.456)
     volts_dimm = DataField("v_dimm", "Memory Voltage", Units.volts, min_value=0.5, max_value=2.0)
-    volts_cpu_vid = DataField("cpu_vid", "CPU VID",Units.volts, min_value=0.60, max_value=1.27)
+    volts_cpu_vid = DataField("cpu_vid", "CPU VID",Units.volts, min_value=0.60, max_value=1.26)
     volts_cpu_core = DataField("cpu_core_volts", "CPU Core Voltage", Units.volts, min_value=1.2, max_value=1.35)
     volts_gpu_core = DataField("gpu_core_volts", "GPU Core Voltage", Units.volts, min_value=0.7, max_value=1.35)
     pch_temp = DataField("pch_temp", Units.celsius, min_value=20, caution_value=50, max_value=80, warn_value=60)
