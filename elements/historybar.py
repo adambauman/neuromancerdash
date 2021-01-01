@@ -43,29 +43,29 @@ class HistoryBarConfig:
             self.font = font
 
 class HistoryBar:
-    _working_surface = None
-    _direct_rect = None
-    _outline_rect = None
+    working_surface = None
+    base_rect = None
 
-    min_history_x = None
-    max_history_x = None
-
-    base_size = None
     current_value = None
     min_history_value = None
     max_history_value = None
+
+    _outline_rect = None
+    _base_size = None
+    _min_history_x = None
+    _max_history_x = None
 
     def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert((0, 0) != bar_graph_config.size)
 
         self._config = bar_graph_config
-        self.base_size = self._config.size
+        self._base_size = self._config.size
 
         if direct_surface and direct_rect:
-            self._working_surface = direct_surface.subsurface(direct_rect)
-            self._direct_rect = direct_rect
+            self.working_surface = direct_surface.subsurface(direct_rect)
+            self.base_rect = direct_rect
         else:
-            self._working_surface = pygame.Surface(self._config.size, surface_flags)
+            self.working_surface = pygame.Surface(self._config.size, surface_flags)
 
         # Draw an initial outline element to lock in the _outline_rect dimensions
         self.__draw_outline__()
@@ -82,11 +82,11 @@ class HistoryBar:
         if not self._outline_rect:
             thiccccc_ness = self._config.outline_thickness
             outline_origin = (thiccccc_ness / 2, thiccccc_ness / 2)
-            outline_size = (self._working_surface.get_width() - thiccccc_ness, self._working_surface.get_height() - thiccccc_ness)
+            outline_size = (self.working_surface.get_width() - thiccccc_ness, self.working_surface.get_height() - thiccccc_ness)
             self._outline_rect = pygame.Rect(outline_origin, outline_size)
 
         pygame.draw.rect(
-            self._working_surface, 
+            self.working_surface, 
             outline_color, self._outline_rect, self._config.outline_thickness, self._config.outline_radius)
 
     def __draw_history__(self, transposed_x, warn=False):
@@ -95,22 +95,22 @@ class HistoryBar:
             history_color = self._config.warn_history_bar_color
 
         # Initialize on the first run
-        if not self.min_history_x and not self.max_history_x:
-            self.min_history_x = transposed_x
-            self.max_history_x = transposed_x
+        if not self._min_history_x and not self._max_history_x:
+            self._min_history_x = transposed_x
+            self._max_history_x = transposed_x
 
-        assert(self.max_history_x >= self.min_history_x)
+        assert(self._max_history_x >= self._min_history_x)
 
         # Update minmax ranges
-        if self.min_history_x > transposed_x:
-            self.min_history_x = transposed_x
-        if self.max_history_x < transposed_x:
-            self.max_history_x = transposed_x
+        if self._min_history_x > transposed_x:
+            self._min_history_x = transposed_x
+        if self._max_history_x < transposed_x:
+            self._max_history_x = transposed_x
 
         # Draw the history rect
-        end_width = self.max_history_x - self.min_history_x
-        history_rect = (self.min_history_x, 0, end_width, self._working_surface.get_height())
-        pygame.draw.rect(self._working_surface, history_color, history_rect)
+        end_width = self._max_history_x - self._min_history_x
+        history_rect = (self._min_history_x, 0, end_width, self.working_surface.get_height())
+        pygame.draw.rect(self.working_surface, history_color, history_rect)
 
     def __draw_indicator__(self, transposed_x, warn=False):
         assert(self._outline_rect)
@@ -129,26 +129,26 @@ class HistoryBar:
 
         line_start = (transposed_x, self._outline_rect.top)
         line_end = (transposed_x, self._outline_rect.height)
-        pygame.draw.line(self._working_surface, indicator_color, line_start, line_end, line_width)
+        pygame.draw.line(self.working_surface, indicator_color, line_start, line_end, line_width)
 
     def set_direct_draw(self, direct_surface, direct_rect):
         # Draw element directly to a subsurface of the direct_surface
         assert(direct_surface)
         assert(0 != direct_rect[2] and 0 != direct_rect[3])
 
-        self._working_surface = direct_surface.subsurface(direct_rect)
-        self._direct_rect = direct_rect
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
 
     def draw_update(self, value):
-        assert(self._working_surface)
+        assert(self.working_surface)
 
         value_float = float(value)
 
         # Return last draw result if the value hasn't changed
         if self.current_value == value_float:
-            return self._working_surface, None
+            return None
 
-        self._working_surface.fill((0, 0, 0, 0))
+        self.working_surface.fill((0, 0, 0, 0))
 
         # Start tracking min/max values
         if not self.min_history_value or not self.max_history_value:
@@ -164,7 +164,7 @@ class HistoryBar:
         # Translate value to element display face
         max_value = self._config.dash_data.max_value
         min_value = self._config.dash_data.min_value
-        transposed_x = Helpers.transpose_ranges(value_float, max_value, min_value, self._working_surface.get_width(), 0)
+        transposed_x = Helpers.transpose_ranges(value_float, max_value, min_value, self.working_surface.get_width(), 0)
         
         is_warning = False
         if max_value <= value_float or min_value >= value_float:
@@ -176,4 +176,4 @@ class HistoryBar:
 
         self.current_value = value_float
 
-        return self._working_surface, self._direct_rect
+        return self.base_rect

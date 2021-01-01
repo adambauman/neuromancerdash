@@ -133,7 +133,7 @@ class Power:
             direct_surface=self._working_surface)
 
         self._volts_12 = HistoryBar(self._configs.volts_12)
-        volts_12_rect = pygame.Rect(self._positions.volts_12, self._volts_12.base_size)
+        volts_12_rect = pygame.Rect(self._positions.volts_12, self._volts_12._base_size)
         self._volts_12.set_direct_draw(self._working_surface, volts_12_rect)
 
         self._volts_12_min = SimpleText(
@@ -155,7 +155,7 @@ class Power:
             direct_surface=self._working_surface)
 
         self._volts_5 = HistoryBar(self._configs.volts_5)
-        volts_5_rect = pygame.Rect(self._positions.volts_5, self._volts_5.base_size)
+        volts_5_rect = pygame.Rect(self._positions.volts_5, self._volts_5._base_size)
         self._volts_5.set_direct_draw(self._working_surface, volts_5_rect)
 
         self._volts_5_min = SimpleText(
@@ -177,7 +177,7 @@ class Power:
             direct_surface=self._working_surface)
 
         self._volts_3_3 = HistoryBar(self._configs.volts_3_3)
-        volts_3_3_rect = pygame.Rect(self._positions.volts_3_3, self._volts_3_3.base_size)
+        volts_3_3_rect = pygame.Rect(self._positions.volts_3_3, self._volts_3_3._base_size)
         self._volts_3_3.set_direct_draw(self._working_surface, volts_3_3_rect)
 
         self._volts_3_3_min = SimpleText(
@@ -199,7 +199,7 @@ class Power:
             direct_surface=self._working_surface)
 
         self._volts_cpuvid = HistoryBar(self._configs.volts_cpuvid)
-        volts_cpuvid_rect = pygame.Rect(self._positions.volts_cpuvid, self._volts_cpuvid.base_size)
+        volts_cpuvid_rect = pygame.Rect(self._positions.volts_cpuvid, self._volts_cpuvid._base_size)
         self._volts_cpuvid.set_direct_draw(self._working_surface, volts_cpuvid_rect)
 
         self._volts_cpuvid_min = SimpleText(
@@ -221,7 +221,7 @@ class Power:
             direct_surface=self._working_surface)
 
         self._volts_dimm = HistoryBar(self._configs.volts_dimm)
-        volts_dimm_rect = pygame.Rect(self._positions.volts_dimm, self._volts_dimm.base_size)
+        volts_dimm_rect = pygame.Rect(self._positions.volts_dimm, self._volts_dimm._base_size)
         self._volts_dimm.set_direct_draw(self._working_surface, volts_dimm_rect)
 
         self._volts_dimm_min = SimpleText(
@@ -243,7 +243,7 @@ class Power:
             direct_surface=self._working_surface)
 
         self._volts_gpu_core = HistoryBar(self._configs.volts_gpu_core)
-        volts_gpu_core_rect = pygame.Rect(self._positions.volts_gpu_core, self._volts_gpu_core.base_size)
+        volts_gpu_core_rect = pygame.Rect(self._positions.volts_gpu_core, self._volts_gpu_core._base_size)
         self._volts_gpu_core.set_direct_draw(self._working_surface, volts_gpu_core_rect)
                                              
         self._volts_gpu_core_min = SimpleText(
@@ -281,7 +281,7 @@ class Power:
         # PSU 12v
         volts_12_value = DashData.best_attempt_read(aida64_data, DashData.volts_12, None)
         if volts_12_value:
-            update_rects.append(self._volts_12.draw_update(volts_12_value)[1])
+            update_rects.append(self._volts_12.draw_update(volts_12_value))
             update_rects.append(self._volts_12_value.draw("{}v".format(volts_12_value))[1])
             update_rects.append(self._volts_12_label.draw()[1])
 
@@ -298,7 +298,7 @@ class Power:
         # PSU 5v
         volts_5_value = DashData.best_attempt_read(aida64_data, DashData.volts_5, None)
         if volts_5_value:
-            update_rects.append(self._volts_5.draw_update(volts_5_value)[1])
+            update_rects.append(self._volts_5.draw_update(volts_5_value))
             update_rects.append(self._volts_5_value.draw(" {}v".format(volts_5_value))[1])
             update_rects.append(self._volts_5_label.draw()[1])
 
@@ -315,7 +315,7 @@ class Power:
         # PSU 3.3v
         volts_3_3_value = DashData.best_attempt_read(aida64_data, DashData.volts_3_3, None)
         if volts_3_3_value:
-            update_rects.append(self._volts_3_3.draw_update(volts_3_3_value)[1])
+            update_rects.append(self._volts_3_3.draw_update(volts_3_3_value))
             update_rects.append(self._volts_3_3_value.draw(" {}v".format(volts_3_3_value))[1])
             update_rects.append(self._volts_3_3_label.draw()[1])
 
@@ -333,7 +333,7 @@ class Power:
         # NOTE: AIDA64 reports cpu_vid and cpu_core voltages as same value on my system
         volts_cpuvid_value = DashData.best_attempt_read(aida64_data, DashData.volts_cpu_vid, None)
         if volts_cpuvid_value:
-            update_rects.append(self._volts_cpuvid.draw_update(volts_cpuvid_value)[1])
+            update_rects.append(self._volts_cpuvid.draw_update(volts_cpuvid_value))
             update_rects.append(self._volts_cpuvid_value.draw(" {}v".format(volts_cpuvid_value))[1])
             update_rects.append(self._volts_cpuvid_label.draw()[1])
 
@@ -350,7 +350,7 @@ class Power:
         # DIMM V
         volts_dimm_value = DashData.best_attempt_read(aida64_data, DashData.volts_dimm, None)
         if volts_dimm_value:
-            update_rects.append(self._volts_dimm.draw_update(volts_dimm_value)[1])
+            update_rects.append(self._volts_dimm.draw_update(volts_dimm_value))
             update_rects.append(self._volts_dimm_value.draw(" {}v".format(volts_dimm_value))[1])
             update_rects.append(self._volts_dimm_label.draw()[1])
 
@@ -367,7 +367,7 @@ class Power:
         # GPU Core
         volts_gpu_core_value = DashData.best_attempt_read(aida64_data, DashData.volts_gpu_core, None)
         if volts_gpu_core_value:
-            update_rects.append(self._volts_gpu_core.draw_update(volts_gpu_core_value)[1])
+            update_rects.append(self._volts_gpu_core.draw_update(volts_gpu_core_value))
             update_rects.append(self._volts_gpu_core_value.draw(" {}v".format(volts_gpu_core_value))[1])
             update_rects.append(self._volts_gpu_core_label.draw()[1])
 
