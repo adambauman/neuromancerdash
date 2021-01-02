@@ -33,4 +33,4 @@ Install RivaTunerStatisticsServer (optional if you want FPS data)
 # Execution
 Two options:
 1. Run **dash_launcher.sh**, this can be added to your crontab for automatic startup
-2. Run **python3 neuromancerdash.py --aidasse http://<ip_of_your_host>:<port>/sse**
+2. Run **python3 neuromancerdash.py --aidasse http://example_ip:8080/sse**
