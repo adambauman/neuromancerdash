@@ -155,7 +155,6 @@ class Cooling:
         self._heat_map = pygame.image.load(os.path.join(AssetPath.misc, "case_heatmap.png")).convert() # Meant as BG, no alpha
 
     def __draw_front_intake_fans__(self, value, using_direct_surface=False):
-        assert(self._surface_flags)
 
         # Draw two bars matching the exhaust style, flip 90 CCW
         self._front_intake_fan_bar.draw_update(value)

@@ -106,6 +106,7 @@ class Power:
     _surface_flags = None
 
     def __init__(self, base_size, direct_surface=None, direct_rect=None, surface_flags=0):
+
         assert((0, 0) != base_size)
 
         self._surface_flags = surface_flags
