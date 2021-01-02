@@ -29,6 +29,9 @@ Install RivaTunerStatisticsServer (optional if you want FPS data)
     * sudo apt-get install libsdl2-ttf-2.0-0 libsdl2-mixer-2.0-0 libsdl2-image-2.0-0
 
 4. Update dash_launcher.sh with the IP and port number for your Host machine
+5. (optional) Add dash_laucnher.sh to your crontab for automatic execution
+    * sudo crontab -e
+    * Add this line to the bottom of the file: **@reboot sh /home/pi/src/neuromancerdash/dash_launcher.sh &**
 
 # Other Client Installation
 Other client hardware can easily be used, clone the repo, install the Python3 components using whichever mechanisms work best for your client. Some systems may already have the SDL2 components in place after pygame is installed/updated, others may required building them from source. I used a Windows 10 PC for the bulk of development and it was easy-peesy.
