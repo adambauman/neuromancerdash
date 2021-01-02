@@ -20,7 +20,7 @@ Install RivaTunerStatisticsServer (optional if you want FPS data)
 # Raspberry Pi Client Installation
 1. Clone this repository onto your client
 
-2. Install Python 3 components:
+2. Install Python3 components:
     * pip3 install sseclient
     * pip3 install pygame --upgrade
     * pip3 install Adafruit_DHT
@@ -29,6 +29,9 @@ Install RivaTunerStatisticsServer (optional if you want FPS data)
     * sudo apt-get install libsdl2-ttf-2.0-0 libsdl2-mixer-2.0-0 libsdl2-image-2.0-0
 
 4. Update dash_launcher.sh with the IP and port number for your Host machine
+
+# Other Client Installation
+Other client hardware can easily be used, clone the repo, install the Python3 components using whatever mechanisms work best for your client. Some systems may already have the SDL2 components in place after pygame is installed/updated, others may required building them from source. I used a Windows 10 PC for the bulk of development and it was easy-peesy.
 
 # Execution
 Two options:
