@@ -107,11 +107,11 @@ class Cooling:
     _surface_flags = None
 
     def __init__(self, base_size, direct_surface=None, direct_rect=None, surface_flags=0):
-        assert(0 != base_size[0] and 0 != base_size[1])
+        assert((0, 0) != base_size)
 
         self._surface_flags = surface_flags
 
-        if direct_surface and direct_rect is not None:
+        if direct_surface and direct_rect:
             self.working_surface = direct_surface.subsurface(direct_rect)
         else:
             self.working_surface = pygame.Surface(base_size, surface_flags)
@@ -155,7 +155,7 @@ class Cooling:
         self._heat_map = pygame.image.load(os.path.join(AssetPath.misc, "case_heatmap.png")).convert() # Meant as BG, no alpha
 
     def __draw_front_intake_fans__(self, value, using_direct_surface=False):
-        assert(self._surface_flags is not None)
+        assert(self._surface_flags)
 
         # Draw two bars matching the exhaust style, flip 90 CCW
         self._front_intake_fan_bar.draw_update(value)
@@ -212,8 +212,6 @@ class Cooling:
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
         cpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
         update_rects.append(self._cpu_pump_status.draw_update(cpu_temperature_value, cpu_fan_value))
-        #if cpu_pump_rect is not None:
-        #    update_rects.append(cpu_pump_rect)
 
         gpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
@@ -237,7 +235,7 @@ class Cooling:
         update_rects.append(self._motherboard_temps.draw_update(aida64_data))
 
         # Ambient temperature and humidity
-        if dht22_data is not None:
+        if dht22_data:
             update_rects.append(self._home_temperature.draw_update(dht22_data.temperature))
 
         return update_rects
