@@ -28,7 +28,7 @@ Install RivaTunerStatisticsServer (optional if you want FPS data)
 3. Install required SDL2 components:
     * sudo apt-get install libsdl2-ttf-2.0-0 libsdl2-mixer-2.0-0 libsdl2-image-2.0-0
 
-4. Update dash_launcher.sh with the IP and port number for your Host machine
+4. Update dash_launcher.sh to reflect the path you cloned this repository into as well as the network address information of your host.
 5. (optional) Add dash_laucnher.sh to your crontab for automatic execution
     * sudo crontab -e
     * Add this line to the bottom of the file: **@reboot sh /home/pi/src/neuromancerdash/dash_launcher.sh &**
