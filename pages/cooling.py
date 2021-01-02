@@ -202,7 +202,7 @@ class Cooling:
 
         assert(0 != len(aida64_data))
 
-        self._working_surface.blit(self._heat_map, (0, 0))
+        self._working_surface.blit(self._heat_map, (0, 34))
         self._working_surface.blit(self._case_profile, (366, 0))
 
         update_rects = []
