@@ -121,7 +121,9 @@ class SystemStatsPositions:
         self.fan_opt_gauge = pygame.Rect(width - 40, 230, 40, 40)
         self.cpu_fan_gauge = pygame.Rect(self.cpu_temp_gauge[0], 275, 40, 40)
         self.gpu_fan_gauge = pygame.Rect(self.fan_opt_gauge[0], self.cpu_fan_gauge[1], 40, 40)
-        self.mobo_temp_rect = pygame.Rect(self.cpu_temp_gauge[0]+5, 290, 34, 14)
+
+        self.mobo_temp_label = pygame.Rect(self.cpu_temp_gauge[0]+5, 282, 34, 14)
+        self.mobo_temp_rect = pygame.Rect(self.cpu_temp_gauge[0]+5, 294, 34, 14)
 
         self.network_info = pygame.Rect(0, height-12, 300, 12)
         self.clock = pygame.Rect(self.cpu_details_rect[0], height-12, 70, 12)
@@ -148,66 +150,68 @@ class SystemStats:
         
         assert(self.working_surface)
 
-        element_configs = SystemStatsConfigs(self.font_normal)
-        element_positions = SystemStatsPositions(base_size[0], base_size[1])
+        self._configs = SystemStatsConfigs(self.font_normal)
+        self._positions = SystemStatsPositions(base_size[0], base_size[1])
 
         self._sys_memory_bar = BarGraph(
-            element_configs.sys_memory_bar,
-            self.working_surface, element_positions.sys_memory)
+            self._configs.sys_memory_bar,
+            self.working_surface, self._positions.sys_memory)
         self._gpu_memory_bar = BarGraph(
-            element_configs.gpu_memory_bar,
-            self.working_surface, element_positions.gpu_memory)
+            self._configs.gpu_memory_bar,
+            self.working_surface, self._positions.gpu_memory)
 
         self._cpu_graph = LineGraphReverse(
-            element_configs.cpu_graph,
-            self.working_surface, element_positions.cpu_graph)
+            self._configs.cpu_graph,
+            self.working_surface, self._positions.cpu_graph)
         self._gpu_graph = LineGraphReverse(
-            element_configs.gpu_graph,
-            self.working_surface, element_positions.gpu_graph)
+            self._configs.gpu_graph,
+            self.working_surface, self._positions.gpu_graph)
 
         self._core_visualizer = SimpleCoreVisualizer(
-            element_configs.core_visualizer,
-            self.working_surface, element_positions.core_visualizer)
+            self._configs.core_visualizer,
+            self.working_surface, self._positions.core_visualizer)
 
         # NOTE: Rect and working surface are reversed from other elements
         self._cpu_details = CPUDetails(
-            element_positions.cpu_details_rect, direct_surface=self.working_surface)
+            self._positions.cpu_details_rect, direct_surface=self.working_surface)
         self._gpu_details = GPUDetails(
-            element_positions.gpu_details_rect, direct_surface=self.working_surface)
+            self._positions.gpu_details_rect, direct_surface=self.working_surface)
 
         self._cpu_temp_gauge = FlatArcGauge(
-            element_configs.cpu_temp_gauge,
-            self.working_surface, element_positions.cpu_temp_gauge)
+            self._configs.cpu_temp_gauge,
+            self.working_surface, self._positions.cpu_temp_gauge)
         self._gpu_temp_gauge = FlatArcGauge(
-            element_configs.gpu_temp_gauge,
-            self.working_surface, element_positions.gpu_temp_gauge)
+            self._configs.gpu_temp_gauge,
+            self.working_surface, self._positions.gpu_temp_gauge)
 
         self._fps_graph = LineGraphReverse(
-            element_configs.fps_graph,
-            self.working_surface, element_positions.fps_graph)
-        self._fps_text = FPSText(element_positions.fps_text_rect, direct_surface=self.working_surface)
+            self._configs.fps_graph,
+            self.working_surface, self._positions.fps_graph)
+        self._fps_text = FPSText(self._positions.fps_text_rect, direct_surface=self.working_surface)
 
         self._temperature_humidity = TemperatureHumidity(
-            element_positions.temperature_humidity_rect, direct_surface=self.working_surface)
+            self._positions.temperature_humidity_rect, direct_surface=self.working_surface)
 
         self._fan1_gauge = FlatArcGauge(
-            element_configs.fan1_gauge, 
-            self.working_surface, element_positions.fan1_gauge)
+            self._configs.fan1_gauge, 
+            self.working_surface, self._positions.fan1_gauge)
         self._fan_opt_gauge = FlatArcGauge(
-            element_configs.fan_opt_gauge,
-            self.working_surface, element_positions.fan_opt_gauge)
+            self._configs.fan_opt_gauge,
+            self.working_surface, self._positions.fan_opt_gauge)
         self._cpu_fan_gauge = FlatArcGauge(
-            element_configs.cpu_fan_gauge,
-            self.working_surface, element_positions.cpu_fan_gauge)
+            self._configs.cpu_fan_gauge,
+            self.working_surface, self._positions.cpu_fan_gauge)
         self._gpu_fan_gauge = FlatArcGauge(
-            element_configs.gpu_fan_gauge,
-            self.working_surface, element_positions.gpu_fan_gauge)
+            self._configs.gpu_fan_gauge,
+            self.working_surface, self._positions.gpu_fan_gauge)
 
+        self._mobo_temperature_label = SimpleText(
+            self._positions.mobo_temp_label, "{}", direct_surface=self.working_surface)
         self._mobo_temperature = SimpleText(
-            element_positions.mobo_temp_rect, "{}\u00b0C", direct_surface=self.working_surface)
+            self._positions.mobo_temp_rect, "{}\u00b0C", text_color=Color.yellow,direct_surface=self.working_surface)
 
-        self._network_info = NetworkInformation(element_positions.network_info, direct_surface=self.working_surface)
-        self._clock = SimpleText(element_positions.clock, direct_surface=self.working_surface)
+        self._network_info = NetworkInformation(self._positions.network_info, direct_surface=self.working_surface)
+        self._clock = SimpleText(self._positions.clock, direct_surface=self.working_surface)
 
     def backup_element_surface(self):
         # Blit, copy doesn't work if this is a subsurfaced direct-draw element
@@ -267,6 +271,7 @@ class SystemStats:
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
+        update_rects.append(self._mobo_temperature_label.draw_update("Mobo"))
         update_rects.append(self._mobo_temperature.draw_update(mobo_temperature_value))
 
         # Network Info
