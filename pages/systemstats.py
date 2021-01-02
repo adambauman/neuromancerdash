@@ -226,10 +226,10 @@ class SystemStats:
         update_rects = []
 
         cpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.cpu_util, "0")
-        update_rects.append(self._cpu_graph.draw_update(cpu_utilization_value)[1])
+        update_rects.append(self._cpu_graph.draw_update(cpu_utilization_value))
 
         gpu_utilization_value = DashData.best_attempt_read(aida64_data, DashData.gpu_util, "0")
-        update_rects.append(self._gpu_graph.draw_update(gpu_utilization_value)[1])
+        update_rects.append(self._gpu_graph.draw_update(gpu_utilization_value))
 
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
         update_rects.append(self._cpu_temp_gauge.draw_update(cpu_temperature)[1])
@@ -258,7 +258,7 @@ class SystemStats:
         update_rects.append(self._core_visualizer.update(aida64_data)[1])
 
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
-        update_rects.append(self._fps_graph.draw_update(fps_value)[1])
+        update_rects.append(self._fps_graph.draw_update(fps_value))
         update_rects.append(self._fps_text.draw_update(fps_value))
 
         # Ambient temperature and humidity

@@ -11,9 +11,6 @@ from data.dataobjects import DataField, DashData
 from .styles import Color, FontPath, AssetPath
 from .helpers import Helpers
 
-# Set true to benchmark the update process
-g_benchmark = False
-
 class DynamicField:
     def __init__(self, origin, subsurface, text, text_color, font, value=None, clamp_chars=0):
         # Will be an updatable subsurface of the working surface

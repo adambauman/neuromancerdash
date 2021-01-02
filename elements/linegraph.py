@@ -27,18 +27,21 @@ class LineGraphConfig:
         self.draw_on_zero = True
 
 class LineGraphReverse:
+    self.working_surface = None
+    self.base_rect = None
+
     def __init__(self, line_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert((0, 0) != line_graph_config.size)
 
         self._config = line_graph_config
         self._surface_flags = surface_flags
         if direct_surface and direct_rect:
-            self._working_surface = direct_surface.subsurface(direct_rect)
-            self.update_rect = direct_rect
+            self.working_surface = direct_surface.subsurface(direct_rect)
+            self.base_rect = direct_rect
         else:
             assert(self._config.size)
-            self._working_surface = pygame.Surface(self._config.size, self._surface_flags)
-            self.update_rect = pygame.Rect((0, 0), self._config.size)
+            self.working_surface = pygame.Surface(self._config.size, self._surface_flags)
+            self.base_rect = pygame.Rect((0, 0), self._config.size)
 
         self._background = None
         if self._config.display_background:
@@ -47,11 +50,11 @@ class LineGraphReverse:
         # Built a plotting area that accounts for padding and the line width
         plot_x = self._config.plot_vertical_padding
         plot_y = self._config.plot_vertical_padding + self._config.line_width
-        plot_width = self._working_surface.get_width() - (self._config.plot_vertical_padding * 2)
-        plot_height = self._working_surface.get_height() - (self._config.plot_vertical_padding * 2) - (self._config.line_width)
+        plot_width = self.working_surface.get_width() - (self._config.plot_vertical_padding * 2)
+        plot_height = self.working_surface.get_height() - (self._config.plot_vertical_padding * 2) - (self._config.line_width)
         self._plot_area = pygame.Rect(plot_x, plot_y, plot_width, plot_height)
 
-        plot_queue_length = int(self._working_surface.get_width() / self._config.steps_per_update)
+        plot_queue_length = int(self.working_surface.get_width() / self._config.steps_per_update)
         self._plot_points = deque([], maxlen=plot_queue_length)
         self._plot_points.append((plot_width, plot_height))
 
@@ -67,15 +70,15 @@ class LineGraphReverse:
             self._plot_points.popleft()
 
     def draw_update(self, value):
-        assert(self._working_surface)
+        assert(self.working_surface)
         assert(self._config)
         assert(self._plot_area)
 
         # Clear the working surface
         if self._background:
-            self._working_surface.blit(self._background, (0, 0))
+            self.working_surface.blit(self._background, (0, 0))
         else:
-            self._working_surface.fill(0, 0, 0, 0)
+            self.working_surface.fill(0, 0, 0, 0)
 
         # Prepare plot points by shifting them left by steps_per_update
         self.__shift_plots__()
@@ -90,13 +93,13 @@ class LineGraphReverse:
             plot_y, plot_height)
 
         # Append new plot point with transposed value as Y
-        self._plot_points.append((self._working_surface.get_width(), transposed_value))
+        self._plot_points.append((self.working_surface.get_width(), transposed_value))
 
-        # Skip drawing on zero, send None as update_rect to avoid unecessary update
+        # Skip drawing on zero, send None as base_rect to avoid unecessary update
         if 0 == int(value) and not self._config.draw_on_zero:
-            return self._working_surface, None
+            return self.working_surface, None
 
         pygame.draw.lines(
-            self._working_surface, self._config.line_color, False, self._plot_points, self._config.line_width)
+            self.working_surface, self._config.line_color, False, self._plot_points, self._config.line_width)
 
-        return self._working_surface, self.update_rect
+        return self.base_rect
