@@ -156,7 +156,8 @@ class Cooling:
         assert(self._surface_flags is not None)
 
         # Draw two bars matching the exhaust style, flip 90 CCW
-        single_intake_bar = self._front_intake_fan_bar.draw_update(value)[0]
+        self._front_intake_fan_bar.draw_update(value)
+        single_intake_bar = self._front_intake_fan_bar.working_surface
         fan_spacing = 20
         dual_surface_size = ((single_intake_bar.get_width() * 2) + fan_spacing, single_intake_bar.get_height())
         dual_fan_surface = pygame.Surface(dual_surface_size, self._surface_flags)
@@ -170,10 +171,11 @@ class Cooling:
         if using_direct_surface:
             update_rect = self._working_surface.blit(dual_fan_rotated_surface, update_rect)
 
-        return dual_fan_rotated_surface, update_rect
+        return update_rect
 
     def __draw_bottom_intake_fans_(self, value, using_direct_surface=False):
-        single_bar = self._bottom_intake_fan_bar.draw_update(value)[0]
+        self._bottom_intake_fan_bar.draw_update(value)
+        single_bar = self._bottom_intake_fan_bar.working_surface
         fan_spacing = 20
         dual_surface_size = (single_bar.get_width() * 2 + fan_spacing, single_bar.get_height())
         dual_fan_surface = pygame.Surface(dual_surface_size, self._surface_flags)
@@ -185,7 +187,7 @@ class Cooling:
         if using_direct_surface:
             update_rect = self._working_surface.blit(dual_fan_surface, update_rect)
          
-        return dual_fan_surface, update_rect
+        return update_rect
 
     def backup_element_surface(self):
         # Blit, copy doesn't work if this is a subsurfaced direct-draw element
@@ -200,7 +202,6 @@ class Cooling:
 
         assert(0 != len(aida64_data))
 
-        # Bit wasteful, but for now blit out BG and case profile graphic
         self._working_surface.blit(self._heat_map, (0, 0))
         self._working_surface.blit(self._case_profile, (366, 0))
 
@@ -208,33 +209,33 @@ class Cooling:
 
         cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
         cpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        update_rects.append(self._cpu_pump_status.draw_update(cpu_temperature_value, cpu_fan_value)[1])
+        update_rects.append(self._cpu_pump_status.draw_update(cpu_temperature_value, cpu_fan_value))
         #if cpu_pump_rect is not None:
         #    update_rects.append(cpu_pump_rect)
 
         gpu_temperature_value = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
-        update_rects.append(self._gpu_temperature.draw_update(gpu_temperature_value, gpu_fan_value)[1])
+        update_rects.append(self._gpu_temperature.draw_update(gpu_temperature_value, gpu_fan_value))
 
         # Fan bar graphs
         rear_exhaust_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_3_fan, "0")
-        update_rects.append(self._rear_exhaust_fan_bar.draw_update(rear_exhaust_fan_value)[1])
+        update_rects.append(self._rear_exhaust_fan_bar.draw_update(rear_exhaust_fan_value))
 
         forward_exhaust_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
-        update_rects.append(self._forward_exhaust_fan_bar.draw_update(forward_exhaust_fan_value)[1])
+        update_rects.append(self._forward_exhaust_fan_bar.draw_update(forward_exhaust_fan_value))
 
         front_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
         update_rects.append(
-            self.__draw_front_intake_fans__(front_intake_fan_value, using_direct_surface=True)[1])
+            self.__draw_front_intake_fans__(front_intake_fan_value, using_direct_surface=True))
 
         bottom_intake_fan_value = DashData.best_attempt_read(aida64_data, DashData.chassis_2_fan, "0")
         update_rects.append(
-            self.__draw_bottom_intake_fans_(bottom_intake_fan_value, using_direct_surface=True)[1])
+            self.__draw_bottom_intake_fans_(bottom_intake_fan_value, using_direct_surface=True))
 
         update_rects.append(self._motherboard_temps.draw_update(aida64_data))
 
         # Ambient temperature and humidity
         if dht22_data is not None:
-            update_rects.append(self._home_temperature.draw_update(dht22_data.temperature)[1])
+            update_rects.append(self._home_temperature.draw_update(dht22_data.temperature))
 
-        return self._working_surface, update_rects
+        return update_rects

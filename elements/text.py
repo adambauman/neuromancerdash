@@ -510,7 +510,6 @@ class MotherboardTemperatureSensors:
         assert(self.working_surface)
         assert(self._static_elements)
 
-        #self.working_surface.fill((0,0,0,0))
         self.working_surface.blit(self._static_elements, (0, 0))
 
         motherboard_temp = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")

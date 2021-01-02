@@ -393,4 +393,4 @@ class Power:
             update_rects.append(self._gpu_util_graph.draw_update(gpu_util))
             update_rects.append(self._gpu_util_label.draw_update(gpu_util))
 
-        return self._working_surface, update_rects
+        return update_rects

@@ -54,6 +54,8 @@ class GaugeConfig:
         self.label = ""
 
 class FlatArcGauge:
+    working_surface = None
+    base_rect = None
     current_value = None
 
     _current_needle_rotation = 0
@@ -71,11 +73,11 @@ class FlatArcGauge:
         base_size = (diameter, diameter)
 
         if direct_surface and direct_rect:
-            self._working_surface = direct_surface.subsurface(direct_rect)
-            self.update_rect = direct_rect
+            self.working_surface = direct_surface.subsurface(direct_rect)
+            self.base_rect = direct_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
-            self.update_rect = pygame.Rect((0, 0), base_size)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
+            self.base_rect = pygame.Rect((0, 0), base_size)
         
         # Setup static elements, these are things like the gauge arcs that will not need updating
         self.__prepare_constant_elements__(base_size, surface_flags)
@@ -133,7 +135,7 @@ class FlatArcGauge:
             gauge_base_surface.blit(unit_text_surface[0], (center_align[0], center_align[1] + 300))
 
         # Scale the base surface to the final size and blit to the static elements surface
-        assert(self._working_surface.get_size() == base_size)
+        assert(self.working_surface.get_size() == base_size)
         self._static_elements_surface = pygame.transform.smoothscale(gauge_base_surface, base_size)
 
         ########
@@ -188,11 +190,11 @@ class FlatArcGauge:
             else: #clockwise
                 shadow_rotation += -shadow_distance
             rotated_shadow = pygame.transform.rotozoom(self._needle_shadow_surface, shadow_rotation, 0.93)
-            shadow_center = Helpers.calculate_center_align(self._working_surface, rotated_shadow)
-            self._working_surface.blit(rotated_shadow, shadow_center)
+            shadow_center = Helpers.calculate_center_align(self.working_surface, rotated_shadow)
+            self.working_surface.blit(rotated_shadow, shadow_center)
 
-        needle_center = Helpers.calculate_center_align(self._working_surface, rotated_needle)
-        self._working_surface.blit(rotated_needle, needle_center)
+        needle_center = Helpers.calculate_center_align(self.working_surface, rotated_needle)
+        self.working_surface.blit(rotated_needle, needle_center)
 
     def __draw_value_text__(self, value):
         # Set value text color, change it to the warning color if the data field has a warn level value
@@ -215,17 +217,25 @@ class FlatArcGauge:
         if self._config.value_font_origin:
             value_origin = self._config.value_font_origin
         else:
-            value_origin = Helpers.calculate_center_align(self._working_surface, value_surface)
+            value_origin = Helpers.calculate_center_align(self.working_surface, value_surface)
 
-        self._working_surface.blit(value_surface, value_origin)
+        self.working_surface.blit(value_surface, value_origin)
 
         # Return the rect for udpating the value area, this could be used to keep value fresh without
         # redrawing the needle on every update
-        value_update_rect = pygame.Rect((value_origin), value_surface.get_size())
-        return value_update_rect
+        value_base_rect = pygame.Rect((value_origin), value_surface.get_size())
+        return value_base_rect
+
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
 
     def draw_update(self, value):
-        assert(self._working_surface)
+        assert(self.working_surface)
         assert(self._static_elements_surface)
         assert(self._needle_surface)
 
@@ -234,10 +244,10 @@ class FlatArcGauge:
 
         # No need to update, return previous working surface and no update rect
         if self.current_value == value:
-            return self._working_surface, None
+            return None
 
         # Reset the working surface
-        self._working_surface.blit(self._static_elements_surface, (0, 0))
+        self.working_surface.blit(self._static_elements_surface, (0, 0))
 
         self.__draw_value_text__(value)
             
@@ -255,4 +265,4 @@ class FlatArcGauge:
         if g_benchmark:
             print("BENCHMARK: ArcGauge {}: {}ms".format(self._config.data_field.field_name, pygame.time.get_ticks() - start_ticks))
 
-        return self._working_surface, self.update_rect
+        return self.base_rect

@@ -232,16 +232,16 @@ class SystemStats:
         update_rects.append(self._gpu_graph.draw_update(gpu_utilization_value))
 
         cpu_temperature = DashData.best_attempt_read(aida64_data, DashData.cpu_temp, "0")
-        update_rects.append(self._cpu_temp_gauge.draw_update(cpu_temperature)[1])
+        update_rects.append(self._cpu_temp_gauge.draw_update(cpu_temperature))
         gpu_temperature = DashData.best_attempt_read(aida64_data, DashData.gpu_temp, "0")
-        update_rects.append(self._gpu_temp_gauge.draw_update(gpu_temperature)[1])
+        update_rects.append(self._gpu_temp_gauge.draw_update(gpu_temperature))
 
         fan1_value = DashData.best_attempt_read(aida64_data, DashData.chassis_1_fan, "0")
-        update_rects.append(self._fan1_gauge.draw_update(fan1_value)[1])
+        update_rects.append(self._fan1_gauge.draw_update(fan1_value))
         fan_opt_value = DashData.best_attempt_read(aida64_data, DashData.cpu_opt_fan, "0")
-        update_rects.append(self._fan_opt_gauge.draw_update(fan_opt_value)[1])
+        update_rects.append(self._fan_opt_gauge.draw_update(fan_opt_value))
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
-        update_rects.append(self._gpu_fan_gauge.draw_update(gpu_fan_value)[1])
+        update_rects.append(self._gpu_fan_gauge.draw_update(gpu_fan_value))
 
         # NOTE: CPU fan reporting is flaky on this motherboard? Disabling for now.
         #cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
@@ -251,11 +251,11 @@ class SystemStats:
         update_rects.append(self._gpu_details.draw_update(aida64_data))
 
         sys_memory_value = DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")
-        update_rects.append(self._sys_memory_bar.draw_update(sys_memory_value)[1])
+        update_rects.append(self._sys_memory_bar.draw_update(sys_memory_value))
         gpu_memory_value = DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")
-        update_rects.append(self._gpu_memory_bar.draw_update(gpu_memory_value)[1])
+        update_rects.append(self._gpu_memory_bar.draw_update(gpu_memory_value))
        
-        update_rects.append(self._core_visualizer.update(aida64_data)[1])
+        update_rects.append(self._core_visualizer.update(aida64_data))
 
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         update_rects.append(self._fps_graph.draw_update(fps_value))
@@ -279,4 +279,4 @@ class SystemStats:
         time_string = now.strftime("%H:%M:%S")
         update_rects.append(self._clock.draw_update(time_string, force_draw=True))
 
-        return self._working_surface, update_rects
+        return update_rects

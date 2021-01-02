@@ -27,8 +27,8 @@ class LineGraphConfig:
         self.draw_on_zero = True
 
 class LineGraphReverse:
-    self.working_surface = None
-    self.base_rect = None
+    working_surface = None
+    base_rect = None
 
     def __init__(self, line_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
         assert((0, 0) != line_graph_config.size)
@@ -69,6 +69,14 @@ class LineGraphReverse:
         if 0 > (self._plot_points[0][0] - self._config.steps_per_update):
             self._plot_points.popleft()
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
+
     def draw_update(self, value):
         assert(self.working_surface)
         assert(self._config)
@@ -97,7 +105,7 @@ class LineGraphReverse:
 
         # Skip drawing on zero, send None as base_rect to avoid unecessary update
         if 0 == int(value) and not self._config.draw_on_zero:
-            return self.working_surface, None
+            return None
 
         pygame.draw.lines(
             self.working_surface, self._config.line_color, False, self._plot_points, self._config.line_width)

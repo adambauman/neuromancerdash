@@ -253,7 +253,7 @@ def main(argv):
         # Returns a surface to blit, if direct_surface and direct_rect defined it uses subsurfaces and
         # returns "blitable_surface, updated rects" for each element that will not be None if they were redrawn.
         try:
-            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)[1]
+            update_rects = available_pages[current_page].draw_update(aida64_deque.popleft(), dht22_data)
         except:
             if __debug__:
                 print("Exception during update")

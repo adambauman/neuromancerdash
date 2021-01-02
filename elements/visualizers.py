@@ -34,8 +34,8 @@ class CoreVisualizerConfig:
 class SimpleCoreVisualizer:
     _config = CoreVisualizerConfig
 
-    _working_surface = None
-    _direct_rect = None
+    working_surface = None
+    base_rect = None
 
     # Tracking outside config in case we need to adjust on the fly
     _core_height = 0
@@ -72,13 +72,13 @@ class SimpleCoreVisualizer:
         base_height =\
             (self._core_height * self._config.core_rows) + (self._config.core_spacing * (self._config.core_rows - 1))
 
-        if None != direct_surface and None != direct_rect:
+        if direct_surface and direct_rect:
             assert(base_width <= direct_rect[2] and base_height <= direct_rect[3])
 
-            self._working_surface = direct_surface.subsurface(direct_rect)
-            self._direct_rect = direct_rect
+            self.working_surface = direct_surface.subsurface(direct_rect)
+            self.base_rect = direct_rect
         else:
-            self._working_surface = pygame.Surface((base_width, base_height), surface_flags)
+            self.working_surface = pygame.Surface((base_width, base_height), surface_flags)
 
         # Initialize last core activity and do a hack update
         initialize_data = {}
@@ -91,7 +91,7 @@ class SimpleCoreVisualizer:
         self._first_run = False
 
     def update(self, data):
-        assert(self._working_surface is not None)
+        assert(self.working_surface)
         assert(0 != len(self._last_core_activity))
         assert(len(data) >= self._core_count)
 
@@ -133,7 +133,7 @@ class SimpleCoreVisualizer:
                 core_color = self._config.active_color
 
             pygame.draw.rect(
-                self._working_surface, 
+                self.working_surface, 
                 core_color, 
                 (core_origin_x, core_origin_y, self._core_width, self._core_width)
             )
@@ -153,7 +153,7 @@ class SimpleCoreVisualizer:
         if g_benchmark:
             print("BENCHMARK: CoreVisualizer: {}ms".format(pygame.time.get_ticks() - start_ticks))
 
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 class PumpStatusConfig:
     def __init__(self, size=(80, 80), temperature_font=None):
@@ -176,7 +176,9 @@ class PumpStatusConfig:
         self.pump_indicator_warning_color = Color.windows_red_1
 
 class PumpStatus:
-    _working_surface = None
+    working_surface = None
+    base_rect = None
+
     _cpu_pump = None
     _pump_indicator_okay = None
     _pump_indicator_warn = None
@@ -189,15 +191,15 @@ class PumpStatus:
 
         self._config = pump_status_config
         self._surface_flags = surface_flags
-        self._direct_rect = direct_rect
+        self.base_rect = direct_rect
 
         if direct_surface and direct_rect:
-            self._working_surface = direct_surface.subsurface(direct_rect)
+            self.working_surface = direct_surface.subsurface(direct_rect)
         else:
-            self._working_surface = pygame.Surface(size, self._surface_flags)
+            self.working_surface = pygame.Surface(size, self._surface_flags)
 
         # Prepare the initial working surface
-        self._working_surface.fill((0,0,0,0))
+        self.working_surface.fill((0,0,0,0))
         cpu_pump = pygame.image.load(os.path.join(AssetPath.hardware, "corsair_h100_head.png")).convert_alpha()
         scale_modifier = self._config.size[0] / cpu_pump.get_width()
         # CPU pump graphic is pretty big, scale it down to fit the configured element width
@@ -213,19 +215,10 @@ class PumpStatus:
 
 
     def draw_update(self, temperature_value, pump_rpm_value):
-        assert(self._working_surface is not None)
+        assert(self.working_surface is not None)
         assert(self._pump_indicator_okay is not None and self._pump_indicator_warn is not None)
 
-        self._working_surface.blit(self._cpu_pump, (0, 0))
-
-        # Save some processing and return previous surface. If using direct surface draw the previous area will 
-        # remain static
-        # unless you draw something over/under it.
-        #if self._current_temperature_value == temperature_value and self._current_rpm_value == pump_rpm_value:
-        #    return self._working_surface, None
-        #else:
-        #    if __debug__:
-        #        print("Updating PumpStatus, temp: {}, pump_rpm: {}".format(temperature_value, pump_rpm_value))
+        self.working_surface.blit(self._cpu_pump, (0, 0))
 
         # Do not clear the entire working surface, everything we need to update is within the indicator 
         # surface's bounds
@@ -237,9 +230,9 @@ class PumpStatus:
 
         if draw_warning:
             # Pump is under speed, use warning surface!
-            self._working_surface.blit(self._pump_indicator_warn, (0, 0))
+            self.working_surface.blit(self._pump_indicator_warn, (0, 0))
         else:
-            self._working_surface.blit(self._pump_indicator_okay, (0, 0))
+            self.working_surface.blit(self._pump_indicator_okay, (0, 0))
 
         # TODO: Font coloration based on temperature, if enabled
         # Draw temperature text within the indicator
@@ -247,12 +240,12 @@ class PumpStatus:
                 self._config.temperature_font, "{}\u00b0".format(temperature_value), 
                 self._config.temperature_font_color, self._config.temperature_shadow_color)
         # TODO: Dynamic temperature origin tied to scaled size
-        self._working_surface.blit(shadowed_temperature_text, self._temperature_origin)
+        self.working_surface.blit(shadowed_temperature_text, self._temperature_origin)
 
         self._current_temperature_value = temperature_value
         self._current_rpm_value = pump_rpm_value
             
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 
 class GPUTemperatureConfig:
@@ -278,7 +271,9 @@ class GPUTemperatureConfig:
 
 # TODO: This is all a bit of a mismash ATM, clean it up, make more dynamic for sizing, etc.
 class GPUTemperature:
-    _working_surface = None
+    working_surface = None
+    base_rect = None
+
     _heatsink_fins = None
     _indicator_housing = None
     _indicator_okay = None
@@ -292,12 +287,12 @@ class GPUTemperature:
 
         self._config = pump_status_config
         self._surface_flags = surface_flags
-        self._direct_rect = direct_rect
+        self.base_rect = direct_rect
 
         if direct_surface and direct_rect:
-            self._working_surface = direct_surface.subsurface(direct_rect)
+            self.working_surface = direct_surface.subsurface(direct_rect)
         else:
-            self._working_surface = pygame.Surface(size, self._surface_flags)
+            self.working_surface = pygame.Surface(size, self._surface_flags)
 
         fan_graph_config = BarGraphConfig((230, 32), (0,2000))
         fan_graph_config.draw_background = False
@@ -306,13 +301,12 @@ class GPUTemperature:
         fan_graph_config.current_value_draw = True
         fan_graph_config.current_value_position = (155, 10)
         fan_graph_rect = pygame.Rect((0, 29), fan_graph_config.size)
-        self._fan_graph = BarGraph(fan_graph_config, self._working_surface, fan_graph_rect)
+        self._fan_graph = BarGraph(fan_graph_config, self.working_surface, fan_graph_rect)
 
         self.__prepare_surfaces_()
 
-
     def __prepare_surfaces_(self):
-        assert(self._working_surface is not None)
+        assert(self.working_surface)
 
         # Load images, using pre-scaled for now
         self._heatsink_fins = pygame.image.load(os.path.join(AssetPath.hardware, "gpu_fins.png")).convert_alpha()
@@ -330,23 +324,22 @@ class GPUTemperature:
         self._indicator_warn = indicator_base.copy()
         self._indicator_warn.fill(self._config.indicator_warning_color, special_flags=pygame.BLEND_RGBA_MULT)
 
-
     def draw_update(self, temperature_value, fan_rpm_value):
-        assert(self._working_surface is not None)
-        assert(self._heatsink_fins is not None)
-        assert(self._indicator_housing is not None)
-        assert(self._indicator_okay is not None and self._indicator_warn is not None)
+        assert(self.working_surface)
+        assert(self._heatsink_fins)
+        assert(self._indicator_housing)
+        assert(self._indicator_okay and self._indicator_warn)
 
         indicator_origin = (220, 4)
-        self._working_surface.blit(self._heatsink_fins, (0, 0))
+        self.working_surface.blit(self._heatsink_fins, (0, 0))
         self._fan_graph.draw_update(fan_rpm_value)
-        self._working_surface.blit(self._indicator_housing, indicator_origin)
+        self.working_surface.blit(self._indicator_housing, indicator_origin)
 
         # TODO: Could add GPU fan warning, lots of modern GPUs spin down when idle though
         if self._config.warning_temperature <= int(temperature_value):
-            self._working_surface.blit(self._indicator_warn, indicator_origin)
+            self.working_surface.blit(self._indicator_warn, indicator_origin)
         else:
-            self._working_surface.blit(self._indicator_okay, indicator_origin)
+            self.working_surface.blit(self._indicator_okay, indicator_origin)
 
         # TODO: Font coloration based on temperature, if enabled
         # Draw temperature text within the indicator
@@ -354,12 +347,12 @@ class GPUTemperature:
                 self._config.temperature_font, "{}\u00b0".format(temperature_value), 
                 self._config.temperature_font_color, self._config.temperature_shadow_color)
         # TODO: Dynamic temperature origin tied to scaled size
-        self._working_surface.blit(shadowed_temperature_text, (242, 32))
+        self.working_surface.blit(shadowed_temperature_text, (242, 32))
 
         self._current_temperature_value = temperature_value
         self._current_rpm_value = fan_rpm_value
             
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 class HomeTemperatureConfig:
     def __init__(self):
@@ -373,12 +366,12 @@ class HomeTemperatureConfig:
         self.display_fahrenheit = True
 
 class HomeTemperature:
-    _config = None
-    _working_surface = None
-    
+    working_surface = None
     direct_rect = None
     base_size = None
     current_value = None
+
+    _config = None
 
     def __init__(self, home_temperature_config=HomeTemperatureConfig(), direct_surface=None, direct_rect=None, surface_flags=0):
 
@@ -393,7 +386,7 @@ class HomeTemperature:
         self._icon_home.fill(self._config.home_icon_color, special_flags=pygame.BLEND_RGB_MULT)
 
         if direct_surface and direct_rect:
-            self._working_surface = direct_surface.subsurface(direct_rect, surface_flags)
+            self.working_surface = direct_surface.subsurface(direct_rect, surface_flags)
             self.base_size = (direct_rect[0], direct_rect[1])
             self.direct_rect = direct_rect
         else:
@@ -406,8 +399,7 @@ class HomeTemperature:
                self._icon_home.get_height() + self._config.icon_text_spacing + self._config.temperature_font.get_sized_height()
             self.base_size = (required_width, required_height)
 
-            self._working_surface = pygame.Surface(self.base_size, self._surface_flags)
-
+            self.working_surface = pygame.Surface(self.base_size, self._surface_flags)
 
     def __draw_temperature__(self, temperature):
         assert(self._config)
@@ -419,28 +411,28 @@ class HomeTemperature:
     def set_direct_draw(self, direct_surface, direct_rect):
         # Draw element directly to a subsurface of the direct_surface
         assert(direct_surface)
-        assert(0 != direct_rect[2] and 0 != direct_rect[3])
+        assert((0, 0) != direct_rect.size)
 
-        self._working_surface = direct_surface.subsurface(direct_rect)
+        self.working_surface = direct_surface.subsurface(direct_rect)
 
     def draw_update(self, room_temperature):
-        assert(self._working_surface)
+        assert(self.working_surface)
         assert(self._config)
 
         if self.current_value == room_temperature:
             # No update necessary
-            return self._working_surface, None
+            return None
         
-        self._working_surface.fill((0, 0, 0, 0))
-        icon_centered_origin = Helpers.get_centered_origin(self._working_surface.get_size(), self._icon_home.get_size())
-        self._working_surface.blit(self._icon_home, (icon_centered_origin[0], 0))
+        self.working_surface.fill((0, 0, 0, 0))
+        icon_centered_origin = Helpers.get_centered_origin(self.working_surface.get_size(), self._icon_home.get_size())
+        self.working_surface.blit(self._icon_home, (icon_centered_origin[0], 0))
 
         text_surface = self.__draw_temperature__(room_temperature)
-        text_x = Helpers.get_centered_origin(self._working_surface.get_size(), text_surface.get_size())[0]
+        text_x = Helpers.get_centered_origin(self.working_surface.get_size(), text_surface.get_size())[0]
         text_y = self._icon_home.get_height() + self._config.icon_text_spacing
-        assert(self._working_surface.get_height() >= text_y)
+        assert(self.working_surface.get_height() >= text_y)
 
-        self._working_surface.blit(self.__draw_temperature__(room_temperature), (text_x, text_y))
+        self.working_surface.blit(self.__draw_temperature__(room_temperature), (text_x, text_y))
         self._current_value = room_temperature
 
-        return self._working_surface, self.direct_rect
+        return self.direct_rect
