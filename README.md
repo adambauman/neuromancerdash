@@ -31,7 +31,7 @@ Install RivaTunerStatisticsServer (optional if you want FPS data)
 4. Update dash_launcher.sh with the IP and port number for your Host machine
 
 # Other Client Installation
-Other client hardware can easily be used, clone the repo, install the Python3 components using whatever mechanisms work best for your client. Some systems may already have the SDL2 components in place after pygame is installed/updated, others may required building them from source. I used a Windows 10 PC for the bulk of development and it was easy-peesy.
+Other client hardware can easily be used, clone the repo, install the Python3 components using whichever mechanisms work best for your client. Some systems may already have the SDL2 components in place after pygame is installed/updated, others may required building them from source. I used a Windows 10 PC for the bulk of development and it was easy-peesy.
 
 # Execution
 Two options:
