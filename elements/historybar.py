@@ -10,9 +10,6 @@ import pygame
 from .styles import Color
 from .helpers import Helpers
 
-# Set true to benchmark the update process
-g_benchmark = False
-
 class HistoryBarConfig:
     def __init__(self, size, dash_data, font=None):
         assert(2 == len(size))
