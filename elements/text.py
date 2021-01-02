@@ -54,10 +54,10 @@ class DetailsStackConfig:
 
 class CPUDetails:
     # Surfaces
-    _working_surface = None
-    _static_elements = None
-    _direct_rect = None
+    working_surface = None
+    base_rect = None
 
+    _static_elements = None
     # DynamicFields
     _cpu_power = None
     _cpu_clock = None
@@ -77,10 +77,10 @@ class CPUDetails:
         base_size = (element_rect[2], element_rect[3])
 
         if direct_surface is not None:
-            self._working_surface = direct_surface.subsurface(element_rect)
-            self._direct_rect = element_rect
+            self.working_surface = direct_surface.subsurface(element_rect)
+            self.base_rect = element_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
 
         # Surface setup
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
@@ -95,50 +95,57 @@ class CPUDetails:
 
         y_offset = self._config.stack_y_offset
         font_height = self._font_normal.get_sized_height()
+        text_color = Color.white
+        sub_text_color = Color.yellow
+        label_color = Color.grey_75
 
         # Start doing a little mock drawing here to workout where the static elements are positioned
         origin = (0, 0)
         self._cpu_power = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{} " + DashData.cpu_power.unit.symbol, Color.white, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.cpu_power.unit.symbol, text_color, self._font_normal)
 
         # CPU Clock
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._cpu_clock = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{} " + DashData.cpu_clock.unit.symbol, Color.white, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.cpu_clock.unit.symbol, text_color, self._font_normal)
 
         # CPU Utilization
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._cpu_utilization = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{}" + DashData.cpu_util.unit.symbol, Color.yellow, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{}" + DashData.cpu_util.unit.symbol, sub_text_color, self._font_normal)
 
         # Static label, write to the static background
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self._font_normal.render_to(self._static_elements, origin, "Page Alloc", Color.grey_75)
+        self._font_normal.render_to(self._static_elements, origin, "Page Alloc", label_color)
 
         # Page Alloc
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._page_alloc = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{} " + DashData.used_virtual_memory.unit.symbol, Color.yellow, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.used_virtual_memory.unit.symbol, sub_text_color, self._font_normal)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
 
     def draw_update(self, data):
-        assert(self._working_surface is not None)
-        assert(self._static_elements is not None)
+        assert(self.working_surface)
+        assert(self._static_elements)
         assert(0 != len(data))
 
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
-
-        self._working_surface.fill((0,0,0,0))
-        self._working_surface.blit(self._static_elements, (0, 0))
+        self.working_surface.fill((0,0,0,0))
+        self.working_surface.blit(self._static_elements, (0, 0))
 
         cpu_power_value = DashData.best_attempt_read(data, DashData.cpu_power, "0")
         self._cpu_power.update(cpu_power_value)
@@ -152,19 +159,14 @@ class CPUDetails:
         page_alloc_value = DashData.best_attempt_read(data, DashData.used_virtual_memory, "0")
         self._page_alloc.update(page_alloc_value)
 
-        if g_benchmark:
-            print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
-
-
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 
 class GPUDetails:
-     # Surfaces
-    _working_surface = None
-    _static_elements = None
-    _direct_rect = None
+    working_surface = None
+    base_rect = None
 
+    _static_elements = None
     # DynamicFields
     _perfcap_reason = None
     _gpu_power = None
@@ -181,12 +183,12 @@ class GPUDetails:
             self._font_normal.kerning = True
 
         if direct_surface is not None:
-            self._working_surface = direct_surface.subsurface(element_rect)
-            self._using_direct_surface = True
-            self._direct_rect = element_rect
+            self.working_surface = direct_surface.subsurface(element_rect)
+            #self._using_direct_surface = True
+            self.base_rect = element_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
-            self._using_direct_surface = False
+            self.working_surface = pygame.Surface(base_size, surface_flags)
+            #self._using_direct_surface = False
 
         # Surface setup
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
@@ -201,62 +203,69 @@ class GPUDetails:
 
         y_offset = self._config.stack_y_offset
         font_height = self._font_normal.get_sized_height()
+        text_color = Color.white
+        sub_text_color = Color.yellow
+        label_color = Color.grey_75
 
         # Start doing a little mock drawing here to workout where the static label(s) are positioned
         origin = (0, 0)
         # Static Label
-        self._font_normal.render_to(self._static_elements, origin, "PerfCap", Color.white)
+        self._font_normal.render_to(self._static_elements, origin, "PerfCap", text_color)
 
         # PerfCap Reason
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._perfcap_reason = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{}", Color.yellow, self._font_normal, clamp_chars=11)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{}", sub_text_color, self._font_normal, clamp_chars=11)
 
         # GPU Power
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._gpu_power = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{} " + DashData.gpu_power.unit.symbol, Color.white, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.gpu_power.unit.symbol, text_color, self._font_normal)
 
         # GPU Clock
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._gpu_clock = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{} " + DashData.gpu_clock.unit.symbol, Color.white, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.gpu_clock.unit.symbol, text_color, self._font_normal)
 
         # GPU Utilization
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._gpu_utilization = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{}" + DashData.gpu_util.unit.symbol, Color.yellow, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{}" + DashData.gpu_util.unit.symbol, sub_text_color, self._font_normal)
 
         # Static RAM Label
         origin = (origin[0], (origin[1] + font_height) + y_offset)
-        self._font_normal.render_to(self._static_elements, origin, "Dyn RAM", Color.grey_75)
+        self._font_normal.render_to(self._static_elements, origin, "Dyn RAM", label_color)
 
         # Dynamic RAM Used
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._dynamic_ram_used = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
-            "{} " + DashData.gpu_used_dynamic_memory.unit.symbol, Color.yellow, self._font_normal)
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
+            "{} " + DashData.gpu_used_dynamic_memory.unit.symbol, sub_text_color, self._font_normal)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
 
     def draw_update(self, data):
-        assert(self._working_surface is not None)
-        assert(self._static_elements is not None)
+        assert(self.working_surface)
+        assert(self._static_elements)
         assert(0 != len(data))
 
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
-
-        self._working_surface.fill((0,0,0,0))
-        self._working_surface.blit(self._static_elements, (0, 0))
+        self.working_surface.fill((0,0,0,0))
+        self.working_surface.blit(self._static_elements, (0, 0))
 
         perfcap_reason_data = DashData.best_attempt_read(data, DashData.gpu_perfcap_reason, "")
         self._perfcap_reason.update(perfcap_reason_data)
@@ -273,26 +282,25 @@ class GPUDetails:
         dynamic_ram_used_value = DashData.best_attempt_read(data, DashData.gpu_used_dynamic_memory, "0")
         self._dynamic_ram_used.update(dynamic_ram_used_value)
 
-        if g_benchmark:
-            print("BENCHMARK: GPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
-
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 
 class FPSConfig:
-    def __init__(self, number_font=None, label_font=None, draw_zero=True):
+    def __init__(self, number_font=None, label_font=None, number_color=Color.white, label_color=Color.white, draw_zero=True):
         self.number_font = number_font
         self.label_font = label_font
+        self.number_color = number_color
+        self.label_color = label_color
         self.draw_zero = draw_zero
 
 class FPSText:
-    _current_value = None
-    _direct_rect = None
+    working_surface = None
+    base_rect = None
+    current_value = None
 
     def __init__(self, fps_field_rect, fps_config=FPSConfig(), direct_surface=None, surface_flags=0):
-
-        base_size = (fps_field_rect[2], fps_field_rect[3])
-        assert(0 != base_size[0] or 0 != base_size[1])
+        base_size = (fps_field_rect.size)
+        assert((0, 0) != base_size)
 
         # Config and fonts
         self._config = fps_config
@@ -300,51 +308,51 @@ class FPSText:
         if self._config.number_font is None:
             self._config.number_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 50)
             self._config.number_font.kerning = True
-            self._direct_rect = fps_field_rect
+            self.base_rect = fps_field_rect
 
         if self._config.label_font is None:
             self._config.label_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
             self._config.label_font.kerning = True
 
         if direct_surface is not None:
-            self._working_surface = direct_surface.subsurface(fps_field_rect)
+            self.working_surface = direct_surface.subsurface(fps_field_rect)
         else:
-            self._working_surface = pygame.Surface((base_size), surface_flags)
+            self.working_surface = pygame.Surface((base_size), surface_flags)
 
         # Setup the last loose bits
         # Could probably be a bit more dynamic based on number font parameters, etc.
         label_x = 3
-        label_y = self._working_surface.get_height() - self._config.label_font.get_sized_height()
+        label_y = self.working_surface.get_height() - self._config.label_font.get_sized_height()
         self._label_position = (label_x, label_y)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
+
     def draw_update(self, value):
+        assert(self.working_surface)
 
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
-
-        self._working_surface.fill((0,0,0,0))
-        self._config.label_font.render_to(self._working_surface, self._label_position, "FPS", Color.white)
+        self.working_surface.fill((0,0,0,0))
+        self._config.label_font.render_to(self.working_surface, self._label_position, "FPS", self._config.label_color)
         if 0 == int(value) and self._config.draw_zero is False:
             pass
         else:
-            self._config.number_font.render_to(self._working_surface, (0, 0), "{}".format(value), Color.white)
-
-        if g_benchmark:
-            print("BENCHMARK: CPU Details: {}ms".format(pygame.time.get_ticks() - start_ticks))
+            self._config.number_font.render_to(self.working_surface, (0, 0), "{}".format(value), self._config.number_color)
         
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 
 class TemperatureHumidity:
-    
-    # DynamicFields
+    working_surface = None
+    base_rect = None
+
     _temperature = None
     _humidity = None
-
-    # Surfaces
-    _working_surface = None
     _static_elements = None
-    _direct_rect = None
 
     def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0):
 
@@ -356,10 +364,10 @@ class TemperatureHumidity:
 
         base_size = (element_rect[2], element_rect[3])
         if direct_surface is not None:
-            self._working_surface = direct_surface.subsurface(element_rect)
-            self._direct_rect = element_rect
+            self.working_surface = direct_surface.subsurface(element_rect)
+            self.base_rect = element_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
 
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
@@ -384,7 +392,7 @@ class TemperatureHumidity:
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._temperature = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
             "{:.1f}\u00b0F", Color.white, self._font)
 
         # Static Label
@@ -395,38 +403,41 @@ class TemperatureHumidity:
         origin = (origin[0], (origin[1] + font_height) + y_offset)
         self._humidity = DynamicField(
             origin,
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), font_height + y_offset)),
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), font_height + y_offset)),
             "{:.1f}%", Color.white, self._font)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
+
     def draw_update(self, data):
-        assert(self._working_surface is not None)
-        assert(self._static_elements is not None)
+        assert(self.working_surface)
+        assert(self._static_elements)
 
-        self._working_surface.fill((0,0,0,0))
-        self._working_surface.blit(self._static_elements, (0, 0))
-
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
+        self.working_surface.fill((0,0,0,0))
+        self.working_surface.blit(self._static_elements, (0, 0))
 
         self._temperature.update(data.temperature)
         self._humidity.update(data.humidity)
 
-        if g_benchmark:
-            print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))
-
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 
 class MotherboardTemperatureSensors:
+    working_surface = None
+    base_rect = None
+
     # DynamicFields
     _motherboard = None
     _pch = None
     _nvme = None
 
     # Surfaces
-    _working_surface = None
     _static_elements = None
-    _direct_rect = None
 
     def __init__(self, element_rect, direct_surface=None, surface_flags=0):
 
@@ -436,11 +447,11 @@ class MotherboardTemperatureSensors:
         self._value_font.kerning = True
 
         base_size = (element_rect[2], element_rect[3])
-        if direct_surface is not None:
-            self._working_surface = direct_surface.subsurface(element_rect)
-            self._direct_rect = element_rect
+        if direct_surface:
+            self.working_surface = direct_surface.subsurface(element_rect)
+            self.base_rect = element_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
 
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
@@ -465,7 +476,7 @@ class MotherboardTemperatureSensors:
         origin = (origin[0], (origin[1] + label_font_height) + y_offset)
         self._motherboard = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), value_font_height + y_offset)),
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), value_font_height + y_offset)),
             "{}\u00b0C", Color.windows_cyan_1, self._value_font)
 
         # Static Label
@@ -476,7 +487,7 @@ class MotherboardTemperatureSensors:
         origin = (origin[0], (origin[1] + label_font_height) + y_offset)
         self._pch = DynamicField(
             origin,
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), value_font_height + y_offset)),
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), value_font_height + y_offset)),
             "{}\u00b0C", Color.windows_cyan_1, self._value_font)
 
         # Static Label
@@ -487,18 +498,23 @@ class MotherboardTemperatureSensors:
         origin = (origin[0], (origin[1] + label_font_height) + y_offset)
         self._nvme = DynamicField(
             origin,
-            self._working_surface.subsurface((origin[0], origin[1], self._working_surface.get_width(), value_font_height + y_offset)),
+            self.working_surface.subsurface((origin[0], origin[1], self.working_surface.get_width(), value_font_height + y_offset)),
             "{}\u00b0C", Color.windows_cyan_1, self._value_font)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
+
     def draw_update(self, aida64_data):
-        assert(self._working_surface is not None)
-        assert(self._static_elements is not None)
+        assert(self.working_surface)
+        assert(self._static_elements)
 
-        #self._working_surface.fill((0,0,0,0))
-        self._working_surface.blit(self._static_elements, (0, 0))
-
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
+        #self.working_surface.fill((0,0,0,0))
+        self.working_surface.blit(self._static_elements, (0, 0))
 
         motherboard_temp = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
         pch_temp = DashData.best_attempt_read(aida64_data, DashData.pch_temp, "0")
@@ -519,17 +535,15 @@ class MotherboardTemperatureSensors:
         else:
             self._nvme.update(nvme_temp)
 
-        if g_benchmark:
-            print("BENCHMARK: FPS Text: {}ms".format(pygame.time.get_ticks() - start_ticks))
-
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 
 class SimpleText:
-    _working_surface = None
+    working_surface = None
+    base_rect = None
+    current_value = None
+
     _using_direct_surface = False
-    _current_value = None
-    _direct_rect = None
 
     def __init__(self, element_rect, text_template="{}", font=None, text_color=Color.white, direct_surface=None, surface_flags=0):
         assert(0 != element_rect[2] and 0 != element_rect[3])
@@ -546,34 +560,41 @@ class SimpleText:
 
         base_size = (element_rect[2], element_rect[3])
         if direct_surface:
-            self._working_surface = direct_surface.subsurface(element_rect)
+            self.working_surface = direct_surface.subsurface(element_rect)
             self._using_direct_surface = True
-            self._direct_rect = element_rect
+            self.base_rect = element_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
+
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
 
     def draw_update(self, value, new_text_color=None, force_draw=False):
-        assert(self._working_surface)
+        assert(self.working_surface)
 
         if new_text_color:
             self._text_color = new_text_color
 
-        if self._current_value != value or force_draw:
-            self._working_surface.fill((0,0,0,0))
-            self._font.render_to(self._working_surface, (0, 0), self._text_template.format(value), self._text_color)
+        if self.current_value != value or force_draw:
+            self.working_surface.fill((0,0,0,0))
+            self._font.render_to(self.working_surface, (0, 0), self._text_template.format(value), self._text_color)
 
-        self._current_value = value
+        self.current_value = value
 
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 
 class NetworkInformation:
     # Surfaces
-    _working_surface = None
+    working_surface = None
+    base_rect = None
+    
     _static_elements = None
-    _direct_rect = None
-
-    # Dynamic Fields
     _down_speed = None
     _up_speed = None
 
@@ -587,20 +608,20 @@ class NetworkInformation:
         else:
             self._font_normal = font
 
-        base_size = (element_rect[0], element_rect[1])
+        base_size = (element_rect.size)
         if direct_surface is not None:
-            self._working_surface = direct_surface.subsurface(element_rect)
-            self._direct_rect = element_rect
+            self.working_surface = direct_surface.subsurface(element_rect)
+            self.base_rect = element_rect
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
 
         self.__setup_surfaces_and_fields__(element_rect, surface_flags)
 
     def __setup_surfaces_and_fields__(self, element_rect, surface_flags):
         assert(self._static_elements is None)
 
-        base_size = (element_rect[2], element_rect[3])
-        assert(0 != base_size[0] or 0 != base_size[1])
+        base_size = (element_rect.size)
+        assert((0, 0) != base_size)
 
         self._static_elements = pygame.Surface(base_size)
 
@@ -618,7 +639,7 @@ class NetworkInformation:
         origin = (rendered_rect[2] + label_value_x_space, 0)
         self._down_speed = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], value_width, base_size[1])),
+            self.working_surface.subsurface((origin[0], origin[1], value_width, base_size[1])),
             "{} " + DashData.nic1_download_rate.unit.symbol, self._value_color, self._font_normal)
 
         # Static Label
@@ -629,27 +650,28 @@ class NetworkInformation:
         origin = (origin[0] + rendered_rect[2] + label_value_x_space, 0)
         self._up_speed = DynamicField(
             origin, 
-            self._working_surface.subsurface((origin[0], origin[1], value_width, base_size[1])),
+            self.working_surface.subsurface((origin[0], origin[1], value_width, base_size[1])),
             "{} " + DashData.nic1_upload_rate.unit.symbol, self._value_color, self._font_normal)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
 
     def draw_update(self, download_value, upload_value):
-        assert(self._working_surface is not None)
-        assert(self._static_elements is not None)
+        assert(self.working_surface)
+        assert(self._static_elements)
 
-        if g_benchmark:
-            start_ticks = pygame.time.get_ticks()
-
-        self._working_surface.fill((0,0,0,0))
-        self._working_surface.blit(self._static_elements, (0, 0))
+        self.working_surface.fill((0,0,0,0))
+        self.working_surface.blit(self._static_elements, (0, 0))
 
         self._down_speed.update(download_value)
         self._up_speed.update(upload_value)
 
-        if g_benchmark:
-            print("BENCHMARK: NetworkInformation: {}ms".format(pygame.time.get_ticks() - start_ticks))
-
-        return self._working_surface, self._direct_rect
+        return self.base_rect
 
 class EnclosedLabelConfig:
     def __init__(self, 
@@ -672,6 +694,7 @@ class EnclosedLabelConfig:
             self.font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
 
 class EnclosedLabel:
+    working_surface = None
     base_rect = None
     first_draw = True
 
@@ -705,10 +728,10 @@ class EnclosedLabel:
         self._text_centered_position = Helpers.get_centered_origin(self.base_rect.size, text_rect.size)
 
         if direct_surface:
-            self._working_surface = direct_surface.subsurface(self.base_rect)
+            self.working_surface = direct_surface.subsurface(self.base_rect)
             self._direct_draw = True
         else:
-            self._working_surface = pygame.Surface(self.base_rect.size, surface_flags)
+            self.working_surface = pygame.Surface(self.base_rect.size, surface_flags)
 
     def __draw_rect__(self):
         # Outline rect needs a little calculation if the caller didn't specify an outline rect size
@@ -716,17 +739,17 @@ class EnclosedLabel:
             line_width = self._config.outline_line_width
             if line_width > 0: 
                 outline_origin = (line_width / 2, line_width / 2)
-                outline_size = (self._working_surface.get_width() - line_width, self._working_surface.get_height() - line_width)
+                outline_size = (self.working_surface.get_width() - line_width, self.working_surface.get_height() - line_width)
                 self._outline_rect = pygame.Rect(outline_origin, outline_size)
             else:
                 outline_origin = (0, 0)
-                outline_size = self._working_surface.get_size()
+                outline_size = self.working_surface.get_size()
                 self._outline_rect = pygame.Rect(outline_origin, outline_size)
 
         assert(self._outline_rect)
 
         pygame.draw.rect(
-            self._working_surface, 
+            self.working_surface, 
             self._config.outline_color, self._outline_rect, self._config.outline_line_width, self._config.outline_radius)
 
     def __draw_text__(self, text=None):
@@ -738,20 +761,28 @@ class EnclosedLabel:
         if self._config.draw_text_shadow:
             rendered_text = Helpers.get_shadowed_text(
                 self._config.font, text, self._config.text_color, self._config.text_shadow_color)
-            self._working_surface.blit(rendered_text, self._text_centered_position)
+            self.working_surface.blit(rendered_text, self._text_centered_position)
         else:
-            self._config.font.render_to(self._working_surface, self._text_centered_position, text, self._config.text_color)
+            self._config.font.render_to(self.working_surface, self._text_centered_position, text, self._config.text_color)
+
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
 
     def draw(self, text=None):
-        assert(self._working_surface)
+        assert(self.working_surface)
         assert(self._config)
         assert(self.base_rect)
 
-        self._working_surface.fill((0, 0, 0, 0))
+        self.working_surface.fill((0, 0, 0, 0))
 
         self.__draw_rect__()
         self.__draw_text__(text)
 
         self.first_draw = False
 
-        return self._working_surface, self.base_rect
+        return self.base_rect

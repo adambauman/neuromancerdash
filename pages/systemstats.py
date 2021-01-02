@@ -93,7 +93,6 @@ class SystemStatsConfigs:
         self.gpu_fan_gauge.data_field = DashData.gpu_fan
         self.gpu_fan_gauge.label = "G"
 
-
 class SystemStatsPositions:
 
     def __init__(self, width, height):
@@ -146,13 +145,6 @@ class SystemStats:
 
         self.font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self.font_normal.kerning = True
-
-        #if __debug__:
-        #    self._background = pygame.image.load(os.path.join(AssetPath.backgrounds, "480_320_grid.png")).convert_alpha()
-        #    self._working_surface.blit(self._background, (0,0))
-
-        # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
-        #           font instances. Would cut down on memory usage and make it easier to match font styles.
         
         assert(self._working_surface is not None)
 
@@ -251,12 +243,12 @@ class SystemStats:
         gpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.gpu_fan, "0")
         update_rects.append(self._gpu_fan_gauge.draw_update(gpu_fan_value)[1])
 
-        # NOTE: CPU fan reporting is flaky on this motherboard? Disabling because it's unstable
+        # NOTE: CPU fan reporting is flaky on this motherboard? Disabling for now.
         #cpu_fan_value = DashData.best_attempt_read(aida64_data, DashData.cpu_fan, "0")
         #update_rects.append(self._cpu_fan_gauge.draw_update(cpu_fan_value)[1])
 
-        update_rects.append(self._cpu_details.draw_update(aida64_data)[1])
-        update_rects.append(self._gpu_details.draw_update(aida64_data)[1])
+        update_rects.append(self._cpu_details.draw_update(aida64_data))
+        update_rects.append(self._gpu_details.draw_update(aida64_data))
 
         sys_memory_value = DashData.best_attempt_read(aida64_data, DashData.sys_ram_used, "0")
         update_rects.append(self._sys_memory_bar.draw_update(sys_memory_value)[1])
@@ -267,24 +259,24 @@ class SystemStats:
 
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         update_rects.append(self._fps_graph.draw_update(fps_value)[1])
-        update_rects.append(self._fps_text.draw_update(fps_value)[1])
+        update_rects.append(self._fps_text.draw_update(fps_value))
 
         # Ambient temperature and humidity
         if dht22_data is not None:
-            update_rects.append(self._temperature_humidity.draw_update(dht22_data)[1])
+            update_rects.append(self._temperature_humidity.draw_update(dht22_data))
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
-        update_rects.append(self._mobo_temperature.draw_update(mobo_temperature_value, force_draw=True)[1])
+        update_rects.append(self._mobo_temperature.draw_update(mobo_temperature_value, force_draw=True))
 
         # Network Info
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
         nic1_up_value = DashData.best_attempt_read(aida64_data, DashData.nic1_upload_rate, "0")
-        update_rects.append(self._network_info.draw_update(nic1_down_value, nic1_up_value)[1])
+        update_rects.append(self._network_info.draw_update(nic1_down_value, nic1_up_value))
 
         # Clock
         now = datetime.now()
         time_string = now.strftime("%H:%M:%S")
-        update_rects.append(self._clock.draw_update(time_string, force_draw=True)[1])
+        update_rects.append(self._clock.draw_update(time_string, force_draw=True))
 
         return self._working_surface, update_rects

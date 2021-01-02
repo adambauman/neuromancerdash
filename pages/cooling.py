@@ -231,7 +231,7 @@ class Cooling:
         update_rects.append(
             self.__draw_bottom_intake_fans_(bottom_intake_fan_value, using_direct_surface=True)[1])
 
-        update_rects.append(self._motherboard_temps.draw_update(aida64_data)[1])
+        update_rects.append(self._motherboard_temps.draw_update(aida64_data))
 
         # Ambient temperature and humidity
         if dht22_data is not None:
