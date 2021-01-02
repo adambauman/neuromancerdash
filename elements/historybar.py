@@ -52,11 +52,14 @@ class HistoryBar:
     _min_history_x = None
     _max_history_x = None
 
-    def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
+    def __init__(
+        self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0, force_update=False):
+
         assert((0, 0) != bar_graph_config.size)
 
         self._config = bar_graph_config
         self._base_size = self._config.size
+        self._force_update = force_update
 
         if direct_surface and direct_rect:
             self.working_surface = direct_surface.subsurface(direct_rect)
@@ -142,8 +145,9 @@ class HistoryBar:
         value_float = float(value)
 
         # Return last draw result if the value hasn't changed
-        if self.current_value == value_float:
-            return None
+        if not self._force_update:
+            if self.current_value == value_float:
+                return None
 
         self.working_surface.fill((0, 0, 0, 0))
 

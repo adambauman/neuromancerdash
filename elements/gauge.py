@@ -63,11 +63,12 @@ class FlatArcGauge:
     _needle_surface = None
     _needle_shadow_surface = None
 
-    def __init__(self, gauge_config, direct_surface=None, direct_rect=None, surface_flags=0):
+    def __init__(self, gauge_config, direct_surface=None, direct_rect=None, surface_flags=0, force_update=False):
         assert(gauge_config.data_field)
         assert(0 < gauge_config.radius)
 
         self._config = gauge_config
+        self._force_update = force_update
 
         diameter = self._config.radius * 2
         base_size = (diameter, diameter)
@@ -243,8 +244,9 @@ class FlatArcGauge:
             start_ticks = pygame.time.get_ticks()
 
         # No need to update, return previous working surface and no update rect
-        if self.current_value == value:
-            return None
+        if not self._force_update:
+            if self.current_value == value:
+                return None
 
         # Reset the working surface
         self.working_surface.blit(self._static_elements_surface, (0, 0))

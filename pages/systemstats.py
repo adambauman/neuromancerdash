@@ -94,7 +94,6 @@ class SystemStatsConfigs:
         self.gpu_fan_gauge.label = "G"
 
 class SystemStatsPositions:
-
     def __init__(self, width, height):
         assert(0 != width and 0 != height)
 
@@ -129,94 +128,95 @@ class SystemStatsPositions:
 
 
 class SystemStats:
-    _working_surface = None
+    working_surface = None
+
     _backup_surface = None
     _background = None
     _base_size = None
 
     def __init__(self, base_size, direct_surface=None, direct_rect=None, surface_flags=0):
-        assert(0 != base_size[0] and 0 != base_size[1])
+        assert((0, 0) != base_size)
 
         self._base_size = base_size
         if direct_surface and direct_rect is not None: 
-            self._working_surface = direct_surface.subsurface(direct_rect)
+            self.working_surface = direct_surface.subsurface(direct_rect)
         else:
-            self._working_surface = pygame.Surface(self._base_size, surface_flags)
+            self.working_surface = pygame.Surface(self._base_size, surface_flags)
 
         self.font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self.font_normal.kerning = True
         
-        assert(self._working_surface is not None)
+        assert(self.working_surface)
 
         element_configs = SystemStatsConfigs(self.font_normal)
         element_positions = SystemStatsPositions(base_size[0], base_size[1])
 
         self._sys_memory_bar = BarGraph(
             element_configs.sys_memory_bar,
-            self._working_surface, element_positions.sys_memory)
+            self.working_surface, element_positions.sys_memory)
         self._gpu_memory_bar = BarGraph(
             element_configs.gpu_memory_bar,
-            self._working_surface, element_positions.gpu_memory)
+            self.working_surface, element_positions.gpu_memory)
 
         self._cpu_graph = LineGraphReverse(
             element_configs.cpu_graph,
-            self._working_surface, element_positions.cpu_graph)
+            self.working_surface, element_positions.cpu_graph)
         self._gpu_graph = LineGraphReverse(
             element_configs.gpu_graph,
-            self._working_surface, element_positions.gpu_graph)
+            self.working_surface, element_positions.gpu_graph)
 
         self._core_visualizer = SimpleCoreVisualizer(
             element_configs.core_visualizer,
-            self._working_surface, element_positions.core_visualizer)
+            self.working_surface, element_positions.core_visualizer)
 
         # NOTE: Rect and working surface are reversed from other elements
         self._cpu_details = CPUDetails(
-            element_positions.cpu_details_rect, direct_surface=self._working_surface)
+            element_positions.cpu_details_rect, direct_surface=self.working_surface)
         self._gpu_details = GPUDetails(
-            element_positions.gpu_details_rect, direct_surface=self._working_surface)
+            element_positions.gpu_details_rect, direct_surface=self.working_surface)
 
         self._cpu_temp_gauge = FlatArcGauge(
             element_configs.cpu_temp_gauge,
-            self._working_surface, element_positions.cpu_temp_gauge)
+            self.working_surface, element_positions.cpu_temp_gauge)
         self._gpu_temp_gauge = FlatArcGauge(
             element_configs.gpu_temp_gauge,
-            self._working_surface, element_positions.gpu_temp_gauge)
+            self.working_surface, element_positions.gpu_temp_gauge)
 
         self._fps_graph = LineGraphReverse(
             element_configs.fps_graph,
-            self._working_surface, element_positions.fps_graph)
-        self._fps_text = FPSText(element_positions.fps_text_rect, direct_surface=self._working_surface)
+            self.working_surface, element_positions.fps_graph)
+        self._fps_text = FPSText(element_positions.fps_text_rect, direct_surface=self.working_surface)
 
         self._temperature_humidity = TemperatureHumidity(
-            element_positions.temperature_humidity_rect, direct_surface=self._working_surface)
+            element_positions.temperature_humidity_rect, direct_surface=self.working_surface)
 
         self._fan1_gauge = FlatArcGauge(
             element_configs.fan1_gauge, 
-            self._working_surface, element_positions.fan1_gauge)
+            self.working_surface, element_positions.fan1_gauge)
         self._fan_opt_gauge = FlatArcGauge(
             element_configs.fan_opt_gauge,
-            self._working_surface, element_positions.fan_opt_gauge)
+            self.working_surface, element_positions.fan_opt_gauge)
         self._cpu_fan_gauge = FlatArcGauge(
             element_configs.cpu_fan_gauge,
-            self._working_surface, element_positions.cpu_fan_gauge)
+            self.working_surface, element_positions.cpu_fan_gauge)
         self._gpu_fan_gauge = FlatArcGauge(
             element_configs.gpu_fan_gauge,
-            self._working_surface, element_positions.gpu_fan_gauge)
+            self.working_surface, element_positions.gpu_fan_gauge)
 
         self._mobo_temperature = SimpleText(
-            element_positions.mobo_temp_rect, "{}\u00b0C", direct_surface=self._working_surface)
+            element_positions.mobo_temp_rect, "{}\u00b0C", direct_surface=self.working_surface)
 
-        self._network_info = NetworkInformation(element_positions.network_info, direct_surface=self._working_surface)
-        self._clock = SimpleText(element_positions.clock, direct_surface=self._working_surface)
+        self._network_info = NetworkInformation(element_positions.network_info, direct_surface=self.working_surface)
+        self._clock = SimpleText(element_positions.clock, direct_surface=self.working_surface)
 
     def backup_element_surface(self):
         # Blit, copy doesn't work if this is a subsurfaced direct-draw element
-        self._backup_surface = pygame.Surface(self._working_surface.get_size())
-        self._backup_surface.blit(self._working_surface, (0, 0))
+        self._backup_surface = pygame.Surface(self.working_surface.get_size())
+        self._backup_surface.blit(self.working_surface, (0, 0))
 
     def restore_element_surface(self):
         if self._backup_surface:
-            self._working_surface.blit(self._backup_surface, (0, 0))
+            self.working_surface.blit(self._backup_surface, (0, 0))
 
     def draw_update(self, aida64_data, dht22_data=None):
         assert(0 != len(aida64_data))
@@ -255,7 +255,7 @@ class SystemStats:
         gpu_memory_value = DashData.best_attempt_read(aida64_data, DashData.gpu_ram_used, "0")
         update_rects.append(self._gpu_memory_bar.draw_update(gpu_memory_value))
        
-        update_rects.append(self._core_visualizer.update(aida64_data))
+        update_rects.append(self._core_visualizer.draw_update(aida64_data))
 
         fps_value = DashData.best_attempt_read(aida64_data, DashData.rtss_fps, "0")
         update_rects.append(self._fps_graph.draw_update(fps_value))
@@ -267,7 +267,7 @@ class SystemStats:
 
         # Motherboard temp (nestled between all the fans)
         mobo_temperature_value = DashData.best_attempt_read(aida64_data, DashData.motherboard_temp, "0")
-        update_rects.append(self._mobo_temperature.draw_update(mobo_temperature_value, force_draw=True))
+        update_rects.append(self._mobo_temperature.draw_update(mobo_temperature_value))
 
         # Network Info
         nic1_down_value = DashData.best_attempt_read(aida64_data, DashData.nic1_download_rate, "0")
@@ -277,6 +277,6 @@ class SystemStats:
         # Clock
         now = datetime.now()
         time_string = now.strftime("%H:%M:%S")
-        update_rects.append(self._clock.draw_update(time_string, force_draw=True))
+        update_rects.append(self._clock.draw_update(time_string))
 
         return update_rects

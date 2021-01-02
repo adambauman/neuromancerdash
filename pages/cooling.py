@@ -82,7 +82,6 @@ class CoolingPositions:
         self.forward_exhaust_fan_bar = pygame.Rect((forward_exhaust_fan_x, exhaust_fans_y), exhaust_fan_bar_size)
 
         front_intake_bar_size = element_configs.front_intake_fan_bar.size
-        #self.front_intake_fan_bars = pygame.Rect((438, 50), front_intake_bar_size)
         self.front_intake_fan_bars = pygame.Rect((350, 40), front_intake_bar_size)
 
         bottom_intake_fan_bar_size = element_configs.bottom_intake_fan_bar.size
@@ -101,7 +100,8 @@ class CoolingPositions:
 
 
 class Cooling:
-    _working_surface = None
+    working_surface = None
+
     _backup_surface = None
     _background = None
     _surface_flags = None
@@ -112,9 +112,9 @@ class Cooling:
         self._surface_flags = surface_flags
 
         if direct_surface and direct_rect is not None:
-            self._working_surface = direct_surface.subsurface(direct_rect)
+            self.working_surface = direct_surface.subsurface(direct_rect)
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
 
         self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self._font_normal.kerning = True
@@ -122,28 +122,30 @@ class Cooling:
         # TODO: (Adam) 2020-12-11 Pass in a shared fonts object, lots of these controls have their own
         #           font instances. Would cut down on memory usage and make it easier to match font styles.
 
-        element_configs = CoolingConfigs(self._font_normal)
-        self._element_positions = CoolingPositions(base_size, element_configs)
+        self._configs = CoolingConfigs(self._font_normal)
+        self._positions = CoolingPositions(base_size, self._configs)
 
         self._rear_exhaust_fan_bar = BarGraph(
-            element_configs.rear_exhaust_bar, self._working_surface, self._element_positions.rear_exhaust_fan_bar)
+            self._configs.rear_exhaust_bar, self.working_surface, self._positions.rear_exhaust_fan_bar)
         self._forward_exhaust_fan_bar = BarGraph(
-            element_configs.forward_exhaust_bar, self._working_surface, self._element_positions.forward_exhaust_fan_bar)
+            self._configs.forward_exhaust_bar, self.working_surface, self._positions.forward_exhaust_fan_bar)
 
-        self._cpu_pump_status = PumpStatus(element_configs.cpu_pump_status, self._working_surface, self._element_positions.cpu_pump)
-        self._gpu_temperature = GPUTemperature(element_configs.gpu_temperature, self._working_surface, self._element_positions.gpu_temperature)
+        self._cpu_pump_status = PumpStatus(
+            self._configs.cpu_pump_status, self.working_surface, self._positions.cpu_pump, force_update=True)
+        self._gpu_temperature = GPUTemperature(
+            self._configs.gpu_temperature, self.working_surface, self._positions.gpu_temperature, force_update=True)
 
         self._motherboard_temps = MotherboardTemperatureSensors(
-            self._element_positions.motherboard_temps_rect, direct_surface=self._working_surface, surface_flags=pygame.SRCALPHA)
+            self._positions.motherboard_temps_rect, direct_surface=self.working_surface, surface_flags=pygame.SRCALPHA)
 
         # NOTE: Trying new setup method that allows for dynamic resizing with reduced headaches
         self._home_temperature = HomeTemperature(surface_flags=surface_flags)
-        home_temp_rect = pygame.Rect(self._element_positions.home_temperature, self._home_temperature.base_size)
-        self._home_temperature.set_direct_draw(self._working_surface, home_temp_rect)
+        home_temp_rect = pygame.Rect(self._positions.home_temperature, self._home_temperature.base_size)
+        self._home_temperature.set_direct_draw(self.working_surface, home_temp_rect)
 
         # Not using direct draw, elements need transforms before blit
-        self._front_intake_fan_bar = BarGraph(element_configs.front_intake_fan_bar)
-        self._bottom_intake_fan_bar = BarGraph(element_configs.bottom_intake_fan_bar)
+        self._front_intake_fan_bar = BarGraph(self._configs.front_intake_fan_bar)
+        self._bottom_intake_fan_bar = BarGraph(self._configs.bottom_intake_fan_bar)
 
         # Load image files
         self._icon_linked = pygame.image.load(os.path.join(AssetPath.icons, "linked_24px.png")).convert_alpha()
@@ -167,9 +169,9 @@ class Cooling:
         # TODO: Use maths to align link icon
         dual_fan_rotated_surface.blit(self._icon_linked, (6, 127))
 
-        update_rect = self._element_positions.front_intake_fan_bars
+        update_rect = self._positions.front_intake_fan_bars
         if using_direct_surface:
-            update_rect = self._working_surface.blit(dual_fan_rotated_surface, update_rect)
+            update_rect = self.working_surface.blit(dual_fan_rotated_surface, update_rect)
 
         return update_rect
 
@@ -183,27 +185,27 @@ class Cooling:
         dual_fan_surface.blit(single_bar, (single_bar.get_width() + fan_spacing, 0))
         dual_fan_surface.blit(pygame.transform.rotate(self._icon_linked, 90), (144, 3))
 
-        update_rect = self._element_positions.bottom_intake_fan_bars
+        update_rect = self._positions.bottom_intake_fan_bars
         if using_direct_surface:
-            update_rect = self._working_surface.blit(dual_fan_surface, update_rect)
+            update_rect = self.working_surface.blit(dual_fan_surface, update_rect)
          
         return update_rect
 
     def backup_element_surface(self):
         # Blit, copy doesn't work if this is a subsurfaced direct-draw element
-        self._backup_surface = pygame.Surface(self._working_surface.get_size())
-        self._backup_surface.blit(self._working_surface, (0, 0))
+        self._backup_surface = pygame.Surface(self.working_surface.get_size())
+        self._backup_surface.blit(self.working_surface, (0, 0))
 
     def restore_element_surface(self):
         if self._backup_surface:
-            self._working_surface.blit(self._backup_surface, (0, 0))
+            self.working_surface.blit(self._backup_surface, (0, 0))
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
 
         assert(0 != len(aida64_data))
 
-        self._working_surface.blit(self._heat_map, (0, 34))
-        self._working_surface.blit(self._case_profile, (366, 0))
+        self.working_surface.blit(self._heat_map, (0, 34))
+        self.working_surface.blit(self._case_profile, (366, 0))
 
         update_rects = []
 

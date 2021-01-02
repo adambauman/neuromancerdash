@@ -295,12 +295,15 @@ class FPSText:
     base_rect = None
     current_value = None
 
-    def __init__(self, fps_field_rect, fps_config=FPSConfig(), direct_surface=None, surface_flags=0):
+    def __init__(
+        self, fps_field_rect, fps_config=FPSConfig(), direct_surface=None, surface_flags=0, force_update=False):
+
         base_size = (fps_field_rect.size)
         assert((0, 0) != base_size)
 
         # Config and fonts
         self._config = fps_config
+        self._force_update = force_update
 
         if self._config.number_font is None:
             self._config.number_font = pygame.freetype.Font(FontPath.fira_code_semibold(), 50)
@@ -333,13 +336,19 @@ class FPSText:
     def draw_update(self, value):
         assert(self.working_surface)
 
+        if not self._force_update:
+            if self.current_value == value:
+                return None
+
         self.working_surface.fill((0,0,0,0))
         self._config.label_font.render_to(self.working_surface, self._label_position, "FPS", self._config.label_color)
         if 0 == int(value) and self._config.draw_zero is False:
             pass
         else:
             self._config.number_font.render_to(self.working_surface, (0, 0), "{}".format(value), self._config.number_color)
-        
+
+        self.current_value = value
+
         return self.base_rect
 
 
@@ -347,11 +356,16 @@ class TemperatureHumidity:
     working_surface = None
     base_rect = None
 
+    current_temperature = None
+    current_humidity = None
+
     _temperature = None
     _humidity = None
     _static_elements = None
 
-    def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0):
+    def __init__(self, element_rect, font=None, direct_surface=None, surface_flags=0, force_update=False):
+
+        self._force_update = force_update
 
         if font is None:
             self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
@@ -415,11 +429,21 @@ class TemperatureHumidity:
         assert(self.working_surface)
         assert(self._static_elements)
 
+        temperature = data.temperature
+        humidity = data.humidity
+
+        if not self._force_update:
+            if self.current_temperature == temperature and self.current_humidity == humidity:
+                return None
+
         self.working_surface.fill((0,0,0,0))
         self.working_surface.blit(self._static_elements, (0, 0))
 
-        self._temperature.update(data.temperature)
-        self._humidity.update(data.humidity)
+        self._temperature.update(temperature)
+        self._humidity.update(humidity)
+
+        self.current_temperature = temperature
+        self.current_humidity = humidity
 
         return self.base_rect
 
@@ -539,25 +563,26 @@ class SimpleText:
     base_rect = None
     current_value = None
 
-    _using_direct_surface = False
+    def __init__(
+        self, element_rect, text_template="{}", font=None, text_color=Color.white, 
+        direct_surface=None, surface_flags=0, force_update=False):
 
-    def __init__(self, element_rect, text_template="{}", font=None, text_color=Color.white, direct_surface=None, surface_flags=0):
-        assert(0 != element_rect[2] and 0 != element_rect[3])
+        assert((0, 0) != element_rect.size)
         assert(0 != len(text_template))
         assert(-1 != text_template.find("{}"))
 
         self._text_color = text_color
         self._text_template = text_template
+        self._force_update = force_update
 
         if font:
             self._font = font
         else:
             self._font = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
 
-        base_size = (element_rect[2], element_rect[3])
+        base_size = (element_rect.size)
         if direct_surface:
             self.working_surface = direct_surface.subsurface(element_rect)
-            self._using_direct_surface = True
             self.base_rect = element_rect
         else:
             self.working_surface = pygame.Surface(base_size, surface_flags)
@@ -570,15 +595,18 @@ class SimpleText:
         self.working_surface = direct_surface.subsurface(direct_rect)
         self.base_rect = direct_rect
 
-    def draw_update(self, value, new_text_color=None, force_draw=False):
+    def draw_update(self, value, new_text_color=None):
         assert(self.working_surface)
+
+        if not self._force_update:
+            if self.current_value == value:
+                return None
 
         if new_text_color:
             self._text_color = new_text_color
 
-        if self.current_value != value or force_draw:
-            self.working_surface.fill((0,0,0,0))
-            self._font.render_to(self.working_surface, (0, 0), self._text_template.format(value), self._text_color)
+        self.working_surface.fill((0,0,0,0))
+        self._font.render_to(self.working_surface, (0, 0), self._text_template.format(value), self._text_color)
 
         self.current_value = value
 
@@ -589,15 +617,21 @@ class NetworkInformation:
     # Surfaces
     working_surface = None
     base_rect = None
+
+    current_up_speed = None
+    current_down_speed = None
     
     _static_elements = None
     _down_speed = None
     _up_speed = None
 
-    def __init__(self, element_rect, font=None, value_color=Color.white, label_color=Color.white, direct_surface=None, surface_flags=0):
+    def __init__(
+        self, element_rect, font=None, value_color=Color.white, label_color=Color.white, 
+        direct_surface=None, surface_flags=0, force_update=False):
 
         self._value_color = value_color
         self._label_color = label_color
+        self._force_update = force_update
 
         if font is None:
             self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
@@ -661,6 +695,10 @@ class NetworkInformation:
         assert(self.working_surface)
         assert(self._static_elements)
 
+        if not self._force_update:
+            if self.current_down_speed == download_value and self.current_up_speed == upload_value:
+                return None
+
         self.working_surface.fill((0,0,0,0))
         self.working_surface.blit(self._static_elements, (0, 0))
 
@@ -694,16 +732,23 @@ class EnclosedLabel:
     base_rect = None
     first_draw = True
 
+    current_text = None
+
     _direct_draw = False
     _outline_rect = None
     _text_centered_position = None
 
-    def __init__(self, position, text, enclosed_label_config=EnclosedLabelConfig(), direct_surface=None, surface_flags=0):
+    def __init__(
+        self, position, text, enclosed_label_config=EnclosedLabelConfig(), 
+        direct_surface=None, surface_flags=0, force_update=False):
+
         assert(0 != len(text))
 
         self._config = enclosed_label_config
         self._text = text
         self._outline_rect = pygame.Rect((0, 0), self._config.outline_size)
+        self._force_update = force_update
+        self.current_text = text
 
         # Calculate how big our working area needs to be before setting the working surface
         if self._config.draw_text_shadow:
@@ -774,11 +819,16 @@ class EnclosedLabel:
         assert(self._config)
         assert(self.base_rect)
 
+        if not self._force_update:
+            if self.current_text == text:
+                return None
+
         self.working_surface.fill((0, 0, 0, 0))
 
         self.__draw_rect__()
         self.__draw_text__(text)
 
         self.first_draw = False
+        self.current_text = text
 
         return self.base_rect

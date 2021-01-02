@@ -56,10 +56,13 @@ class BarGraph:
     _static_overlay_surface = None
     _font = None
 
-    def __init__(self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0):
+    def __init__(
+        self, bar_graph_config, direct_surface=None, direct_rect=None, surface_flags=0, force_update=False):
+
         assert((0, 0) != bar_graph_config.size)
 
         self._config = bar_graph_config
+        self._force_update = force_update
 
         if direct_surface and direct_rect:
             self.working_surface = direct_surface.subsurface(direct_rect)
@@ -133,12 +136,21 @@ class BarGraph:
 
             self._static_overlay_surface.blit(shadow_text, origin)
 
+    def set_direct_draw(self, direct_surface, direct_rect):
+        # Draw element directly to a subsurface of the direct_surface
+        assert(direct_surface)
+        assert((0, 0) != direct_rect.size)
+
+        self.working_surface = direct_surface.subsurface(direct_rect)
+        self.base_rect = direct_rect
+
     def draw_update(self, value):
         assert(self.working_surface)
         assert(self._static_overlay_surface)
 
-        if self.current_value == value:
-            return None
+        if not self._force_update:
+            if self.current_value == value:
+                return None
         
         if g_benchmark:
             start_ticks = pygame.time.get_ticks()

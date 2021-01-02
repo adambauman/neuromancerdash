@@ -99,7 +99,8 @@ class PowerPositions:
         self.gpu_graph_label = pygame.Rect(295, 305, 150, 10)
 
 class Power:
-    _working_surface = None
+    working_surface = None
+
     _backup_surface = None
     _background = None
     _surface_flags = None
@@ -109,9 +110,9 @@ class Power:
 
         self._surface_flags = surface_flags
         if direct_surface and direct_rect:
-            self._working_surface = direct_surface.subsurface(direct_rect)
+            self.working_surface = direct_surface.subsurface(direct_rect)
         else:
-            self._working_surface = pygame.Surface(base_size, surface_flags)
+            self.working_surface = pygame.Surface(base_size, surface_flags)
 
         self._font_normal = pygame.freetype.Font(FontPath.fira_code_semibold(), 12)
         self._font_normal.kerning = True
@@ -124,151 +125,151 @@ class Power:
             self._positions.volts_12_value, 
             "12.000v", 
             self._configs.volt_value_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_12_label = EnclosedLabel(
             self._positions.volts_12_label, 
             "PSU  12v", 
             self._configs.volt_label_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_12 = HistoryBar(self._configs.volts_12)
         volts_12_rect = pygame.Rect(self._positions.volts_12, self._volts_12._base_size)
-        self._volts_12.set_direct_draw(self._working_surface, volts_12_rect)
+        self._volts_12.set_direct_draw(self.working_surface, volts_12_rect)
 
         self._volts_12_min = SimpleText(
-            self._positions.volts_12_min, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_12_min, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
         self._volts_12_max = SimpleText(
-            self._positions.volts_12_max, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_12_max, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
 
         # PSU 5 Volt Rail
         self._volts_5_value = EnclosedLabel(
             self._positions.volts_5_value, 
             " 5.000v", 
             self._configs.volt_value_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_5_label = EnclosedLabel(
             self._positions.volts_5_label, 
             "PSU   5v", 
             self._configs.volt_label_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_5 = HistoryBar(self._configs.volts_5)
         volts_5_rect = pygame.Rect(self._positions.volts_5, self._volts_5._base_size)
-        self._volts_5.set_direct_draw(self._working_surface, volts_5_rect)
+        self._volts_5.set_direct_draw(self.working_surface, volts_5_rect)
 
         self._volts_5_min = SimpleText(
-            self._positions.volts_5_min, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_5_min, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
         self._volts_5_max = SimpleText(
-            self._positions.volts_5_max, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_5_max, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
 
         # PSU 3.3 Volt Rail
         self._volts_3_3_value = EnclosedLabel(
             self._positions.volts_3_3_value, 
             " 3.300v", 
             self._configs.volt_value_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_3_3_label = EnclosedLabel(
             self._positions.volts_3_3_label, 
             "PSU 3.3v", 
             self._configs.volt_label_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_3_3 = HistoryBar(self._configs.volts_3_3)
         volts_3_3_rect = pygame.Rect(self._positions.volts_3_3, self._volts_3_3._base_size)
-        self._volts_3_3.set_direct_draw(self._working_surface, volts_3_3_rect)
+        self._volts_3_3.set_direct_draw(self.working_surface, volts_3_3_rect)
 
         self._volts_3_3_min = SimpleText(
-            self._positions.volts_3_3_min, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_3_3_min, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
         self._volts_3_3_max = SimpleText(
-            self._positions.volts_3_3_max, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_3_3_max, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
 
         # CPUVID
         self._volts_cpuvid_value = EnclosedLabel(
             self._positions.volts_cpuvid_value, 
             " 1.650v", 
             self._configs.volt_value_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_cpuvid_label = EnclosedLabel(
             self._positions.volts_cpuvid_label, 
             "CPU  VID",
             self._configs.volt_label_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_cpuvid = HistoryBar(self._configs.volts_cpuvid)
         volts_cpuvid_rect = pygame.Rect(self._positions.volts_cpuvid, self._volts_cpuvid._base_size)
-        self._volts_cpuvid.set_direct_draw(self._working_surface, volts_cpuvid_rect)
+        self._volts_cpuvid.set_direct_draw(self.working_surface, volts_cpuvid_rect)
 
         self._volts_cpuvid_min = SimpleText(
-            self._positions.volts_cpuvid_min, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_cpuvid_min, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
         self._volts_cpuvid_max = SimpleText(
-            self._positions.volts_cpuvid_max, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_cpuvid_max, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
 
         # DIMM
         self._volts_dimm_value = EnclosedLabel(
             self._positions.volts_dimm_value, 
             " 1.650v", 
             self._configs.volt_value_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_dimm_label = EnclosedLabel(
             self._positions.volts_dimm_label, 
             "DIMM   V",
             self._configs.volt_label_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_dimm = HistoryBar(self._configs.volts_dimm)
         volts_dimm_rect = pygame.Rect(self._positions.volts_dimm, self._volts_dimm._base_size)
-        self._volts_dimm.set_direct_draw(self._working_surface, volts_dimm_rect)
+        self._volts_dimm.set_direct_draw(self.working_surface, volts_dimm_rect)
 
         self._volts_dimm_min = SimpleText(
-            self._positions.volts_dimm_min, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_dimm_min, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
         self._volts_dimm_max = SimpleText(
-            self._positions.volts_dimm_max, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_dimm_max, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
 
         # GPU Core
         self._volts_gpu_core_value = EnclosedLabel(
             self._positions.volts_gpu_core_value, 
             " 1.650v", 
             self._configs.volt_value_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_gpu_core_label = EnclosedLabel(
             self._positions.volts_gpu_core_label, 
             "GPU CORE",
             self._configs.volt_label_config, 
-            direct_surface=self._working_surface)
+            direct_surface=self.working_surface)
 
         self._volts_gpu_core = HistoryBar(self._configs.volts_gpu_core)
         volts_gpu_core_rect = pygame.Rect(self._positions.volts_gpu_core, self._volts_gpu_core._base_size)
-        self._volts_gpu_core.set_direct_draw(self._working_surface, volts_gpu_core_rect)
+        self._volts_gpu_core.set_direct_draw(self.working_surface, volts_gpu_core_rect)
                                              
         self._volts_gpu_core_min = SimpleText(
-            self._positions.volts_gpu_core_min, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_gpu_core_min, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
         self._volts_gpu_core_max = SimpleText(
-            self._positions.volts_gpu_core_max, "{}v", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.volts_gpu_core_max, "{}v", text_color=Color.grey_75, direct_surface=self.working_surface)
 
         # CPU Utilization
-        self._cpu_util_graph = LineGraphReverse(self._configs.cpu_graph, self._working_surface, self._positions.cpu_graph)
+        self._cpu_util_graph = LineGraphReverse(self._configs.cpu_graph, self.working_surface, self._positions.cpu_graph)
         self._cpu_util_label = SimpleText(
-            self._positions.cpu_graph_label, "CPU Utilization: {}%", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.cpu_graph_label, "CPU Utilization: {}%", text_color=Color.grey_75, direct_surface=self.working_surface)
 
         # GPU Utilization
-        self._gpu_util_graph = LineGraphReverse(self._configs.gpu_graph, self._working_surface, self._positions.gpu_graph)
+        self._gpu_util_graph = LineGraphReverse(self._configs.gpu_graph, self.working_surface, self._positions.gpu_graph)
         self._gpu_util_label = SimpleText(
-            self._positions.gpu_graph_label, "GPU Utilization: {}%", text_color=Color.grey_75, direct_surface=self._working_surface)
+            self._positions.gpu_graph_label, "GPU Utilization: {}%", text_color=Color.grey_75, direct_surface=self.working_surface)
 
     def backup_element_surface(self):
         # Blit, copy doesn't work if this is a subsurfaced direct-draw element
-        self._backup_surface = pygame.Surface(self._working_surface.get_size())
-        self._backup_surface.blit(self._working_surface, (0, 0))
+        self._backup_surface = pygame.Surface(self.working_surface.get_size())
+        self._backup_surface.blit(self.working_surface, (0, 0))
 
     def restore_element_surface(self):
         if self._backup_surface:
-            self._working_surface.blit(self._backup_surface, (0, 0))
+            self.working_surface.blit(self._backup_surface, (0, 0))
 
     def draw_update(self, aida64_data, dht22_data=None, redraw_all=False):
 
