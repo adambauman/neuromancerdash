@@ -20,17 +20,17 @@ Install RivaTunerStatisticsServer (optional if you want FPS data)
 # Raspberry Pi Client Installation
 1. Clone this repository onto your client
 
-2. Install Python 3 components
-    1. pip3 install sseclient
-    2. pip3 install pygame --upgrade
-    3. pip3 install Adafruit_DHT
+2. Install Python 3 components:
+    * pip3 install sseclient
+    * pip3 install pygame --upgrade
+    * pip3 install Adafruit_DHT
 
-3. Install required SDL2 components: 
-    sudo apt-get install libsdl2-ttf-2.0-0 libsdl2-mixer-2.0-0 libsdl2-image-2.0-0
+3. Install required SDL2 components:
+    * sudo apt-get install libsdl2-ttf-2.0-0 libsdl2-mixer-2.0-0 libsdl2-image-2.0-0
 
-4. Modify dash_launcher.sh with the IP of your Host machine
+4. Update dash_launcher.sh with the IP and port number for your Host machine
 
 # Execution
 Two options:
-1. Run ./dash_launcher.sh, this can be added to your crontab for automatic startup
-2. Run python3 neuromancerdash.py --aidasse http://<ip_of_your_host>:<port>/sse
+1. Run **dash_launcher.sh**, this can be added to your crontab for automatic startup
+2. Run **python3 neuromancerdash.py --aidasse http://<ip_of_your_host>:<port>/sse**
