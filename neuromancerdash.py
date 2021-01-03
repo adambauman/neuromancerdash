@@ -15,6 +15,9 @@ import traceback
 # Set true to benchmark various parts of the update process
 g_benchmark = False
 
+# Set true to dump each display frame to a numbered PNG file.
+g_dump_display_frames = False
+
 from data.aida64lcdsse import AIDA64LCDSSE
 from utilities.screensaver import MatrixScreensaver
 from pages.systemstats import SystemStats
@@ -159,6 +162,9 @@ def main(argv):
     data_retry_delay = 50
     retry_ticks_before_screensaver = 2000
 
+    if g_dump_display_frames:
+        current_frame_number = 0
+
     display_surface.fill(Color.black)
     restore_surface = None
     while True:
@@ -267,6 +273,11 @@ def main(argv):
             print("BENCHMARK: Draw: {}ms".format(pygame.time.get_ticks() - draw_start_ticks))
         if g_benchmark:
             print("BENCHMARK: Loop update: {}ms".format(pygame.time.get_ticks() - loop_start_ticks))
+
+        if g_dump_display_frames:
+            output_filename = "frame_{}.png".format(current_frame_number)
+            pygame.image.save(display_surface, output_filename)
+            current_frame_number += 1
 
 
     # Loop broken, exit pygame to cleanup resources
