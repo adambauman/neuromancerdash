@@ -1,6 +1,7 @@
+# Neuromancer Dash
+
 ![DashSample](assets/samples/systemstats.gif)
 
-# Neuromancer Dash
 Provides network connected, standalone monitoring of computer health data using AIDA64 LCD data streams. Neuromancer Dash supports multiple pages and can also pull data from other hardware such as temperature and humidity sensors.
 
 Inspired by JayzTwoCents' external monitor panel: https://www.youtube.com/watch?v=RTdniu3gn3Y
