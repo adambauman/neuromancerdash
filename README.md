@@ -7,7 +7,7 @@ Provides network connected, standalone monitoring of computer health data using 
 Inspired by JayzTwoCents' external monitor panel: https://www.youtube.com/watch?v=RTdniu3gn3Y
 
 # Hardware
-Neuromancer Dash will run on anything with an external display that's capable of running pygame 2.0.0. For my dashboard I'm using a Raspberry Pi Zero W and 5" 480x320 HDMI LCD panel. 
+Neuromancer Dash will run on anything with an external display that's capable of running pygame 2.0.0. For my dashboard I'm using a Raspberry Pi Zero W and 5" 480x320 HDMI LCD panel. The files required to customize and print your own mount are included in the **hardware_support** directory or can be found on Thingiverse: https://www.thingiverse.com/thing:4708587
 
 ![InstalledThumbnail](hardware_support/installed_thumb.jpg)
 
