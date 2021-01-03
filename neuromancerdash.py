@@ -16,7 +16,7 @@ import traceback
 g_benchmark = False
 
 # Set true to dump each display frame to a numbered PNG file.
-g_dump_display_frames = False
+g_dump_display_frames = True
 
 from data.aida64lcdsse import AIDA64LCDSSE
 from utilities.screensaver import MatrixScreensaver
