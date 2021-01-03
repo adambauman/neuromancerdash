@@ -1,10 +1,14 @@
+![DashSample](assets/samples/systemstats.gif)
+
 # Neuromancer Dash
-Provides standalone monitoring of computer health data using AIDA64 LCD data streams. Neuromancer Dash supports multiple pages and can also pull data from other hardware such as temperature and humidity sensors.
+Provides network connected, standalone monitoring of computer health data using AIDA64 LCD data streams. Neuromancer Dash supports multiple pages and can also pull data from other hardware such as temperature and humidity sensors.
 
 Inspired by JayzTwoCents' external monitor panel: https://www.youtube.com/watch?v=RTdniu3gn3Y
 
 # Hardware
-Neuromancer Dash will run on anything with an external display that's capable of running pygame 2.0.0. For my dashboard I'm using a Raspberry Pi Zero W and 5" 480x320 HDMI LCD panel.
+Neuromancer Dash will run on anything with an external display that's capable of running pygame 2.0.0. For my dashboard I'm using a Raspberry Pi Zero W and 5" 480x320 HDMI LCD panel. 
+
+![InstalledThumbnail](assets/hardware_support/installed_thumb.jpg)
 
 # Host Installation
 Install AIDA64 (required, I used AIDA64 Extreme)
